@@ -1,4 +1,4 @@
-function [data,avgData,medData] = loadAndProcessData(filepath)
+function [nData,rData,avgData,medData] = loadAndProcessData(filepath)
 % Load, filter, normalize, and compute the average/median of the time series
 %
 % Anthony Ho, 10/24/2014
@@ -6,46 +6,56 @@ function [data,avgData,medData] = loadAndProcessData(filepath)
 
     %% Constants
     
-    threshold = 0.05;
+    thresholdPercentile = 5;
     
 
     %% Import data
     
     disp(sprintf('   Processing %s',filepath));
     
-    data = importdata(filepath);
+    rData = importdata(filepath);
+    nData = rData;
     
-    N0 = size(data,1);
-    nTimePoint = size(data,2);
+    N0 = size(rData,1);
+    nTimePoint = size(rData,2);
     avgData = zeros(nTimePoint,1);
     medData = zeros(nTimePoint,1);
+    
+    threshold = prctile(rData(:,1),thresholdPercentile);
+    %threshold = 0.05;
     
     
     %% Normalization
     
-    for j = 1:size(data,1)
-        if data(j,1)>threshold
-            amp = data(j,1);
-            data(j,:) = data(j,:)/amp;
+    for j = 1:N0
+        
+        if rData(j,1)>threshold
+            amp = rData(j,1);
+            nData(j,:) = rData(j,:)/amp;
         end
+        
     end
 
     
     %% Cleaning up data
     
-    rowsToRemove = any(data(:,1)<threshold,2);
-    data(rowsToRemove,:) = [];
+    rowsToRemove = any(rData(:,1)<threshold,2);
+    rData(rowsToRemove,:) = [];
+    nData(rowsToRemove,:) = [];
     
-    rowsToRemove = any(data==0,2);
-    data(rowsToRemove,:) = [];
+    rowsToRemove = any(rData==0,2);
+    rData(rowsToRemove,:) = [];
+    nData(rowsToRemove,:) = [];
 
-    N1 = size(data,1);
+    N1 = size(rData,1);
     
     %% Averaging
     
-    for i=1:nTimePoint
-        avgData(i) = mean(data(:,i));
-        medData(i) = median(data(:,i));
+    for i = 1:nTimePoint
+        
+        avgData(i) = mean(nData(:,i));
+        medData(i) = median(nData(:,i));
+        
     end
       
     

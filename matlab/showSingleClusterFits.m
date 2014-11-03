@@ -1,5 +1,5 @@
-function showSingleClusterFits(dataset,xAxis,fitParams,fitParamsStruct, ...
-    functionHandle,colorByField,sortByField)
+function showSingleClusterFits(dataset,rawDataset,xAxis,fitParams, ...
+    fitErrors,fitParamsStruct,functionHandle,colorByField,sortByField)
 % SHOWSINGLECLUSTERFITS Shows all clusters raw signals and their fits 
 % individually
 %
@@ -49,13 +49,13 @@ function showSingleClusterFits(dataset,xAxis,fitParams,fitParamsStruct, ...
     end
     
     % Textbox positions
-    xpos = 0.7;
+    xpos = 0.5;
     ypos = 0.85;
         
     
     %% Plotting
 
-    disp('Showing individual single cluster fits...');
+    disp('Showing individual single-cluster fits...');
     
     hFig = figure; 
     set(hFig,'Position',[5 1200 3000 1500])
@@ -100,10 +100,24 @@ function showSingleClusterFits(dataset,xAxis,fitParams,fitParamsStruct, ...
             
             % Show fit parameters in plot
             fitParamsText = '';
-            for k = 1:size(fitParamsStruct,1)
-                textLine = sprintf(' = %0.2g',fitParamsStruct{k,2}(fitParams(index,:)));
-                fitParamsText = strcat(fitParamsText,fitParamsStruct{k,1},textLine,'\n');
+            % Adding fit parameters and their respective standard errors
+            for k = 1:size(fitParamsStruct,1)-1
+                textLine = sprintf(' = %0.2g %s %0.2g', ...
+                    fitParamsStruct{k,2}(fitParams(index,:)),setstr(177),...
+                    fitParamsStruct{k,6}(fitErrors(index,:)));
+                if strcmp(fitParamsStruct{k,1}(1),'\')
+                    fitParamsText = strcat(fitParamsText,'\',fitParamsStruct{k,1},textLine,'\n');
+                else
+                    fitParamsText = strcat(fitParamsText,fitParamsStruct{k,1},textLine,'\n');
+                end
             end
+            % Adding error of the fit
+            textLine = sprintf(' = %0.2g',fitParamsStruct{end,2}(fitParams(index,:)));
+            fitParamsText = strcat(fitParamsText,fitParamsStruct{end,1},textLine,'\n');
+            % Adding the raw intensity of the first point
+            textLine = sprintf(' = %0.2g',rawDataset(index,1));
+            fitParamsText = strcat(fitParamsText,'I_0',textLine);
+            % Showing all numbers
             text(xpos,ypos,sprintf(fitParamsText),'Units','normalized');
             
             % Color of the line and markers
