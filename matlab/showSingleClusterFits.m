@@ -60,7 +60,7 @@ function showSingleClusterFits(dataset,rawDataset,xAxis,fitParams, ...
     hFig = figure; 
     set(hFig,'Position',[5 1200 3000 1500])
     
-    for i = 1:nFrames
+    for i = 1:1%nFrames
         
         clf;
         

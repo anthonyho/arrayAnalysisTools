@@ -3,7 +3,7 @@ function F = DEF10302014(params,xdata)
 
     %%
     
-    i = 6;
+    i = 1;
     
     allFixedParams = [ ...
     0.1599    0.2288    0.1446    0.1297    0.1255    0.1461
