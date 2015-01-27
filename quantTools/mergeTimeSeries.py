@@ -57,7 +57,7 @@ def main():
     twoPi = 2 * pi
     
     numTimepoints = int(args.numTimepoints)
-    replaceToTimepoint = '{}'
+    replaceToTimepoint = '##'
 
     clusterIDColLabels = ['instrumentID', 'runID', 'flowcellID', 'flowcellSide', 'tileID', 'x-pos', 'y-pos']
     fitResultsColLabels = ['fitted', 'amp', 'sigma', 'fittedX', 'fittedY']
@@ -131,8 +131,8 @@ def main():
     CPsigmaTime['times'] = CPsignalTime['times']
 
     ## Writing dataframes to files
-    CPsignalTime.to_csv(CPsignalTimeFilePath, sep='\t', index=False, header=False)
-    CPsigmaTime.to_csv(CPsigmaTimeFilePath, sep='\t', index=False, header=False)
+    CPsignalTime.to_csv(CPsignalTimeFilePath, sep='\t', index=False)
+    CPsigmaTime.to_csv(CPsigmaTimeFilePath, sep='\t', index=False)
 
     return 1 
 
