@@ -131,8 +131,8 @@ def main():
     CPsigmaTime['times'] = CPsignalTime['times']
 
     ## Writing dataframes to files
-    CPsignalTime.to_csv(CPsignalTimeFilePath, sep='\t', index=False)
-    CPsigmaTime.to_csv(CPsigmaTimeFilePath, sep='\t', index=False)
+    CPsignalTime.to_csv(CPsignalTimeFilePath, sep='\t', index=False, header=False)
+    CPsigmaTime.to_csv(CPsigmaTimeFilePath, sep='\t', index=False, header=False)
 
     return 1 
 
