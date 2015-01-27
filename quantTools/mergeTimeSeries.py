@@ -119,18 +119,18 @@ def main():
     listCPsigmasColLabels = list(CPsigmas.columns.values)
     listCPtimesIndLabels = list(CPtimes.index.values)
 
-    ## Making CPsignalTime dataframe
+    ## Make CPsignalTime dataframe
     CPsignalTime['clusterID'] = concatDFColumnsIntoSeries(currCPfluorData, clusterIDColLabels, ':')
     CPsignalTime['signals'] = concatDFColumnsIntoSeries(CPsignals, listCPsignalsColLabels, ':')
     CPtimesInStr = concatSeriesIntoString(CPtimes, listCPtimesIndLabels, ':')
     CPsignalTime['times'] = [ CPtimesInStr ]*len(CPsignalTime.index)
 
-    ## Making CPsigmaTime dataframe
+    ## Make CPsigmaTime dataframe
     CPsigmaTime['clusterID'] = CPsignalTime['clusterID']
     CPsigmaTime['sigmas'] = concatDFColumnsIntoSeries(CPsigmas, listCPsigmasColLabels, ':')
     CPsigmaTime['times'] = CPsignalTime['times']
 
-    ## Writing dataframes to files
+    ## Write dataframes to files
     CPsignalTime.to_csv(CPsignalTimeFilePath, sep='\t', index=False)
     CPsigmaTime.to_csv(CPsigmaTimeFilePath, sep='\t', index=False)
 
