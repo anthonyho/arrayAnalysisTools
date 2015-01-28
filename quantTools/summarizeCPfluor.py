@@ -13,7 +13,7 @@ from itertools import izip
 from numpy import pi
 import numpy as np
 import matplotlib.pyplot as plt
-import ahplot
+import plotlib
 
 
 ## Print analysis summaries
@@ -37,7 +37,7 @@ def showHistograms(plotTitle, data1, xlabel1, data2, xlabel2, data3, xlabel3):
         ax[i].hist(data[i],numBins,color='#3F5D7D',alpha=0.8)
 
         ax[i].set_xlabel(xLabels[i])
-        ahplot.makepretty(ax[i])
+        plotlib.makepretty(ax[i])
 
     ax[0].set_ylabel("Count")
     ax[1].set_title(plotTitle, y=1.05)
