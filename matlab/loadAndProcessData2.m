@@ -21,10 +21,6 @@ function [nData,rData,avgData,medData] = loadAndProcessData(filepath)
     avgData = zeros(nTimePoint,1);
     medData = zeros(nTimePoint,1);
     
-    if N0 == 0
-        return
-    end
-    
     threshold = prctile(rData(:,1),thresholdPercentile);
     %threshold = 0.05;
     
@@ -57,8 +53,8 @@ function [nData,rData,avgData,medData] = loadAndProcessData(filepath)
     
     for i = 1:nTimePoint
         
-        avgData(i) = mean(nData(:,i));
-        medData(i) = median(nData(:,i));
+        avgData(i) = mean(rData(:,i));
+        medData(i) = median(rData(:,i));
         
     end
       
