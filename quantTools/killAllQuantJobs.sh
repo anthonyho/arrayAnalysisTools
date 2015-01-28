@@ -11,11 +11,23 @@ read -p "Are you sure you want to delete all quantification jobs under your acco
 case ${answer:0:1} in
     y|Y )
         # Kill the parent quantifyAllTiles.sh script
-	kill $(ps aux | grep -E "$user.*[b]ash.*quantifyAllTiles" | awk '{print $2}')
+	bash_jobs=$(ps aux | grep -E "$user.*[b]ash.*quantifyAllTiles" | awk '{print $2}')
+	if [ -z "$bash_jobs" ]
+	then
+	    kill $bash_jobs
+	fi
 	# Kill the quantifyAllTiles.py script
-	kill $(ps aux | grep -E "$user.*[p]ython.*quantifyAllTiles" | awk '{print $2}')
+	python_jobs=$(ps aux | grep -E "$user.*[p]ython.*quantifyAllTiles" | awk '{print $2}')
+	if [ -z "$python_jobs" ]
+	then
+	    kill $python_jobs
+	fi
 	# Kill the MATLAB instances
-	kill $(ps aux | grep -E "$user.*[m]atlab.*AnalyseImage" | awk '{print $2}')
+	matlab_jobs=$(ps aux | grep -E "$user.*[m]atlab.*AnalyseImage" | awk '{print $2}')
+	if [ -z "$matlab_jobs" ]
+	then
+	    kill $matlab_jobs
+	fi
     ;;
     * )
     ;;
