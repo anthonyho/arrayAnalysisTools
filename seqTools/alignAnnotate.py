@@ -12,7 +12,9 @@ import os, sys
 import argparse
 import pandas as pd
 import numpy as np
+from joblib import Parallel, delayed
 from Bio import SeqIO
+import multiprocessing
 import seqlib
 
 
@@ -82,6 +84,7 @@ def alignAnnotateEachSeqMMindels(querySeq, refSeqsDict, startPos, refPosDict):
 
     
 ## Align and annotate a query sequence against a set of reference sequences
+## Assume all sequences have been converted to upper cases
 def alignAnnotateEachSeq(querySeq, refSeqsDict, startPos, refPosDict, MMcutoff, indelMode):
     
     # Check if perfect match with any of the reference sequences
@@ -99,6 +102,10 @@ def alignAnnotateEachSeq(querySeq, refSeqsDict, startPos, refPosDict, MMcutoff, 
     else:
         return alignAnnotateEachSeqMMindels(querySeq, refSeqsDict, startPos, refPosDict)
 
+def tmpFunc(i, seq, refSeqsDict, startPos, refPosDict, MMcutoff, indelMode):
+    print i, alignAnnotateEachSeq(seq, refSeqsDict, startPos, refPosDict, MMcutoff, indelMode)
+    return
+    
 
 def main():
 
@@ -135,10 +142,27 @@ def main():
         
     ## Load seqfile
     allSeqs = pd.read_csv(args.seqFilePath, sep='\t', header=None)    
+    allAnnt = pd.DataFrame(index=allSeqs.index)
+
+
+    ## Align and annotate
+#    if args.numCore == 1:
+    allAnnt = allSeqs[int(args.seqCol)].str.upper().apply(alignAnnotateEachSeq, args=(refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel))
+    
+
+       
+#    print allAnnt
+
+    for i, seq in enumerate(allSeqs[int(args.seqCol)]):
+        allAnnt.iat[i,0] = alignAnnotateEachSeq(seq.upper(), refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel)
+
     
     #> multiprocessing
-    for seq in allSeqs[int(args.seqCol)]:
-        print alignAnnotateEachSeq(seq.upper(), refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel)
+    #for i, seq in enumerate(allSeqs[int(args.seqCol)]):
+#        alignAnnotateEachSeq(seq.upper(), refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel)
+    #alignAnnotateEachSeq(seq.upper(), refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel)
+
+#    Parallel(n_jobs=16)(delayed(tmpFunc)(i, seq.upper(), refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel) for i, seq in enumerate(allSeqs[int(args.seqCol)]))
 
     
     return 1 

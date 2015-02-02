@@ -110,7 +110,7 @@ def main():
 
     ## Compute timepoints relative to the reference timepoint and convert to float64
     if args.refTime == None:
-        CPtimes = (CPtimes - CPtimes.iloc[0]).apply(lambda x: x / np.timedelta64(1, 's'))
+        CPtimes = (CPtimes - CPtimes.iat[0]).apply(lambda x: x / np.timedelta64(1, 's'))
     else:
         CPtimes = (CPtimes - refTime).apply(lambda x: x / np.timedelta64(1, 's'))
 
