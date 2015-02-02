@@ -4,7 +4,7 @@
 # against a set of reference sequences
 #
 # Anthony Ho, ahho@stanford.edu, 1/28/2015
-# Last update 1/28/2015
+# Last update 2/2/2015
 
 
 ## Import libraries
@@ -102,10 +102,6 @@ def alignAnnotateEachSeq(querySeq, refSeqsDict, startPos, refPosDict, MMcutoff, 
     else:
         return alignAnnotateEachSeqMMindels(querySeq, refSeqsDict, startPos, refPosDict)
 
-def tmpFunc(i, seq, refSeqsDict, startPos, refPosDict, MMcutoff, indelMode):
-    print i, alignAnnotateEachSeq(seq, refSeqsDict, startPos, refPosDict, MMcutoff, indelMode)
-    return
-    
 
 def main():
 
@@ -118,9 +114,9 @@ def main():
     parser.add_argument('-s', '--startPos', type=int, default=1, help="number indictating the position of the first base of the read (default=1)")
     parser.add_argument('-n', '--numCore', type=int, default=1, help="number of cores to use (default=1)") 
     parser.add_argument('refSeqFilePath', help="path to the reference sequences file (in FASTA/FASTQ format)")
-    parser.add_argument('seqCol', help="column of the file containing the list of sequences to be aligned and annotated (in Python notation)")
+    parser.add_argument('seqCol', type=int, help="column of the file containing the list of sequences to be aligned and annotated (in Python notation)")
     parser.add_argument('seqFilePath', help="path to the file containing the list of sequences to be aligned and annotated")
-    parser.add_argument('outCol', help="column of the output file to which the annotation will be written to (in Python notation)")
+    parser.add_argument('outCol', type=int, help="column of the output file to which the annotation will be written to (in Python notation)")
     parser.add_argument('outputFilePath', help="path to the output file")
     args = parser.parse_args()
 
@@ -141,29 +137,22 @@ def main():
             refPosDict[record.id] = []
         
     ## Load seqfile
-    allSeqs = pd.read_csv(args.seqFilePath, sep='\t', header=None)    
-    allAnnt = pd.DataFrame(index=allSeqs.index)
-
+    allQuerySeqs = pd.read_csv(args.seqFilePath, sep='\t', header=None)    
 
     ## Align and annotate
-#    if args.numCore == 1:
-    allAnnt = allSeqs[int(args.seqCol)].str.upper().apply(alignAnnotateEachSeq, args=(refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel))
-    
+    # If using only 1 core:
+    if args.numCore == 1:
+        allAnnotations = allQuerySeqs[args.seqCol].str.upper().apply(alignAnnotateEachSeq, args=(refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel))
+    else:
+    ## Multiprocessing:
+        allAnnotationsList = Parallel(n_jobs=args.numCore, verbose=1)(delayed(alignAnnotateEachSeq)(seq.upper(), refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel) for seq in allQuerySeqs[args.seqCol])
+        allAnnotations = pd.Series(allAnnotationsList)
 
-       
-#    print allAnnt
+    ## Inserting allAnnotations as a column in allQuerySeqs at the user-specific location
+    allQuerySeqs.insert(args.outCol, 'annotations', allAnnotations)
 
-    for i, seq in enumerate(allSeqs[int(args.seqCol)]):
-        allAnnt.iat[i,0] = alignAnnotateEachSeq(seq.upper(), refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel)
-
-    
-    #> multiprocessing
-    #for i, seq in enumerate(allSeqs[int(args.seqCol)]):
-#        alignAnnotateEachSeq(seq.upper(), refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel)
-    #alignAnnotateEachSeq(seq.upper(), refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel)
-
-#    Parallel(n_jobs=16)(delayed(tmpFunc)(i, seq.upper(), refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel) for i, seq in enumerate(allSeqs[int(args.seqCol)]))
-
+    ## Write to output file path
+    allQuerySeqs.to_csv(args.outputFilePath, sep='\t', index=False, header=False)
     
     return 1 
 
