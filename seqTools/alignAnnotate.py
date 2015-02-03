@@ -113,6 +113,7 @@ def main():
     parser.add_argument('-q', '--numberedMode', action='store_true', help="enable non-sequential numbering of the nucleotides along the sequence using the quality score (default=false)")
     parser.add_argument('-s', '--startPos', type=int, default=1, help="number indictating the position of the first base of the read (default=1)")
     parser.add_argument('-n', '--numCore', type=int, default=1, help="number of cores to use (default=1)") 
+    parser.add_argument('-v', '--verbose', type=int, default=0, help="verbosity. 0 = no verbosity") 
     parser.add_argument('refSeqFilePath', help="path to the reference sequences file (in FASTA/FASTQ format)")
     parser.add_argument('seqCol', type=int, help="column of the file containing the list of sequences to be aligned and annotated (in Python notation)")
     parser.add_argument('seqFilePath', help="path to the file containing the list of sequences to be aligned and annotated")
@@ -146,7 +147,7 @@ def main():
         allAnnotations = allQuerySeqs[args.seqCol].str.upper().apply(alignAnnotateEachSeq, args=(refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel))
     else:
     ## Multiprocessing:
-        allAnnotationsList = Parallel(n_jobs=args.numCore, verbose=1)(delayed(alignAnnotateEachSeq)(seq.upper(), refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel) for seq in allQuerySeqs[args.seqCol])
+        allAnnotationsList = Parallel(n_jobs=args.numCore, verbose=args.verbose)(delayed(alignAnnotateEachSeq)(seq.upper(), refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel) for seq in allQuerySeqs[args.seqCol])
         allAnnotations = pd.Series(allAnnotationsList)
 
     ## Inserting allAnnotations as a column in allQuerySeqs at the user-specific location
