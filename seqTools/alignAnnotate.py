@@ -149,8 +149,11 @@ def main():
         allAnnotationsList = Parallel(n_jobs=args.numCore, verbose=args.verbose)(delayed(alignAnnotateEachSeq)(seq.upper(), refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel) for seq in allQuerySeqs['seq'])
         allAnnotations = pd.Series(allAnnotationsList)
 
-    ## Inserting allAnnotations as a column in allQuerySeqs at the user-specific location
-    allQuerySeqs.insert(args.outCol, 'annotation', allAnnotations)
+    ## Append sizes of the barcode blocks (i.e. how many sequences share the same barcode to give rise to the consensus sequence)
+    allAnnotationsAndCounts = allAnnotations + ':' + allQuerySeqs['count'].map(str)
+
+    ## Insert allAnnotations as a column in allQuerySeqs at the user-specific location
+    allQuerySeqs.insert(args.outCol, 'annotation', allAnnotationsAndCounts)
 
     ## Write to output file path
     allQuerySeqs.to_csv(args.outputFilePath, sep='\t', index=False)
