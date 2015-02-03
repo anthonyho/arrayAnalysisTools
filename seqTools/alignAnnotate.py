@@ -150,7 +150,7 @@ def main():
         allAnnotations = pd.Series(allAnnotationsList)
 
     ## Inserting allAnnotations as a column in allQuerySeqs at the user-specific location
-    allQuerySeqs.insert(args.outCol, 'annotations', allAnnotations)
+    allQuerySeqs.insert(args.outCol, 'annotation', allAnnotations)
 
     ## Write to output file path
     allQuerySeqs.to_csv(args.outputFilePath, sep='\t', index=False)
