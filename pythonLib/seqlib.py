@@ -33,7 +33,7 @@ def findMismatchesAndIndels(query, reference, startPos=1, refPos=[]):
 
     # User-defined nucleotide positions
     if not refPos:
-        realRefPos = range(0,len(query))
+        realRefPos = range(0,len(query+1))
     else:
         realRefPos = np.cumsum(refPos)-1
 

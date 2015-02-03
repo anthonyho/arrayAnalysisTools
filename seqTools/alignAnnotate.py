@@ -131,6 +131,7 @@ def main():
         for record in SeqIO.parse(args.refSeqFilePath, 'fastq'):
             refSeqsDict[record.id] = str(record.seq.upper())
             refPosDict[record.id] = [i-phredOffset for i in record.letter_annotations['phred_quality']]
+            refPosDict[record.id].append(1)
     else:
         for record in SeqIO.parse(args.refSeqFilePath, 'fasta'):
             refSeqsDict[record.id] = str(record.seq.upper())
