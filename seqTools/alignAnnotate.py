@@ -113,11 +113,10 @@ def main():
     parser.add_argument('-q', '--numberedMode', action='store_true', help="enable non-sequential numbering of the nucleotides along the sequence using the quality score (default=false)")
     parser.add_argument('-s', '--startPos', type=int, default=1, help="number indictating the position of the first base of the read (default=1)")
     parser.add_argument('-n', '--numCore', type=int, default=1, help="number of cores to use (default=1)") 
-    parser.add_argument('-v', '--verbose', type=int, default=0, help="verbosity. 0 = no verbosity") 
+    parser.add_argument('-v', '--verbose', type=int, default=0, help="verbosity of progress. 0 = no verbosity. (default=0)") 
+    parser.add_argument('-o', '--outCol', type=int, default=0, help="column of the output file to which the annotation will be written to (in Python notation) (default=0)")
     parser.add_argument('refSeqFilePath', help="path to the reference sequences file (in FASTA/FASTQ format)")
-    parser.add_argument('seqCol', type=int, help="column of the file containing the list of sequences to be aligned and annotated (in Python notation)")
     parser.add_argument('seqFilePath', help="path to the file containing the list of sequences to be aligned and annotated")
-    parser.add_argument('outCol', type=int, help="column of the output file to which the annotation will be written to (in Python notation)")
     parser.add_argument('outputFilePath', help="path to the output file")
     args = parser.parse_args()
 
@@ -138,23 +137,23 @@ def main():
             refSeqsDict[record.id] = str(record.seq.upper())
             refPosDict[record.id] = []
         
-    ## Load seqfile
-    allQuerySeqs = pd.read_csv(args.seqFilePath, sep='\t', header=None)    
+    ## Load seqFile
+    allQuerySeqs = pd.read_csv(args.seqFilePath, sep='\t')
 
     ## Align and annotate
     # If using only 1 core:
     if args.numCore == 1:
-        allAnnotations = allQuerySeqs[args.seqCol].str.upper().apply(alignAnnotateEachSeq, args=(refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel))
+        allAnnotations = allQuerySeqs['seq'].str.upper().apply(alignAnnotateEachSeq, args=(refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel))
     else:
-    ## Multiprocessing:
-        allAnnotationsList = Parallel(n_jobs=args.numCore, verbose=args.verbose)(delayed(alignAnnotateEachSeq)(seq.upper(), refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel) for seq in allQuerySeqs[args.seqCol])
+    # Multiprocessing:
+        allAnnotationsList = Parallel(n_jobs=args.numCore, verbose=args.verbose)(delayed(alignAnnotateEachSeq)(seq.upper(), refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel) for seq in allQuerySeqs['seq'])
         allAnnotations = pd.Series(allAnnotationsList)
 
     ## Inserting allAnnotations as a column in allQuerySeqs at the user-specific location
     allQuerySeqs.insert(args.outCol, 'annotations', allAnnotations)
 
     ## Write to output file path
-    allQuerySeqs.to_csv(args.outputFilePath, sep='\t', index=False, header=False)
+    allQuerySeqs.to_csv(args.outputFilePath, sep='\t', index=False)
     
     return 1 
 
