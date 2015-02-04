@@ -112,6 +112,7 @@ def main():
     group.add_argument('-m', '--MMcutoff', type=int, help="indicate the maximum number of mismatches allowed in the no-indel mode (default=length of the query sequence)")
     parser.add_argument('-q', '--numberedMode', action='store_true', help="enable non-sequential numbering of the nucleotides along the sequence using the quality score (default=false)")
     parser.add_argument('-s', '--startPos', type=int, default=1, help="number indictating the position of the first base of the read (default=1)")
+    parser.add_argument('-c', '--count', action='store_true', help="append the count of sequences within a barcode block at the end of annotation (default=false)")
     parser.add_argument('-n', '--numCore', type=int, default=1, help="number of cores to use (default=1)") 
     parser.add_argument('-v', '--verbose', type=int, default=0, help="verbosity of progress. 0 = no verbosity. (default=0)") 
     parser.add_argument('-o', '--outCol', type=int, default=0, help="column of the output file to which the annotation will be written to (in Python notation) (default=0)")
@@ -149,8 +150,11 @@ def main():
         allAnnotationsList = Parallel(n_jobs=args.numCore, verbose=args.verbose)(delayed(alignAnnotateEachSeq)(seq.upper(), refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel) for seq in allQuerySeqs['seq'])
         allAnnotations = pd.Series(allAnnotationsList)
 
-    ## Append sizes of the barcode blocks (i.e. how many sequences share the same barcode to give rise to the consensus sequence)
-    allAnnotationsAndCounts = allAnnotations + ':' + allQuerySeqs['count'].map(str)
+    ## Append sizes of the barcode blocks (i.e. how many sequences share the same barcode to give rise to the consensus sequence) if count mode is enabled
+    if args.count:
+        allAnnotationsAndCounts = allAnnotations + ':' + allQuerySeqs['count'].map(str)
+    else:
+        allAnnotationsAndCounts = allAnnotations
 
     ## Insert allAnnotations as a column in allQuerySeqs at the user-specific location
     allQuerySeqs.insert(args.outCol, 'annotation', allAnnotationsAndCounts)
