@@ -1,30 +1,26 @@
-#!/usr/bin/env python
-#
-# Sequence analysis, alignemnt and annotation tools
-#
 # Anthony Ho, ahho@stanford.edu, 1/28/2015
 # Last update 2/3/2015
+""" Library of sequence analysis, alignemnt and annotation tools """
 
 
-## Import libraries
 import subprocess
 import numpy as np
 import string
 
 
-## Find reverse complement
+# Find reverse complement
 def reverseComplement(seq):
     complements = string.maketrans("ATCGN", "TAGCN")
     return seq.upper().translate(complements)[::-1]
 
-## Compute Phred Q score, default is Phred-33
+# Compute Phred Q score, default is Phred-33
 def qScore(seq, phred=33):
     if phred == 64:
         return [ord(n)-64 for i, n in enumerate(seq)]
     else:
         return [ord(n)-33 for i, n in enumerate(seq)]
 
-## Compute the average Phred Q score of a given sequence, defualt is Phred-33
+# Compute the average Phred Q score of a given sequence, defualt is Phred-33
 def avgQScore(seq, phred=33):
     if phred == 64:
         l = [ord(n)-64 for i, n in enumerate(seq)]
@@ -32,15 +28,15 @@ def avgQScore(seq, phred=33):
         l = [ord(n)-33 for i, n in enumerate(seq)]
     return np.mean(l)
 
-## Parse fasta sequences from string, separated by \n
+# Parse fasta sequences from string, separated by \n
 def parseFastaSeqsAsString(fastaStr, IDchar='>'):
     return [''.join(record.split('\n')[1:]) for record in fastaStr.split(IDchar)[1:]]
 
-## Compute Hamming distance between two sequences, assuming equal length
+# Compute Hamming distance between two sequences, assuming equal length
 def hamming(s1, s2):
     return sum(ch1 != ch2 for ch1, ch2 in zip(s1, s2))
 
-## Find mismatches between two sequences, assuming equal length
+# Find mismatches between two sequences, assuming equal length
 def findMismatches(query, reference, startPos=1, refPos=[]):
 
     # User-defined nucleotide positions
@@ -53,7 +49,7 @@ def findMismatches(query, reference, startPos=1, refPos=[]):
     listMM = [chR+str(startPos+realRefPos[i])+chQ for i, (chQ, chR) in enumerate(zip(query, reference)) if chQ != chR]
     return listMM
 
-## Find mismatches and indels between two aligned sequences (i.e. equal length after gapping)
+# Find mismatches and indels between two aligned sequences (i.e. equal length after gapping)
 def findMismatchesAndIndels(query, reference, startPos=1, refPos=[]):
 
     # User-defined nucleotide positions
@@ -80,9 +76,9 @@ def findMismatchesAndIndels(query, reference, startPos=1, refPos=[]):
 
     return listMM, listIn, listDel
 
-## Align a query sequence to a reference sequence using EMBOSS's Needleman-Wunsch program
-## Note: it assumes the EMBOSS needle program is installed and only works on Unix/Mac-based 
-## OS due to the bash interface
+# Align a query sequence to a reference sequence using EMBOSS's Needleman-Wunsch program
+# Note: it assumes the EMBOSS needle program is installed and only works on Unix/Mac-based 
+# OS due to the bash interface
 def alignEmbossNeedle(query, reference, gapopen=10, gapextend=0.5):
     cmdBash = ' /bin/bash -c '
     cmdAlign = ' needle -asequence <(echo ' + query + ') -bsequence <(echo ' + reference + ')' 
