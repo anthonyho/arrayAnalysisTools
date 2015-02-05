@@ -12,7 +12,7 @@
 # Last update 1/14/2015
 
 
-## Define usage function
+# Define usage function
 usage() {
     cat <<EOF
 
@@ -27,7 +27,7 @@ EOF
 }
 
 
-## Check number of arguments
+# Check number of arguments
 num_arguments=7
 
 if [ $# -gt $num_arguments ]
@@ -43,7 +43,7 @@ then
 fi
 
 
-## Parse arguments
+# Parse arguments
 image_dir=$1
 image_files_suffix=$2
 output_dir=$3
@@ -53,14 +53,14 @@ num_timepoints=$6
 tiles=$7
 
 
-## Make empty directories for each time point if not exist already
+# Make empty directories for each time point if not exist already
 for (( timepoint=1; timepoint<=$num_timepoints; timepoint++ ))
 do
     mkdir -p ${output_dir}/${output_subdir_prefix}${timepoint}
 done
 
 
-## Declare a function to convert for each tile
+# Declare a function to convert for each tile
 convert_each_tile() {
 
     # Parse argument
@@ -91,7 +91,7 @@ convert_each_tile() {
 export -f convert_each_tile
 
 
-## Convert in parallel for each tile
+# Convert in parallel for each tile
 parallel \
     convert_each_tile $image_dir $image_files_suffix $output_dir $output_subdir_prefix $output_file_prefix {} \
     ::: $tiles

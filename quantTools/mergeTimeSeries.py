@@ -6,7 +6,7 @@
 # Last update 1/26/2015
 
 
-## Import libraries
+# Import libraries
 import os, sys
 import argparse
 import glob
@@ -15,7 +15,7 @@ from numpy import pi
 import numpy as np
 
 
-## Parse timestamp from the last part of the filename as datetime64[ns] objects
+# Parse timestamp from the last part of the filename as datetime64[ns] objects
 def parseTimeFromFilename(fileFullPath):
     (dirPath, filename) = os.path.split(fileFullPath)
     (fileBasename, fileExt) = os.path.splitext(filename)
@@ -24,8 +24,8 @@ def parseTimeFromFilename(fileFullPath):
     return timestamp
 
 
-## Concatenate designated columns of a datadrame into a series of 
-## strings, separated by separator
+# Concatenate designated columns of a datadrame into a series of 
+# strings, separated by separator
 def concatDFColumnsIntoSeries(df, columnsLabels, separator):
     s = pd.Series(df[columnsLabels[0]].map(str))
     for currCol in columnsLabels[1:]:
@@ -33,8 +33,8 @@ def concatDFColumnsIntoSeries(df, columnsLabels, separator):
     return s    
 
 
-## Concatenate designated elements of a series into a string
-## separated by separator
+# Concatenate designated elements of a series into a string
+# separated by separator
 def concatSeriesIntoString(series, indexLabels, separator):
     string = str(series[indexLabels[0]])
     for currElement in indexLabels[1:]:
@@ -44,7 +44,7 @@ def concatSeriesIntoString(series, indexLabels, separator):
 
 def main():
 
-    ## Get options and arguments from command line
+    # Get options and arguments from command line
     parser = argparse.ArgumentParser(description="merge time series data of a tile into a single file")
     parser.add_argument('-r', '--refTime', help="start time of the experiment. If not provided, the start time will be set to the first time point")
     parser.add_argument('numTimepoints', help="number of timepoints")
@@ -52,7 +52,7 @@ def main():
     parser.add_argument('outputFilePathNoExt', help="basename of the output files with no extensions")
     args = parser.parse_args()
 
-    ## Initialization 
+    # Initialization 
 
     twoPi = 2 * pi
     
@@ -72,12 +72,12 @@ def main():
 
     refTime = pd.to_datetime(args.refTime, format='%Y.%m.%d-%H.%M.%S.%f')
 
-    ## Output files
+    # Output files
     CPsignalTimeFilePath = args.outputFilePathNoExt+".CPsignalTime"
     CPsigmaTimeFilePath = args.outputFilePathNoExt+".CPsigmaTime"
 
 
-    ## Go through all time points
+    # Go through all time points
     for timepoint in range(1,numTimepoints+1):
         
         # Get the path to the current CPfluor file
@@ -108,29 +108,29 @@ def main():
             CPtimes[currTimepoint] = parseTimeFromFilename(currCPfluorFile)
 
 
-    ## Compute timepoints relative to the reference timepoint and convert to float64
+    # Compute timepoints relative to the reference timepoint and convert to float64
     if args.refTime == None:
         CPtimes = (CPtimes - CPtimes.iat[0]).apply(lambda x: x / np.timedelta64(1, 's'))
     else:
         CPtimes = (CPtimes - refTime).apply(lambda x: x / np.timedelta64(1, 's'))
 
-    ## Get list of columns/indices labels
+    # Get list of columns/indices labels
     listCPsignalsColLabels = list(CPsignals.columns.values)
     listCPsigmasColLabels = list(CPsigmas.columns.values)
     listCPtimesIndLabels = list(CPtimes.index.values)
 
-    ## Make CPsignalTime dataframe
+    # Make CPsignalTime dataframe
     CPsignalTime['clusterID'] = concatDFColumnsIntoSeries(currCPfluorData, clusterIDColLabels, ':')
     CPsignalTime['signals'] = concatDFColumnsIntoSeries(CPsignals, listCPsignalsColLabels, ':')
     CPtimesInStr = concatSeriesIntoString(CPtimes, listCPtimesIndLabels, ':')
     CPsignalTime['times'] = [ CPtimesInStr ]*len(CPsignalTime.index)
 
-    ## Make CPsigmaTime dataframe
+    # Make CPsigmaTime dataframe
     CPsigmaTime['clusterID'] = CPsignalTime['clusterID']
     CPsigmaTime['sigmas'] = concatDFColumnsIntoSeries(CPsigmas, listCPsigmasColLabels, ':')
     CPsigmaTime['times'] = CPsignalTime['times']
 
-    ## Write dataframes to files
+    # Write dataframes to files
     CPsignalTime.to_csv(CPsignalTimeFilePath, sep='\t', index=False)
     CPsigmaTime.to_csv(CPsigmaTimeFilePath, sep='\t', index=False)
 

@@ -12,7 +12,7 @@
 # WORK IN PROGRESS
 
 
-## Define usage function
+# Define usage function
 usage() {
     cat <<EOF
 
@@ -21,7 +21,7 @@ $0
 EOF
 }
 
-## Define path removal functions
+# Define path removal functions
 path_remove ()  { 
     PATH2=`echo -n $PATH | awk -v RS=: -v ORS=: '$0 != "'$1'"' | sed 's/:$//'`; 
     echo $PATH2;
@@ -32,7 +32,7 @@ matlabpath_remove ()  {
     echo $MATLABPATH2
 }
 
-## Define function to check and make symbolic links
+# Define function to check and make symbolic links
 check_make_sym_links () {
     if [ ! -e $2 ]
     then 
@@ -41,7 +41,7 @@ check_make_sym_links () {
 }
 
 
-## Define paths and directories
+# Define paths and directories
 central_repo_path="/usr/local/lib/array_tools"
 CPlibs="CPlibs"
 CPscripts="CPscripts"
@@ -50,7 +50,7 @@ sym_bin_path="$HOME/.array_tools_path"
 num_arguments=1
 
 
-## Check number of arguments
+# Check number of arguments
 if [ $# -gt $num_arguments ]
 then
 
@@ -58,7 +58,7 @@ then
     usage
     exit 1
 
-## Switch to new repo if an argument is given 
+# Switch to new repo if an argument is given 
 elif [ $# -eq 1 ]
 then
 
@@ -85,7 +85,7 @@ then
     export -n MATLABPATH="${sym_bin_path}/${CPscripts}:$MATLABPATH"
     export -n MATLABPATH="${sym_bin_path}/${CPlibs}:$MATLABPATH"
 
-## Switch back to default repo if no argument is given
+# Switch back to default repo if no argument is given
 elif [ $# -eq 0 ]
 then
 

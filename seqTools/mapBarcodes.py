@@ -9,7 +9,7 @@
 # Last update 2/2/2015
 
 
-## Import libraries
+# Import libraries
 import os, sys
 import argparse
 import pandas as pd
@@ -18,7 +18,7 @@ import numpy as np
 
 def main():
 
-    ## Get options and arguments from command line
+    # Get options and arguments from command line
     parser = argparse.ArgumentParser(description="map barcodes")
     parser.add_argument('bcDictFilePath', help="path to the barcode-annotation dictionary file")
     parser.add_argument('seqsFilePath', help="path to the CPseq-type file to be annotated")
@@ -26,32 +26,32 @@ def main():
     args = parser.parse_args()
 
     
-    ## Read barcode-annotation file as Pandas dataframe
+    # Read barcode-annotation file as Pandas dataframe
     bcDF = pd.read_csv(args.bcDictFilePath, sep='\t', usecols=['barcode','annotation'])
     
-    ## Check if any barcodes duplicate
+    # Check if any barcodes duplicate
     if np.sum(bcDF.duplicated('barcode')) != 0:
         print "There are barcode duplicates in the barcode-annotation dictionary!"
         print "Quitting now..."
         return 0
     
-    ## Convert barcode-annotation dataframe into dictionary
+    # Convert barcode-annotation dataframe into dictionary
     bcDict = bcDF.set_index('barcode')['annotation'].to_dict()
     
 
-    ## Load seqFile
+    # Load seqFile
     seqsDF = pd.read_csv(args.seqsFilePath, sep='\t')
 
-    ## Map barcodes and represent missing keys entries with 'NA:nan:nan:nan:::'
+    # Map barcodes and represent missing keys entries with 'NA:nan:nan:nan:::'
     allAnnotations = seqsDF['barcode'].apply(bcDict.get, args=None).replace({None: 'NA:nan:nan:nan:::'})
 
-    ## Insert annotations to dataframe
+    # Insert annotations to dataframe
     seqsDF.insert(0, 'annotation', allAnnotations)
     
-    ## Drop the clusterID column
+    # Drop the clusterID column
     seqsDF = seqsDF.drop('clusterID', 1)
 
-    ## Write to output file path
+    # Write to output file path
     seqsDF.to_csv(args.outputFilePath, sep='\t', index=False)
 
     return 1 

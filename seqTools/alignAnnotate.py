@@ -7,7 +7,7 @@
 # Last update 2/2/2015
 
 
-## Import libraries
+# Import libraries
 import os, sys
 import argparse
 import pandas as pd
@@ -18,7 +18,7 @@ import multiprocessing
 import seqlib
 
 
-## Make annotation label given alignment information
+# Make annotation label given alignment information
 def makeAnnotation(label, numMM, numIn, numDel, listMM, listIn, listDel):
     csMM = ','.join(listMM)
     csIn = ','.join(listIn)
@@ -28,7 +28,7 @@ def makeAnnotation(label, numMM, numIn, numDel, listMM, listIn, listDel):
     return annotation
 
 
-## Align and annotate a query sequence against a set of reference sequences if ignoring indels completely
+# Align and annotate a query sequence against a set of reference sequences if ignoring indels completely
 def alignAnnotateEachSeqMMonly(querySeq, refSeqsDict, startPos, refPosDict, MMcutoff):
 
     # Make a dictionary of HD of the query against all references that have the same length as query 
@@ -60,7 +60,7 @@ def alignAnnotateEachSeqMMonly(querySeq, refSeqsDict, startPos, refPosDict, MMcu
         return makeAnnotation('NA', np.nan, np.nan, np.nan, [], [], [])
 
 
-## Align and annotate a query sequence against a set of reference sequences considering indels
+# Align and annotate a query sequence against a set of reference sequences considering indels
 def alignAnnotateEachSeqMMindels(querySeq, refSeqsDict, startPos, refPosDict):
 
     # Make a dictionary of alignment results against all references 
@@ -83,8 +83,8 @@ def alignAnnotateEachSeqMMindels(querySeq, refSeqsDict, startPos, refPosDict):
     return makeAnnotation(matchID, len(listMM), len(listIn), len(listDel), listMM, listIn, listDel)
 
     
-## Align and annotate a query sequence against a set of reference sequences
-## Assume all sequences have been converted to upper cases
+# Align and annotate a query sequence against a set of reference sequences
+# Assume all sequences have been converted to upper cases
 def alignAnnotateEachSeq(querySeq, refSeqsDict, startPos, refPosDict, MMcutoff, indelMode):
     
     # Check if perfect match with any of the reference sequences
@@ -105,7 +105,7 @@ def alignAnnotateEachSeq(querySeq, refSeqsDict, startPos, refPosDict, MMcutoff, 
 
 def main():
 
-    ## Get options and arguments from command line
+    # Get options and arguments from command line
     parser = argparse.ArgumentParser(description="align and annotate a given list of sequences against a set of reference sequences")
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-i', '--indel', action='store_true', help="indel mode: enable alignment and annotation of sequences with indels (default=false)")
@@ -122,10 +122,10 @@ def main():
     args = parser.parse_args()
 
 
-    ## Initialization
+    # Initialization
     phredOffset = 15
     
-    ## Read reference sequences (and numbering of nucleotides if in numberedMode)
+    # Read reference sequences (and numbering of nucleotides if in numberedMode)
     refSeqsDict = {}
     refPosDict = {}
     if args.numberedMode:
@@ -138,10 +138,10 @@ def main():
             refSeqsDict[record.id] = str(record.seq.upper())
             refPosDict[record.id] = []
         
-    ## Load seqFile
+    # Load seqFile
     allQuerySeqs = pd.read_csv(args.seqFilePath, sep='\t')
 
-    ## Align and annotate
+    # Align and annotate
     # If using only 1 core:
     if args.numCore == 1:
         allAnnotations = allQuerySeqs['seq'].str.upper().apply(alignAnnotateEachSeq, args=(refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel))
@@ -150,16 +150,16 @@ def main():
         allAnnotationsList = Parallel(n_jobs=args.numCore, verbose=args.verbose)(delayed(alignAnnotateEachSeq)(seq.upper(), refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel) for seq in allQuerySeqs['seq'])
         allAnnotations = pd.Series(allAnnotationsList)
 
-    ## Append sizes of the barcode blocks (i.e. how many sequences share the same barcode to give rise to the consensus sequence) if count mode is enabled
+    # Append sizes of the barcode blocks (i.e. how many sequences share the same barcode to give rise to the consensus sequence) if count mode is enabled
     if args.count:
         allAnnotationsAndCounts = allAnnotations + ':' + allQuerySeqs['count'].map(str)
     else:
         allAnnotationsAndCounts = allAnnotations
 
-    ## Insert allAnnotations as a column in allQuerySeqs at the user-specific location
+    # Insert allAnnotations as a column in allQuerySeqs at the user-specific location
     allQuerySeqs.insert(args.outCol, 'annotation', allAnnotationsAndCounts)
 
-    ## Write to output file path
+    # Write to output file path
     allQuerySeqs.to_csv(args.outputFilePath, sep='\t', index=False)
     
     return 1 

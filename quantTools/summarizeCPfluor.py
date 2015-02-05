@@ -6,7 +6,7 @@
 # Last update 1/15/2015
 
 
-## Import libraries
+# Import libraries
 import os, sys
 import argparse
 from itertools import izip
@@ -16,13 +16,13 @@ import matplotlib.pyplot as plt
 import plotlib
 
 
-## Print analysis summaries
+# Print analysis summaries
 def printSummary(text, number, totalNumber):
     print text, str(number), "("+str(round(float(number)/totalNumber*100, 2))+"%)"
     return
 
 
-## Show histograms
+# Show histograms
 def showHistograms(plotTitle, data1, xlabel1, data2, xlabel2, data3, xlabel3):
 
     fig = plt.figure(figsize=(24, 9))
@@ -47,7 +47,7 @@ def showHistograms(plotTitle, data1, xlabel1, data2, xlabel2, data3, xlabel3):
 
 def main():
 
-    ## Get options and arguments from command line
+    # Get options and arguments from command line
     parser = argparse.ArgumentParser(description="summarize a CPfluor file")
     parser.add_argument('-p', '--plot', action='store_true', default=False, help="option to plot figures")
     parser.add_argument('CPfluorPath', help="CPfluor file to be analyzed")
@@ -56,7 +56,7 @@ def main():
     parser.add_argument('outputDir', help="output directory to store the analyzed data and figure")
     args = parser.parse_args()
 
-    ## Initialization
+    # Initialization
     numSeqs = 0 
     numFittedSeqs = 0
     twoPi = 2 * pi
@@ -69,11 +69,11 @@ def main():
 
     print "Analyzing "+CPfluorBaseName+"..."
 
-    ## Output files
+    # Output files
     outputFilePath = os.path.join(args.outputDir, CPfluorBaseName+".sum")
     figurePath = os.path.join(args.outputDir, CPfluorBaseName+".sum.eps")
 
-    ## Go through the CPfluor file
+    # Go through the CPfluor file
     with open(args.CPfluorPath, 'r') as r1, open(args.filteredFilePath, 'r') as r2, open(outputFilePath, 'w') as w:
         for line1, line2 in izip(r1, r2):
             
@@ -109,11 +109,11 @@ def main():
                     allAmp.append(amp)
                     allSigma.append(sigma)
     
-    ## Print summaries
+    # Print summaries
     printSummary("  Number of clusters with the correct filter:", numSeqs, numSeqs)
     printSummary("  Number of clusters fitted:", numFittedSeqs, numSeqs)
 
-    ## Plot and save histograms
+    # Plot and save histograms
     showHistograms(CPfluorBaseName+" (fitted = "+str(numFittedSeqs)+"/"+str(numSeqs)+" = "
                    +str(round(float(numFittedSeqs)/numSeqs*100,2))+"%)", 
                    np.array(map(float,allIntFluor)), "Integrated fluorescence", 
@@ -121,7 +121,7 @@ def main():
                    np.array(map(float,allSigma)), "Sigma")
     plt.savefig(figurePath, bbox_inches='tight')
 
-    ## Show the histograms if requested
+    # Show the histograms if requested
     if args.plot:
         plt.show()
 
