@@ -100,6 +100,7 @@ class lsqcurvefit:
         # Compute parameters' p-values
         self.paramPvals = self._compute_pValuesFromT()
 
+        del disp
 
 
     # Sanity check of input parameters
