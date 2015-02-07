@@ -195,7 +195,7 @@ class lsqcurvefit:
     # Objective function (residual sum of squares) to be minimized. 
     # Compute sum_i[ (func(p,x_i)-y_i)^2 ] or, if sigma is given, 
     # sum_i[ w_i*(func(p,x_i)-y_i)^2 ] where w_i = 1/sigma_i^2 
-    def _compute_RSS(self, params, x, y, func, funcPrime, sigma=None):
+    def _compute_RSS(self, params, x, y, func, _, sigma=None):
         if sigma is None:
             return np.sum( (func(params, x) - y)**2 )
         else:
