@@ -13,33 +13,7 @@ import glob
 import pandas as pd
 from numpy import pi
 import numpy as np
-
-
-# Parse timestamp from the last part of the filename as datetime64[ns] objects
-def parseTimeFromFilename(fileFullPath):
-    (dirPath, filename) = os.path.split(fileFullPath)
-    (fileBasename, fileExt) = os.path.splitext(filename)
-    timestampStr = fileBasename.split('_')[-1]
-    timestamp = pd.to_datetime(timestampStr, format='%Y.%m.%d-%H.%M.%S.%f')
-    return timestamp
-
-
-# Concatenate designated columns of a datadrame into a series of 
-# strings, separated by separator
-def concatDFColumnsIntoSeries(df, columnsLabels, separator):
-    s = pd.Series(df[columnsLabels[0]].map(str))
-    for currCol in columnsLabels[1:]:
-        s = s+separator+df[currCol].map(str)
-    return s    
-
-
-# Concatenate designated elements of a series into a string
-# separated by separator
-def concatSeriesIntoString(series, indexLabels, separator):
-    string = str(series[indexLabels[0]])
-    for currElement in indexLabels[1:]:
-        string = string+separator+str(series[currElement])
-    return string
+import parselib
 
 
 def main():
@@ -105,7 +79,7 @@ def main():
                                         / currCPfluorData.fitted).replace([np.inf, -np.inf], np.nan)
             CPsigmas[currTimepoint] = (currCPfluorData.sigma / currCPfluorData.fitted).replace([np.inf, -np.inf], np.nan)
             # Parse timestamp from CPfluor filename
-            CPtimes[currTimepoint] = parseTimeFromFilename(currCPfluorFile)
+            CPtimes[currTimepoint] = parselib.parseTimeFromFilename(currCPfluorFile)
 
 
     # Compute timepoints relative to the reference timepoint and convert to float64
@@ -120,14 +94,14 @@ def main():
     listCPtimesIndLabels = list(CPtimes.index.values)
 
     # Make CPsignalTime dataframe
-    CPsignalTime['clusterID'] = concatDFColumnsIntoSeries(currCPfluorData, clusterIDColLabels, ':')
-    CPsignalTime['signals'] = concatDFColumnsIntoSeries(CPsignals, listCPsignalsColLabels, ':')
-    CPtimesInStr = concatSeriesIntoString(CPtimes, listCPtimesIndLabels, ':')
+    CPsignalTime['clusterID'] = parselib.concatDFColumnsIntoSeries(currCPfluorData, clusterIDColLabels, ':')
+    CPsignalTime['signals'] = parselib.concatDFColumnsIntoSeries(CPsignals, listCPsignalsColLabels, ':')
+    CPtimesInStr = parselib.concatSeriesIntoString(CPtimes, listCPtimesIndLabels, ':')
     CPsignalTime['times'] = [ CPtimesInStr ]*len(CPsignalTime.index)
 
     # Make CPsigmaTime dataframe
     CPsigmaTime['clusterID'] = CPsignalTime['clusterID']
-    CPsigmaTime['sigmas'] = concatDFColumnsIntoSeries(CPsigmas, listCPsigmasColLabels, ':')
+    CPsigmaTime['sigmas'] = parselib.concatDFColumnsIntoSeries(CPsigmas, listCPsigmasColLabels, ':')
     CPsigmaTime['times'] = CPsignalTime['times']
 
     # Write dataframes to files
