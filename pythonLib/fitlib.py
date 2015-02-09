@@ -1,13 +1,12 @@
 # Anthony Ho, ahho@stanford.edu, 2/3/2015
 # Summary statistics functions adopted from Lauren Chircus's NLS class
-# Last update 2/5/2015
+# Last update 2/9/2015
 
 
 import numpy as np
 from scipy import optimize
 from scipy import stats
 import matplotlib.pyplot as plt
-
 
 ## To-add:
 ## - F test
@@ -45,12 +44,15 @@ class lsqcurvefit:
     def __init__(self, func, x, y, params0,
                  bounds=None, constraints=(), jac=None,
                  sigma=None, method='SLSQP',
-                 maxiter=100, tol=None, epsilon=None, disp=False):
+                 maxiter=100, tol=None, epsilon=None, disp=True):
+
+        # Get boolean array to indicate missing data in y
+        isFiniteBoolArray = np.isfinite(y)
 
         # Assign instance variables
         self.func = func
-        self.x = x
-        self.y = y
+        self.x = x[isFiniteBoolArray] # Get rid of missing data in y
+        self.y = y[isFiniteBoolArray] # Get rid of missing data in y
         self.params0 = params0
         self.bounds = bounds
         self.constraints = constraints
@@ -64,21 +66,29 @@ class lsqcurvefit:
         self.nDataPoints = len(y)
         self.DOF = self.nDataPoints-len(self.params0)        
 
-        # Sanity check of inout parameters
+        # Sanity check of input parameters
         self._sanityCheck()
                 
         # Call optimize.minimize to fit
         results = self._fit()
         
+        # Assign some results as instance variables
         self.status = results.status
         self.success = results.success
         self.message = results.message
 
         self.params = results.x
         self.RSS = results.fun
-        self.jacobianRSS = results.jac
+        
+        try:        
+            self.jacobianRSS = results.jac
+        except AttributeError:
+            self.jacobianRSS = None
 
-        self.nit = results.nit
+        try:
+            self.nit = results.nit
+        except AttributeError:
+            self.nit = None
 
         # Compute the Jacobian of func at params that minimizes RSS
         self.jacobianFunc = self._compute_jacobianFunc()
@@ -95,12 +105,19 @@ class lsqcurvefit:
         self.SER = self._compute_standardErrorRegression()
         # Compute standard errors of the fit parameters
         self.paramSEs = self._compute_paramSEs()
-        # Compute parameters' t-statistic
-        self.paramTvals = self._compute_tStatistic()
-        # Compute parameters' p-values
-        self.paramPvals = self._compute_pValuesFromT()
+        try:
+            # Compute parameters' t-statistic
+            self.paramTvals = self._compute_tStatistic()
+            # Compute parameters' p-values
+            self.paramPvals = self._compute_pValuesFromT()
+        except TypeError:
+            self.paramTvals = None
+            self.paramPvals = None
 
+        # Cleanups
         del disp
+
+        
 
 
     # Sanity check of input parameters
@@ -175,12 +192,17 @@ class lsqcurvefit:
     # root of the diagonal elements of covar, which estimates the statistical error on 
     # the best-fit parameters resulting from the Gaussian errors sigma_i on the 
     # underlying data y_i.
+    #
+    # Build-in except case in case of singular matrix
     def _compute_paramSEs(self):
-        covar = np.linalg.inv(np.dot(self.jacobianFunc.transpose(), self.jacobianFunc))
-        if self.sigma is None:
-            return np.sqrt(np.diag(self.reChi2*covar))
-        else:
-            return np.sqrt(np.diag(covar))
+        try:
+            covar = np.linalg.inv(np.dot(self.jacobianFunc.transpose(), self.jacobianFunc))
+            if self.sigma is None:
+                return np.sqrt(np.diag(self.reChi2*covar))
+            else:
+                return np.sqrt(np.diag(covar))
+        except np.linalg.linalg.LinAlgError:
+            return None
 
     # Compute the parameter estimates' t-statistic
     def _compute_tStatistic(self):
@@ -213,14 +235,17 @@ class lsqcurvefit:
 
 
 
+
     # Public function to plot data and fitted curve
     def plot(self, figsize=(6,6), markeredgecolor='r', markeredgewidth='2', markersize=10,
-             linecolor='b', linewidth='2', borderwidth='2'):
+             linecolor='b', linewidth='2', borderwidth='2', numPlotPoints=500):
+        xPlotPoints = np.arange(min(self.x), max(self.x)+1, (max(self.x)-min(self.x))/numPlotPoints)
+
         fig = plt.figure(figsize=figsize)
         fig.patch.set_facecolor('white')
         plt.plot(self.x, self.y, marker='o', linestyle='None', color='w', 
                  markeredgecolor=markeredgecolor, markeredgewidth=markeredgewidth, markersize=markersize)
-        plt.plot(self.x, self.func(self.params, self.x), color=linecolor, linewidth=linewidth)
+        plt.plot(xPlotPoints, self.func(self.params, xPlotPoints), color=linecolor, linewidth=linewidth)
         plt.rc('axes', linewidth=borderwidth)
         plt.show()
         return

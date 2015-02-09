@@ -3,19 +3,22 @@
 """ Library of parsing tools specific to the array analysis pipeline """
 
 
-#import subprocess
 import numpy as np
 import pandas as pd
-#import string
 
+
+# Split a column containing separator-separated values into individual 
+# columns and assign to new dataframe
+def splitConcatedDFColumnIntoDF(column, separator):
+    return pd.DataFrame(column.str.split(separator).tolist())
 
 # Concatenate designated columns of a datadrame into a series of 
 # strings, separated by separator
 def concatDFColumnsIntoSeries(df, columnsLabels, separator):
-    s = pd.Series(df[columnsLabels[0]].map(str))
+    series = pd.Series(df[columnsLabels[0]].map(str))
     for currCol in columnsLabels[1:]:
-        s = s+separator+df[currCol].map(str)
-    return s    
+        series = series+separator+df[currCol].map(str)
+    return series
 
 # Concatenate designated elements of a series into a string
 # separated by separator
