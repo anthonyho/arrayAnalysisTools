@@ -1,6 +1,7 @@
 # Anthony Ho, ahho@stanford.edu, 2/3/2015
 # Summary statistics functions adopted from Lauren Chircus's NLS class
 # Last update 2/9/2015
+""" Library of tools for fitting and analysis """
 
 
 import numpy as np
@@ -9,12 +10,24 @@ from scipy import stats
 import matplotlib.pyplot as plt
 
 ## To-add:
-## - F test
 ## - Log likelihood 
 ## - Akaike criterion
 ## - summary function
+## - plot to return axis
 ## - C.I.
 ## - bootstrapping
+
+
+def fTest(model1, model2):
+    if model1.DOF <= model2.DOF:
+        fScore = ((model1.RSS - model2.RSS)/(float(model1.DOF) - float(model2.DOF))) / (model2.RSS/float(model2.DOF))
+        pValue = stats.f.sf(fScore, model1.DOF, model2.DOF)
+        return fScore, pValue
+    else:
+        fScore = ((model2.RSS - model1.RSS)/(float(model2.DOF) - float(model1.DOF))) / (model1.RSS/float(model1.DOF))
+        pValue = stats.f.sf(fScore, model2.DOF, model1.DOF)
+        return fScore, pValue
+
 
 class lsqcurvefit:
     """ Python class for non-linear least square fitting 
@@ -253,3 +266,7 @@ class lsqcurvefit:
     # Public function to print summary of the fitting statistics
     def summarize(self):
         return
+
+
+
+

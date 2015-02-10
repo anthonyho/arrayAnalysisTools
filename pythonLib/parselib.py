@@ -30,9 +30,8 @@ def concatSeriesIntoString(series, indexLabels, separator):
 
 # Parse timestamp from the last part of the filename as datetime64[ns] objects
 def parseTimeFromFilename(fileFullPath):
-    (dirPath, filename) = os.path.split(fileFullPath)
-    (fileBasename, fileExt) = os.path.splitext(filename)
+    (_, filename) = os.path.split(fileFullPath)
+    (fileBasename, _) = os.path.splitext(filename)
     timestampStr = fileBasename.split('_')[-1]
     timestamp = pd.to_datetime(timestampStr, format='%Y.%m.%d-%H.%M.%S.%f')
     return timestamp
-
