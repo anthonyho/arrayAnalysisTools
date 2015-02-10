@@ -27,7 +27,6 @@ def makeAnnotation(label, numMM, numIn, numDel, listMM, listIn, listDel):
     annotation = ':'.join(listAnnotation)
     return annotation
 
-
 # Align and annotate a query sequence against a set of reference sequences if ignoring indels completely
 def alignAnnotateEachSeqMMonly(querySeq, refSeqsDict, startPos, refPosDict, MMcutoff):
 
@@ -59,7 +58,6 @@ def alignAnnotateEachSeqMMonly(querySeq, refSeqsDict, startPos, refPosDict, MMcu
     else:
         return makeAnnotation('NA', np.nan, np.nan, np.nan, [], [], [])
 
-
 # Align and annotate a query sequence against a set of reference sequences considering indels
 def alignAnnotateEachSeqMMindels(querySeq, refSeqsDict, startPos, refPosDict):
 
@@ -82,7 +80,6 @@ def alignAnnotateEachSeqMMindels(querySeq, refSeqsDict, startPos, refPosDict):
     listMM, listIn, listDel = seqlib.findMismatchesAndIndels(alignmentsDict[matchID][0], alignmentsDict[matchID][1], startPos, refPosDict[matchID])
     return makeAnnotation(matchID, len(listMM), len(listIn), len(listDel), listMM, listIn, listDel)
 
-    
 # Align and annotate a query sequence against a set of reference sequences
 # Assume all sequences have been converted to upper cases
 def alignAnnotateEachSeq(querySeq, refSeqsDict, startPos, refPosDict, MMcutoff, indelMode):
@@ -101,7 +98,6 @@ def alignAnnotateEachSeq(querySeq, refSeqsDict, startPos, refPosDict, MMcutoff, 
     # Look for mismatches and indels in indel mode:
     else:
         return alignAnnotateEachSeqMMindels(querySeq, refSeqsDict, startPos, refPosDict)
-
 
 def main():
 
