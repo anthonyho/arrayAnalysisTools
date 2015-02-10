@@ -29,7 +29,7 @@ def main():
     bcDF = pd.read_csv(args.bcDictFilePath, sep='\t', usecols=['barcode', 'annotation'])
 
     # Check if any barcodes duplicate
-    if np.sum(bcDF.duplicated('barcode')) != 0:
+    if np.sum(bcDF.duplicated('barcode')):
         print "There are barcode duplicates in the barcode-annotation dictionary!"
         print "Quitting now..."
         return 0
