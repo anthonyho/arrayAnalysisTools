@@ -19,7 +19,6 @@ def printSummary(text, number, totalNumber):
     print text, str(number), "("+str(round(float(number)/totalNumber*100, 2))+"%)"
     return
 
-
 def main():
 
     # Get options and arguments from command line

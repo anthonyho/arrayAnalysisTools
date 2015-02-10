@@ -21,7 +21,6 @@ def printSummary(text, number, totalNumber):
     print text, str(number), "("+str(round(float(number)/totalNumber*100, 2))+"%)"
     return
 
-
 # Show histograms
 def showHistograms(plotTitle, data1, xlabel1, data2, xlabel2, data3, xlabel3):
 
@@ -43,7 +42,6 @@ def showHistograms(plotTitle, data1, xlabel1, data2, xlabel2, data3, xlabel3):
     ax[1].set_title(plotTitle, y=1.05)
     
     return
-
 
 def main():
 
