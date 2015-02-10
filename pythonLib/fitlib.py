@@ -130,17 +130,12 @@ class lsqcurvefit:
         # Cleanups
         del disp
 
-        
-
-
     # Sanity check of input parameters
     def _sanityCheck(self):
         if not isinstance(self.x, np.ndarray) or not isinstance(self.y, np.ndarray):
             raise ValueError("x and y need to be numpy.ndarrays!")
         if len(self.x) != len(self.y):
             raise ValueError("x and y need to be the same length!")
-
-
         
     # Main method to fit curves using optimize.minimize, default method = SLSQP
     def _fit(self):
@@ -155,8 +150,6 @@ class lsqcurvefit:
                                  bounds=self.bounds, constraints=self.constraints, jac=RSSprime,
                                  method=self.method, 
                                  tol=self.tol, options={'maxiter': self.maxiter, 'disp': self.disp})
-
-
 
     # Compute the Jacobian of func at params that minimizes RSS
     # Use user-supplied Jacobian if provided, otherwise compute numerically 
@@ -225,8 +218,6 @@ class lsqcurvefit:
     def _compute_pValuesFromT(self):
         return stats.t.sf(np.abs(self.paramTvals), self.DOF)*2
 
-
-
     # Objective function (residual sum of squares) to be minimized. 
     # Compute sum_i[ (func(p,x_i)-y_i)^2 ] or, if sigma is given, 
     # sum_i[ w_i*(func(p,x_i)-y_i)^2 ] where w_i = 1/sigma_i^2 
@@ -246,9 +237,6 @@ class lsqcurvefit:
         else:
             return np.sum(2 * (func(params, x) - y) * funcPrime(params, x).transpose() / sigma**2, axis=1)
 
-
-
-
     # Public function to plot data and fitted curve
     def plot(self, figsize=(6,6), markeredgecolor='r', markeredgewidth='2', markersize=10,
              linecolor='b', linewidth='2', borderwidth='2', numPlotPoints=500):
@@ -266,7 +254,3 @@ class lsqcurvefit:
     # Public function to print summary of the fitting statistics
     def summarize(self):
         return
-
-
-
-
