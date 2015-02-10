@@ -1,7 +1,7 @@
 # Anthony Ho, ahho@stanford.edu, 2/3/2015
 # Summary statistics functions adopted from Lauren Chircus's NLS class
 # Last update 2/9/2015
-""" Library of tools for fitting and analysis """
+"""Library of tools for fitting and analysis"""
 
 
 import numpy as np
@@ -30,7 +30,7 @@ def fTest(model1, model2):
 
 
 class lsqcurvefit:
-    """ Python class for non-linear least square fitting 
+    """Python class for non-linear least square fitting 
     
     This class does non-linear least squares fitting using scipy.optimize.minimize 
     
@@ -50,7 +50,6 @@ class lsqcurvefit:
     - bounds needs to be a list of tuples specifying the lower and upper bound for 
       each parameter [(pl0, pu0),(pl1, pu1),...] 
     - see Scipy documentation for scipy.optimize.minimizefor the rest of the arguments
-
     """
 
     # Constructor which also does fitting

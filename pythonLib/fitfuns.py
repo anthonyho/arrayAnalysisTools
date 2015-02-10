@@ -1,6 +1,6 @@
 # Anthony Ho, ahho@stanford.edu, 2/3/2015
 # Last update 2/4/2015
-""" Library containing some commonly used mathematical functions and their derivatives """
+"""Library containing some commonly used mathematical functions and their derivatives"""
 
 
 import numpy as np

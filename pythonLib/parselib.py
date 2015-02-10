@@ -1,6 +1,6 @@
 # Anthony Ho, ahho@stanford.edu, 2/3/2015
 # Last update 2/9/2015
-""" Library of parsing tools specific to the array analysis pipeline """
+"""Library of parsing tools specific to the array analysis pipeline"""
 
 
 import numpy as np

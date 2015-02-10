@@ -1,6 +1,6 @@
 # Anthony Ho, ahho@stanford.edu, 1/28/2015
 # Last update 2/3/2015
-""" Library of sequence analysis, alignemnt and annotation tools """
+"""Library of sequence analysis, alignemnt and annotation tools"""
 
 
 import subprocess

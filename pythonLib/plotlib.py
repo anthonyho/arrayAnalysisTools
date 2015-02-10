@@ -1,6 +1,6 @@
 # Anthony Ho, ahho@stanford.edu, 1/15/2015
 # Last update 1/15/2015
-""" Python module containing some handy plotting tools """
+"""Python module containing some handy plotting tools"""
 
 
 import matplotlib.pyplot as plt
