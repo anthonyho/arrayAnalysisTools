@@ -27,10 +27,11 @@ def makeAnnotation(label, numMM, numIn, numDel, listMM, listIn, listDel):
     annotation = ':'.join(listAnnotation)
     return annotation
 
+
 # Align and annotate a query sequence against a set of reference sequences if ignoring indels completely
 def alignAnnotateEachSeqMMonly(querySeq, refSeqsDict, startPos, refPosDict, MMcutoff):
 
-    # Make a dictionary of HD of the query against all references that have the same length as query 
+    # Make a dictionary of HD of the query against all references that have the same length as query
     hamDict = {refSeqID: seqlib.hamming(querySeq, refSeq) for refSeqID, refSeq in refSeqsDict.items() if len(querySeq) == len(refSeq)}
 
     # If any of the references has the same length as query:
@@ -39,7 +40,7 @@ def alignAnnotateEachSeqMMonly(querySeq, refSeqsDict, startPos, refPosDict, MMcu
         # Find the (IDs of) references that have the smallest hamming distance (i.e. most similar to reference)
         minHam = min(hamDict.values())
         minHamRefIDs = [refSeqID for refSeqID, refSeqHam in hamDict.items() if refSeqHam == minHam]
-        
+
         if minHam <= MMcutoff:
             # Output warning if more than one reference has the smallest hamming distance
             if len(minHamRefIDs) > 1:
@@ -58,10 +59,11 @@ def alignAnnotateEachSeqMMonly(querySeq, refSeqsDict, startPos, refPosDict, MMcu
     else:
         return makeAnnotation('NA', np.nan, np.nan, np.nan, [], [], [])
 
+
 # Align and annotate a query sequence against a set of reference sequences considering indels
 def alignAnnotateEachSeqMMindels(querySeq, refSeqsDict, startPos, refPosDict):
 
-    # Make a dictionary of alignment results against all references 
+    # Make a dictionary of alignment results against all references
     alignmentsDict = {refSeqID: seqlib.alignEmbossNeedle(querySeq, refSeq) for refSeqID, refSeq in refSeqsDict.items()}
 
     # Make a dictionary of HD of all the aligned query-reference pairs
@@ -80,10 +82,11 @@ def alignAnnotateEachSeqMMindels(querySeq, refSeqsDict, startPos, refPosDict):
     listMM, listIn, listDel = seqlib.findMismatchesAndIndels(alignmentsDict[matchID][0], alignmentsDict[matchID][1], startPos, refPosDict[matchID])
     return makeAnnotation(matchID, len(listMM), len(listIn), len(listDel), listMM, listIn, listDel)
 
+
 # Align and annotate a query sequence against a set of reference sequences
 # Assume all sequences have been converted to upper cases
 def alignAnnotateEachSeq(querySeq, refSeqsDict, startPos, refPosDict, MMcutoff, indelMode):
-    
+
     # Check if perfect match with any of the reference sequences
     for refSeqID, refSeq in refSeqsDict.items():
         if querySeq == refSeq:
@@ -99,6 +102,7 @@ def alignAnnotateEachSeq(querySeq, refSeqsDict, startPos, refPosDict, MMcutoff, 
     else:
         return alignAnnotateEachSeqMMindels(querySeq, refSeqsDict, startPos, refPosDict)
 
+
 def main():
 
     # Get options and arguments from command line
@@ -109,18 +113,17 @@ def main():
     parser.add_argument('-q', '--numberedMode', action='store_true', help="enable non-sequential numbering of the nucleotides along the sequence using the quality score (default=false)")
     parser.add_argument('-s', '--startPos', type=int, default=1, help="number indictating the position of the first base of the read (default=1)")
     parser.add_argument('-c', '--count', action='store_true', help="append the count of sequences within a barcode block at the end of annotation (default=false)")
-    parser.add_argument('-n', '--numCore', type=int, default=1, help="number of cores to use (default=1)") 
-    parser.add_argument('-v', '--verbose', type=int, default=0, help="verbosity of progress. 0 = no verbosity. (default=0)") 
+    parser.add_argument('-n', '--numCore', type=int, default=1, help="number of cores to use (default=1)")
+    parser.add_argument('-v', '--verbose', type=int, default=0, help="verbosity of progress. 0 = no verbosity. (default=0)")
     parser.add_argument('-o', '--outCol', type=int, default=0, help="column of the output file to which the annotation will be written to (in Python notation) (default=0)")
     parser.add_argument('refSeqFilePath', help="path to the reference sequences file (in FASTA/FASTQ format)")
     parser.add_argument('seqFilePath', help="path to the file containing the list of sequences to be aligned and annotated")
     parser.add_argument('outputFilePath', help="path to the output file")
     args = parser.parse_args()
 
-
     # Initialization
     phredOffset = 15
-    
+
     # Read reference sequences (and numbering of nucleotides if in numberedMode)
     refSeqsDict = {}
     refPosDict = {}
@@ -133,7 +136,7 @@ def main():
         for record in SeqIO.parse(args.refSeqFilePath, 'fasta'):
             refSeqsDict[record.id] = str(record.seq.upper())
             refPosDict[record.id] = []
-        
+
     # Load seqFile
     allQuerySeqs = pd.read_csv(args.seqFilePath, sep='\t')
 
@@ -141,8 +144,8 @@ def main():
     # If using only 1 core:
     if args.numCore == 1:
         allAnnotations = allQuerySeqs['seq'].str.upper().apply(alignAnnotateEachSeq, args=(refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel))
-    else:
     # Multiprocessing:
+    else:
         allAnnotationsList = Parallel(n_jobs=args.numCore, verbose=args.verbose)(delayed(alignAnnotateEachSeq)(seq.upper(), refSeqsDict, args.startPos, refPosDict, args.MMcutoff, args.indel) for seq in allQuerySeqs['seq'])
         allAnnotations = pd.Series(allAnnotationsList)
 
@@ -157,8 +160,8 @@ def main():
 
     # Write to output file path
     allQuerySeqs.to_csv(args.outputFilePath, sep='\t', index=False)
-    
-    return 1 
+
+    return 1
 
 if __name__ == "__main__":
     main()
