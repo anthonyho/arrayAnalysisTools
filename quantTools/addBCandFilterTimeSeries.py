@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Add barcodes to time series files, and filter the 
+# Add barcodes to time series files, and filter the
 # time series based on filter tag and number of fitted timepoints
 #
 # Anthony Ho, ahho@stanford.edu, 1/27/2015
@@ -19,6 +19,7 @@ def printSummary(text, number, totalNumber):
     print text, str(number), "("+str(round(float(number)/totalNumber*100, 2))+"%)"
     return
 
+
 def main():
 
     # Get options and arguments from command line
@@ -33,7 +34,6 @@ def main():
     parser.add_argument('CPtimeSeriesPath', help="path to the CPtimeSeries file")
     parser.add_argument('outputFilePath', help="path to the output file")
     args = parser.parse_args()
-
 
     # Define which column to read the barcode from depending on read1 or read2
     if args.r1:
@@ -59,7 +59,6 @@ def main():
     endPos = int(args.BCpos.split(':')[1])
     CPtimeSeries.insert(1, 'barcode', filteredTile[BCcolLabel].str[startPos:endPos])
 
-    
     # Create the regular expression string for searching for filter tags
     listOfFilterTags = args.filterTags.split(':')
     listOfRegexFilterTags = ['\A'+t+'\Z'+'|'+'\A'+t+':'+'|'+':'+t+':'+'|'+':'+t+'\Z' for t in listOfFilterTags]
@@ -71,8 +70,7 @@ def main():
     # If the cluster has enough timepoints fitted...
     boolistEnoughFitted = CPtimeSeries[signalColIndex].str.count('nan') <= int(args.maxUnfittedTimepoints)
     # Combine the boolean lists...
-    boolistPassingFilter = boolistWithFilterTag & boolistEnoughFitted 
-
+    boolistPassingFilter = boolistWithFilterTag & boolistEnoughFitted
 
     # Print summaries
     print "Analyzing the following files:"
@@ -81,13 +79,13 @@ def main():
     printSummary("  Total number of clusters analyzed:", len(CPtimeSeries.index), len(CPtimeSeries.index))
     printSummary("  Number of clusters with the correct filter tags:", np.sum(boolistWithFilterTag), len(CPtimeSeries.index))
     printSummary("  Number of clusters with enough timepoints fitted:", np.sum(boolistEnoughFitted), len(CPtimeSeries.index))
-    printSummary("  Number of clusters with the correct filter tags and enough timepoints fitted:", 
+    printSummary("  Number of clusters with the correct filter tags and enough timepoints fitted:",
                  np.sum(boolistPassingFilter), len(CPtimeSeries.index))
 
     # Write the doubly filtered time series with barcodes to output file
     CPtimeSeries[boolistPassingFilter].to_csv(args.outputFilePath, sep='\t', index=False)
-    
-    return 1 
+
+    return 1
 
 if __name__ == "__main__":
     main()

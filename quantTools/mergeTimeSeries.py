@@ -26,10 +26,10 @@ def main():
     parser.add_argument('outputFilePathNoExt', help="basename of the output files with no extensions")
     args = parser.parse_args()
 
-    # Initialization 
+    # Initialization
 
     twoPi = 2 * pi
-    
+
     numTimepoints = int(args.numTimepoints)
     replaceToTimepoint = '##'
 
@@ -40,9 +40,9 @@ def main():
     CPsignals = pd.DataFrame()
     CPsigmas = pd.DataFrame()
     CPtimes = pd.Series()
-    
-    CPsignalTime = pd.DataFrame(columns=['clusterID','signals','times'])
-    CPsigmaTime = pd.DataFrame(columns=['clusterID','sigmas','times'])
+
+    CPsignalTime = pd.DataFrame(columns=['clusterID', 'signals', 'times'])
+    CPsigmaTime = pd.DataFrame(columns=['clusterID', 'sigmas', 'times'])
 
     refTime = pd.to_datetime(args.refTime, format='%Y.%m.%d-%H.%M.%S.%f')
 
@@ -50,10 +50,9 @@ def main():
     CPsignalTimeFilePath = args.outputFilePathNoExt+".CPsignalTime"
     CPsigmaTimeFilePath = args.outputFilePathNoExt+".CPsigmaTime"
 
-
     # Go through all time points
-    for timepoint in range(1,numTimepoints+1):
-        
+    for timepoint in range(1, numTimepoints+1):
+
         # Get the path to the current CPfluor file
         currTimepoint = str(timepoint)
         currCPfluorFilePattern = args.CPfluorFilePattern.replace(replaceToTimepoint, currTimepoint)
@@ -68,22 +67,21 @@ def main():
             return 0
         elif len(listOfCurrCPfluorMatchingPattern) == 1:
             # If a unique CPfluor file exists for the current timepoint, proceed
-            
+
             # Get the path to the current CPfluor file
             currCPfluorFile = listOfCurrCPfluorMatchingPattern[0]
             # Load CPfluor file
             currCPfluorData = pd.read_csv(currCPfluorFile, sep=':', names=CPfluorColLabels)
             # Add data from current timepoint to the dataframes
             # If cluster is not fitted, replace value with NaN
-            CPsignals[currTimepoint] = ((twoPi * currCPfluorData.amp * currCPfluorData.sigma**2) 
+            CPsignals[currTimepoint] = ((twoPi * currCPfluorData.amp * currCPfluorData.sigma**2)
                                         / currCPfluorData.fitted).replace([np.inf, -np.inf], np.nan)
             CPsigmas[currTimepoint] = (currCPfluorData.sigma / currCPfluorData.fitted).replace([np.inf, -np.inf], np.nan)
             # Parse timestamp from CPfluor filename
             CPtimes[currTimepoint] = parselib.parseTimeFromFilename(currCPfluorFile)
 
-
     # Compute timepoints relative to the reference timepoint and convert to float64
-    if args.refTime == None:
+    if args.refTime is None:
         CPtimes = (CPtimes - CPtimes.iat[0]).apply(lambda x: x / np.timedelta64(1, 's'))
     else:
         CPtimes = (CPtimes - refTime).apply(lambda x: x / np.timedelta64(1, 's'))
@@ -97,7 +95,7 @@ def main():
     CPsignalTime['clusterID'] = parselib.concatDFColumnsIntoSeries(currCPfluorData, clusterIDColLabels, ':')
     CPsignalTime['signals'] = parselib.concatDFColumnsIntoSeries(CPsignals, listCPsignalsColLabels, ':')
     CPtimesInStr = parselib.concatSeriesIntoString(CPtimes, listCPtimesIndLabels, ':')
-    CPsignalTime['times'] = [ CPtimesInStr ]*len(CPsignalTime.index)
+    CPsignalTime['times'] = [CPtimesInStr]*len(CPsignalTime.index)
 
     # Make CPsigmaTime dataframe
     CPsigmaTime['clusterID'] = CPsignalTime['clusterID']
@@ -108,7 +106,7 @@ def main():
     CPsignalTime.to_csv(CPsignalTimeFilePath, sep='\t', index=False)
     CPsigmaTime.to_csv(CPsigmaTimeFilePath, sep='\t', index=False)
 
-    return 1 
+    return 1
 
 if __name__ == "__main__":
     main()

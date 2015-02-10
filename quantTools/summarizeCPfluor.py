@@ -21,6 +21,7 @@ def printSummary(text, number, totalNumber):
     print text, str(number), "("+str(round(float(number)/totalNumber*100, 2))+"%)"
     return
 
+
 # Show histograms
 def showHistograms(plotTitle, data1, xlabel1, data2, xlabel2, data3, xlabel3):
 
@@ -33,15 +34,16 @@ def showHistograms(plotTitle, data1, xlabel1, data2, xlabel2, data3, xlabel3):
 
     for i in range(0, 3):
         ax.append(fig.add_subplot(1, 3, i+1))
-        ax[i].hist(data[i],numBins,color='#3F5D7D',alpha=0.8)
+        ax[i].hist(data[i], numBins, color='#3F5D7D', alpha=0.8)
 
         ax[i].set_xlabel(xLabels[i])
         plotlib.makepretty(ax[i])
 
     ax[0].set_ylabel("Count")
     ax[1].set_title(plotTitle, y=1.05)
-    
+
     return
+
 
 def main():
 
@@ -55,7 +57,7 @@ def main():
     args = parser.parse_args()
 
     # Initialization
-    numSeqs = 0 
+    numSeqs = 0
     numFittedSeqs = 0
     twoPi = 2 * pi
 
@@ -74,7 +76,7 @@ def main():
     # Go through the CPfluor file
     with open(args.CPfluorPath, 'r') as r1, open(args.filteredFilePath, 'r') as r2, open(outputFilePath, 'w') as w:
         for line1, line2 in izip(r1, r2):
-            
+
             # Read the CPfluor file
             CPfluorLine = line1.rstrip().split(':')
             fitted = CPfluorLine[7]
@@ -87,36 +89,36 @@ def main():
             if lastTag == args.filterName:
 
                 numSeqs += 1
-                
+
                 if fitted == '1':
 
                     numFittedSeqs += 1
-                    
-                    # Parse data            
+
+                    # Parse data
                     amp = CPfluorLine[8]
                     sigma = CPfluorLine[9]
-                    
+
                     # Compute integrated fluorescence intensity
                     intFluor = str(twoPi*float(amp)*float(sigma)**2)
-                    
+
                     # Write to output file
                     w.write(intFluor+'\t'+amp+'\t'+sigma+'\n')
-                    
+
                     # Append to lists
                     allIntFluor.append(intFluor)
                     allAmp.append(amp)
                     allSigma.append(sigma)
-    
+
     # Print summaries
     printSummary("  Number of clusters with the correct filter:", numSeqs, numSeqs)
     printSummary("  Number of clusters fitted:", numFittedSeqs, numSeqs)
 
     # Plot and save histograms
-    showHistograms(CPfluorBaseName+" (fitted = "+str(numFittedSeqs)+"/"+str(numSeqs)+" = "
-                   +str(round(float(numFittedSeqs)/numSeqs*100,2))+"%)", 
-                   np.array(map(float,allIntFluor)), "Integrated fluorescence", 
-                   np.array(map(float,allAmp)), "Amplitude", 
-                   np.array(map(float,allSigma)), "Sigma")
+    showHistograms(CPfluorBaseName+" (fitted = " + str(numFittedSeqs) + "/" + str(numSeqs) + " = "
+                   + str(round(float(numFittedSeqs)/numSeqs*100, 2)) + "%)",
+                   np.array(map(float, allIntFluor)), "Integrated fluorescence",
+                   np.array(map(float, allAmp)), "Amplitude",
+                   np.array(map(float, allSigma)), "Sigma")
     plt.savefig(figurePath, bbox_inches='tight')
 
     # Show the histograms if requested
@@ -127,7 +129,7 @@ def main():
     r2.close()
     w.close()
 
-    return 1 
+    return 1
 
 if __name__ == "__main__":
     main()
