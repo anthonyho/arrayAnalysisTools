@@ -7,10 +7,16 @@ import numpy as np
 import pandas as pd
 
 
+
+# Split a column containing separator-separated values into individual 
+# columns and assign to new numpy array
+def splitConcatedDFColumnIntoNDarray(column, separator):
+    return np.array(column.str.split(separator).tolist()).astype(float)
+
 # Split a column containing separator-separated values into individual 
 # columns and assign to new dataframe
 def splitConcatedDFColumnIntoDF(column, separator):
-    return pd.DataFrame(column.str.split(separator).tolist())
+    return pd.DataFrame(column.str.split(separator).tolist()).convert_objects(convert_numeric=True)
 
 # Concatenate designated columns of a datadrame into a series of 
 # strings, separated by separator
