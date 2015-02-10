@@ -7,6 +7,12 @@ import numpy as np
 import pandas as pd
 
 
+#
+def computeMedOfDFCol(arr):
+    return 
+    
+
+
 # Split a column containing separator-separated values into individual
 # columns and assign to new numpy array
 def splitConcatedDFColumnIntoNDarray(column, separator):
@@ -15,8 +21,11 @@ def splitConcatedDFColumnIntoNDarray(column, separator):
 
 # Split a column containing separator-separated values into individual
 # columns and assign to new dataframe
-def splitConcatedDFColumnIntoDF(column, separator):
-    return pd.DataFrame(column.str.split(separator).tolist()).convert_objects(convert_numeric=True)
+def splitConcatedDFColumnIntoDF(column, separator, string=False):
+    if string:
+        return pd.DataFrame(column.str.split(separator).tolist())
+    else:
+        return pd.DataFrame(column.str.split(separator).tolist()).convert_objects(convert_numeric=True)
 
 
 # Concatenate designated columns of a datadrame into a series of

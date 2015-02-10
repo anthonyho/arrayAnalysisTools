@@ -238,15 +238,32 @@ class lsqcurvefit:
 
     # Public function to plot data and fitted curve
     def plot(self, figsize=(6, 6), markeredgecolor='r', markeredgewidth='2', markersize=10,
-             linecolor='b', linewidth='2', borderwidth='2', numPlotPoints=500):
+             linecolor='b', linewidth='2', borderwidth='2',
+             xlabel=None, ylabel=None, title=None,
+             numPlotPoints=500):
+
         xPlotPoints = np.arange(min(self.x), max(self.x)+1, (max(self.x)-min(self.x))/numPlotPoints)
 
         fig = plt.figure(figsize=figsize)
+        ax = plt.gca()
         fig.patch.set_facecolor('white')
+
         plt.plot(self.x, self.y, marker='o', linestyle='None', color='w',
                  markeredgecolor=markeredgecolor, markeredgewidth=markeredgewidth, markersize=markersize)
         plt.plot(xPlotPoints, self.func(self.params, xPlotPoints), color=linecolor, linewidth=linewidth)
+
+        if xlabel:
+            ax.set_xlabel(xlabel)
+        if ylabel:
+            ax.set_ylabel(ylabel)
+        if title:
+            ax.set_title(title, y=1.02)
+
         plt.rc('axes', linewidth=borderwidth)
+        ax.xaxis.label.set_fontsize(16)
+        ax.yaxis.label.set_fontsize(16)
+        ax.title.set_fontsize(16)
+
         plt.show()
         return
 

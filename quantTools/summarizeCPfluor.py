@@ -40,7 +40,7 @@ def showHistograms(plotTitle, data1, xlabel1, data2, xlabel2, data3, xlabel3):
         plotlib.makepretty(ax[i])
 
     ax[0].set_ylabel("Count")
-    ax[1].set_title(plotTitle, y=1.05)
+    ax[1].set_title(plotTitle, y=1.02)
 
     return
 
