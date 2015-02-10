@@ -7,23 +7,26 @@ import numpy as np
 import pandas as pd
 
 
-# Split a column containing separator-separated values into individual 
+# Split a column containing separator-separated values into individual
 # columns and assign to new numpy array
 def splitConcatedDFColumnIntoNDarray(column, separator):
     return np.array(column.str.split(separator).tolist()).astype(float)
 
-# Split a column containing separator-separated values into individual 
+
+# Split a column containing separator-separated values into individual
 # columns and assign to new dataframe
 def splitConcatedDFColumnIntoDF(column, separator):
     return pd.DataFrame(column.str.split(separator).tolist()).convert_objects(convert_numeric=True)
 
-# Concatenate designated columns of a datadrame into a series of 
+
+# Concatenate designated columns of a datadrame into a series of
 # strings, separated by separator
 def concatDFColumnsIntoSeries(df, columnsLabels, separator):
     series = pd.Series(df[columnsLabels[0]].map(str))
     for currCol in columnsLabels[1:]:
         series = series+separator+df[currCol].map(str)
     return series
+
 
 # Concatenate designated elements of a series into a string
 # separated by separator
@@ -32,6 +35,7 @@ def concatSeriesIntoString(series, indexLabels, separator):
     for currElement in indexLabels[1:]:
         string = string+separator+str(series[currElement])
     return string
+
 
 # Parse timestamp from the last part of the filename as datetime64[ns] objects
 def parseTimeFromFilename(fileFullPath):
