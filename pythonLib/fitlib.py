@@ -26,7 +26,7 @@ class lsqcurvefit:
        - choice of minimization algorithm (default=SLSQP). See Scipy documentation for the list
          of methods available
        - automatically handle missing data (nan, inf, -inf)
-       - auxiliary functions to show fitted curve against datapoints and print summary of 
+       - auxiliary functions to show fitted curve against datapoints and print summary of
          fitting statistics
 
     Usages:
@@ -44,27 +44,27 @@ class lsqcurvefit:
        - x: M-length sequence
            Independent variable to be passed to func()
        - y: M-length sequence
-           Dependent data 
+           Dependent data
        - params0: N-length sequence
            Initial guess for the parameters
 
        Optional arguments:
        - bounds: N-length sequence of tuples
-           Bounds for variables (only for L-BFGS-B, TNC and SLSQP). A list of tuples specifying 
-           the lower and upper bound for each parameter [(pl0, pu0),(pl1, pu1),...]. Use None 
+           Bounds for variables (only for L-BFGS-B, TNC and SLSQP). A list of tuples specifying
+           the lower and upper bound for each parameter [(pl0, pu0),(pl1, pu1),...]. Use None
            for one of min or max when there is no bound in that direction
            (default=None)
        - constraints: dict or sequence of dict
-           Constraints definition (only for COBYLA and SLSQP). See documentation for 
+           Constraints definition (only for COBYLA and SLSQP). See documentation for
            scipy.optimize.minimize for syntax
            (default=())
        - jac: callable
-           Jacobian (gradient) of model function. Must take the same arguments as func() and 
-           return a 2D-ndarray of shape=(M, N) where M is the number of datapoints and N is the 
+           Jacobian (gradient) of model function. Must take the same arguments as func() and
+           return a 2D-ndarray of shape=(M, N) where M is the number of datapoints and N is the
            number of parameters
            (default=None)
        - sigma: M-length sequence
-           If provided, these values are used as weights in the least-squares problem as 
+           If provided, these values are used as weights in the least-squares problem as
            weight = 1/sigma^2
            (default=None)
        - method: str
@@ -103,7 +103,7 @@ class lsqcurvefit:
        - title: title
        - summary: bool or tuple. If true or tuple, show fitting statistics summary in plot
                   If tuple, show the summary at the indicated location (in relative coord.)
-       - paramNames: names of the parameters to display 
+       - paramNames: names of the parameters to display
        - block: plotting without blocking execution
 
     To print summary:
@@ -136,7 +136,7 @@ class lsqcurvefit:
         self.funcPrime = jac
         if sigma:
             self.sigma = np.array(sigma)
-        else: 
+        else:
             self.sigma = sigma
         self.method = method
         self.maxiter = maxiter
@@ -343,7 +343,6 @@ class lsqcurvefit:
                 summary = (0.98, 0.98)
             ax.text(summary[0], summary[1], self._makeSummaryInPlot(paramNames), transform=ax.transAxes,
                     fontsize=14, verticalalignment='top', horizontalalignment='right')
-            self.printSummary(paramNames)
 
         # Make it pretty
         plt.rc('axes', linewidth=borderwidth)
