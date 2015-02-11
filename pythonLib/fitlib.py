@@ -1,13 +1,15 @@
 # Anthony Ho, ahho@stanford.edu, 2/3/2015
-# Summary statistics functions adopted from Lauren Chircus's NLS class
+# Summary statistics methods adopted from Lauren Chircus's NLS class
 # Last update 2/11/2015
 """Library of tools for fitting and analysis"""
 
 
+import os, sys
 import numpy as np
 from scipy import optimize
 from scipy import stats
 import matplotlib.pyplot as plt
+from types import ModuleType
 
 # To-add:
 # - Log likelihood
@@ -26,8 +28,9 @@ class lsqcurvefit:
        - choice of minimization algorithm (default=SLSQP). See Scipy documentation for the list
          of methods available
        - automatically handle missing data in x and y (nan, inf, -inf) and in sigma (nan)
-       - auxiliary functions to show fitted curve against datapoints and print summary of
+       - auxiliary methods to show fitted curve against datapoints and print summary of
          fitting statistics
+       - auxiliary method to parse fit parameters from file to pass to lsqcurvefit
 
     Usages:
 
@@ -276,11 +279,11 @@ class lsqcurvefit:
     # The covariance matrix is given by:
     #     covar = (J^T J)^{-1}
     #
-    # In the case of unweighted least square fitting, the function returns the square
+    # In the case of unweighted least square fitting, the method returns the square
     # root of the diagonal elements of reChiSq*covar, which estimates the statistical
     # error on the best-fit parameters from the scatter of the underlying data.
     #
-    # In the case of weighted least square fitting, the function returns the square
+    # In the case of weighted least square fitting, the method returns the square
     # root of the diagonal elements of covar, which estimates the statistical error on
     # the best-fit parameters resulting from the Gaussian errors sigma_i on the
     # underlying data y_i.
@@ -316,7 +319,7 @@ class lsqcurvefit:
         paramStrList.append("SER: " + "{: .4g}".format(self.SER))
         return '\n'.join(paramStrList)
 
-    # Public function to plot data and fitted curve
+    # Public method to plot data and fitted curve
     def plot(self, figsize=(7.5, 7.5), numPlotPoints=500,
              markeredgecolor='r', markeredgewidth='2', markersize=10,
              linecolor='b', linewidth='2', borderwidth='2',
@@ -357,7 +360,7 @@ class lsqcurvefit:
 
         return ax
 
-    # Public function to print summary of the fitting statistics
+    # Public method to print summary of the fitting statistics
     def printSummary(self, paramNames=None):
         """Print a summary of the fitting statistics"""
         # Make parameter names if not provided
@@ -387,6 +390,37 @@ class lsqcurvefit:
         print "Number of iterations to convergence = {:d}".format(self.nit)
 
         return
+
+    # Static method to parse the fit parameters to be passed to lsqcurvefit from a file
+    @staticmethod
+    def parseFitParamFromFile(fitParamFilePath):
+        """ Static method to parse the fit parameters to be passed to lsqcurvefit from a file"""        
+        # Define default values for the fit parameters that will be passed to the fit function
+        fitParamDict = {'func': None, 
+                        'params0': None, 
+                        'bounds': None, 
+                        'constraints': (), 
+                        'jac': None, 
+                        'sigma': None, 
+                        'method': 'SLSQP', 
+                        'maxiter': 200, 
+                        'tol': None,
+                        'epsilon': None, 
+                        'disp': False}
+
+        # Import fit parameters from fitParamFile 
+        (_, fitParamFilename) = os.path.split(fitParamFilePath)
+        (fitParamFileBasename, _) = os.path.splitext(fitParamFilename)
+
+        fitParam = __import__(fitParamFileBasename)
+
+        # Assign fit parameters read from fitParamFile into fitParamDict
+        userDefinedFitParamDict = {property_: value
+                                   for property_, value in vars(fitParam).iteritems()
+                                   if property_[:2] != '__' and not isinstance(value, ModuleType)}
+        fitParamDict.update(userDefinedFitParamDict)
+        
+        return fitParamDict
 
 
 # This function does NOT belong to the lsqcurvefit class
