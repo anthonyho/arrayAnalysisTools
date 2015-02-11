@@ -111,8 +111,7 @@ class lsqcurvefit:
        fitObj.printSummary(paramNames=None)
 
        Optional arguments:
-       - paramNames: N-length sequence of str
-           Names of the parameters to display
+       - paramNames: names of the parameters to display
     """
 
     # Constructor which also does fitting
@@ -121,7 +120,7 @@ class lsqcurvefit:
                  sigma=None, method='SLSQP',
                  maxiter=200, tol=None, epsilon=None, disp=True):
 
-        # Convert x, y, sigma to numpy array, get ride of missing data 
+        # Convert x, y, sigma to numpy array, get ride of missing data
         # in x, y and sigma and assign them to instance variables
         x_np = np.array(x)
         y_np = np.array(y)
