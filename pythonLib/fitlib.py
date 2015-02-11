@@ -1,6 +1,6 @@
 # Anthony Ho, ahho@stanford.edu, 2/3/2015
 # Summary statistics functions adopted from Lauren Chircus's NLS class
-# Last update 2/9/2015
+# Last update 2/10/2015
 """Library of tools for fitting and analysis"""
 
 
@@ -12,8 +12,6 @@ import matplotlib.pyplot as plt
 # To-add:
 # - Log likelihood
 # - Akaike criterion
-# - summary function
-# - plot to return axis
 # - C.I.
 # - bootstrapping
 
@@ -30,26 +28,52 @@ def fTest(model1, model2):
 
 
 class lsqcurvefit:
-    """Python class for non-linear least square fitting
+    """Python class for non-linear least square fitting using scipy.optimize.minimize
 
-    This class does non-linear least squares fitting using scipy.optimize.minimize
+       Features of the fitting class include:
+       - fitting with lower/upper bounds and arbitrary equality/inequality constrains
+       - weighted fitting with errors (weight = 1/sigma^2)
+       - user-defined Jacobian for speed-up
+       - choice of minimization algorithm (default=SLSQP). See Scipy documentation for
+         the list of methods available
+       - functions to show fitted datapoints and summary of fitting statistics
 
-    Features of the fitting function include:
-    - fitting with lower/upper bounds and arbitrary equality/inequality constrains
-    - weighted fitting with errors
-    - user-defined Jacobian for speed-up
-    - choice of minimization algorithm (default=SLSQP). See Scipy documentation for
-      the list of methods available
+    Usages:
 
-    Arguments:
-    - func needs to take the form of func(params, x)
-    - params0 needs to be a list/1-D ndarray
-    - x, y, sigma need to be 1-D ndarrays of the same length
-    - jac needs to return a 2D-ndarray of shape=(len(x), len(params))
-      i.e. a m x n matrix where m is the number of datapoints and n is the number of parameters
-    - bounds needs to be a list of tuples specifying the lower and upper bound for
-      each parameter [(pl0, pu0),(pl1, pu1),...]
-    - see Scipy documentation for scipy.optimize.minimizefor the rest of the arguments
+    To fit:
+
+       fitObj = fitlib.lsqcurvefit(func, x, y, params0,
+                                   bounds=None, constraints=(), jac=None,
+                                   sigma=None, method='SLSQP',
+                                   maxiter=100, tol=None, epsilon=None, disp=True)
+
+       Arguments:
+       - func needs to take the form of func(params, x)
+       - params0 needs to be a list/1-D ndarray
+       - x, y, sigma need to be 1-D ndarrays of the same length
+       - jac needs to return a 2D-ndarray of shape=(len(x), len(params))
+         i.e. a m x n matrix where m is the number of datapoints and n is the number of parameters
+       - bounds needs to be a list of tuples specifying the lower and upper bound for
+         each parameter [(pl0, pu0),(pl1, pu1),...]
+       - see Scipy documentation for scipy.optimize.minimizefor the rest of the arguments
+
+    To plot:
+
+       ax = fitObj.plot(self, figsize=(7.5, 7.5), numPlotPoints=500,
+                        markeredgecolor='r', markeredgewidth='2', markersize=10,
+                        linecolor='b', linewidth='2', borderwidth='2',
+                        xlabel=None, ylabel=None, title=None,
+                        summary=None, paramNames=None, block=False)
+
+        Arguments:
+        -
+
+    To print summary:
+
+    fitObj.printSummary(self, paramNames=None)
+
+        Arguments:
+        -
     """
 
     # Constructor which also does fitting
@@ -150,6 +174,25 @@ class lsqcurvefit:
                                  method=self.method,
                                  tol=self.tol, options={'maxiter': self.maxiter, 'disp': self.disp})
 
+    # Objective function (residual sum of squares) to be minimized.
+    # Compute sum_i[ (func(p,x_i)-y_i)^2 ] or, if sigma is given,
+    # sum_i[ w_i*(func(p,x_i)-y_i)^2 ] where w_i = 1/sigma_i^2
+    def _compute_RSS(self, params, x, y, func, _, sigma=None):
+        if sigma is None:
+            return np.sum((func(params, x) - y)**2)
+        else:
+            return np.sum(((func(params, x) - y)/sigma)**2)
+
+    # Derivative of the objective function (residual sum of squares) to be minimized.
+    # Compute the partial derivatives of sum_i[ (func(p,x_i)-y_i)^2 ] or, if sigma
+    # is given, the partial derivatives of sum_i[ w_i*(func(p,x_i)-y_i)^2 ] where
+    # w_i = 1/sigma_i^2
+    def _compute_RSSprime(self, params, x, y, func, funcPrime, sigma=None):
+        if sigma is None:
+            return np.sum(2 * (func(params, x) - y) * funcPrime(params, x).transpose(), axis=1)
+        else:
+            return np.sum(2 * (func(params, x) - y) * funcPrime(params, x).transpose() / sigma**2, axis=1)
+
     # Compute the Jacobian of func at params that minimizes RSS
     # Use user-supplied Jacobian if provided, otherwise compute numerically
     def _compute_jacobianFunc(self):
@@ -217,34 +260,16 @@ class lsqcurvefit:
     def _compute_pValuesFromT(self):
         return stats.t.sf(np.abs(self.paramTvals), self.DOF)*2
 
-    # Objective function (residual sum of squares) to be minimized.
-    # Compute sum_i[ (func(p,x_i)-y_i)^2 ] or, if sigma is given,
-    # sum_i[ w_i*(func(p,x_i)-y_i)^2 ] where w_i = 1/sigma_i^2
-    def _compute_RSS(self, params, x, y, func, _, sigma=None):
-        if sigma is None:
-            return np.sum((func(params, x) - y)**2)
-        else:
-            return np.sum(((func(params, x) - y)/sigma)**2)
-
-    # Derivative of the objective function (residual sum of squares) to be minimized.
-    # Compute the partial derivatives of sum_i[ (func(p,x_i)-y_i)^2 ] or, if sigma
-    # is given, the partial derivatives of sum_i[ w_i*(func(p,x_i)-y_i)^2 ] where
-    # w_i = 1/sigma_i^2
-    def _compute_RSSprime(self, params, x, y, func, funcPrime, sigma=None):
-        if sigma is None:
-            return np.sum(2 * (func(params, x) - y) * funcPrime(params, x).transpose(), axis=1)
-        else:
-            return np.sum(2 * (func(params, x) - y) * funcPrime(params, x).transpose() / sigma**2, axis=1)
-
     # Make summary text in plot
     def _makeSummaryInPlot(self, paramNames=None):
         if paramNames:
-            paramStrList = [u'{}: {:.4g} {} {:.4g}'.format(name, val, u'\u00B1', se) 
+            paramStrList = [u"{}: {:.4g} {} {:.4g}".format(name, val, u'\u00B1', se)
                             for name, val, se in zip(paramNames, self.params, self.paramSEs)]
         else:
-            paramStrList = [u'p[{:d}]: {:.4g} {} {:.4g}'.format(i, val, u'\u00B1', se) 
+            paramStrList = [u"p[{:d}]: {:.4g} {} {:.4g}".format(i, val, u'\u00B1', se)
                             for i, (val, se) in enumerate(zip(self.params, self.paramSEs))]
-        paramStrList.append(r'$\chi^2_{red}$: '+'{: .4g}'.format(self.reChi2))
+        paramStrList.append(r"$\chi^2_{red}$: " + "{: .4g}".format(self.reChi2))
+        paramStrList.append("SER: " + "{: .4g}".format(self.SER))
         return '\n'.join(paramStrList)
 
     # Public function to plot data and fitted curve
@@ -252,19 +277,18 @@ class lsqcurvefit:
              markeredgecolor='r', markeredgewidth='2', markersize=10,
              linecolor='b', linewidth='2', borderwidth='2',
              xlabel=None, ylabel=None, title=None,
-             summary=None, paramNames=None,
-             block=False):
+             summary=None, paramNames=None, block=False):
 
         # Compute the x axis points for plotting the fitted line
         xPlotPoints = np.arange(min(self.x), max(self.x)+1, (max(self.x)-min(self.x))/numPlotPoints)
 
         # Plot the data and fitted line
         fig = plt.figure(figsize=figsize)
-        ax = plt.gca()
-        fig.patch.set_facecolor('white')
+        fig.patch.set_facecolor('w')
         plt.plot(self.x, self.y, marker='o', linestyle='None', color='w',
                  markeredgecolor=markeredgecolor, markeredgewidth=markeredgewidth, markersize=markersize)
         plt.plot(xPlotPoints, self.func(self.params, xPlotPoints), color=linecolor, linewidth=linewidth)
+        ax = plt.gca()
 
         # Show labels, title and summary if requested
         if xlabel:
@@ -275,9 +299,10 @@ class lsqcurvefit:
             ax.set_title(title, y=1.02)
         if summary:
             if type(summary) != tuple:
-                summary = (0.03, 0.18)
-            ax.text(summary[0], summary[1], self._makeSummaryInPlot(paramNames), transform=ax.transAxes, 
-                    fontsize=14, verticalalignment='top')
+                summary = (0.98, 0.98)
+            ax.text(summary[0], summary[1], self._makeSummaryInPlot(paramNames), transform=ax.transAxes,
+                    fontsize=14, verticalalignment='top', horizontalalignment='right')
+            self.summarize(paramNames)
 
         # Make it pretty
         plt.rc('axes', linewidth=borderwidth)
@@ -286,8 +311,36 @@ class lsqcurvefit:
         ax.title.set_fontsize(16)
 
         plt.show(block=block)
-        return
+
+        return ax
 
     # Public function to print summary of the fitting statistics
-    def summarize(self):
+    def printSummary(self, paramNames=None):
+
+        # Make parameter names if not existence
+        if not paramNames:
+            paramNames = ["p[{:d}]".format(i) for i in range(len(self.params))]
+
+        # Define row format for tabular output
+        rowFormatHeader = "{:>15}" * 6
+        rowFormatBody = "{:>15}" + "{:>15.6g}" * 4 + "{:>15}"
+
+        # Showing summary
+        print "Fitted data with {}\n".format(self.func.__name__)
+
+        print rowFormatHeader.format("Parameter", "Estimate", "Std. error",
+                                     "t-statistic", "p-value", "bounds")
+        for name, est, se, tval, pval, bound in zip(paramNames, self.params,
+                                                    self.paramSEs, self.paramTvals,
+                                                    self.paramPvals, self.bounds):
+            print rowFormatBody.format(name, est, se, tval, pval, bound)
+
+        print "\nDegrees of freedom = {:d}".format(self.DOF)
+        print "Residual sum of squares = {:.6g}".format(self.RSS)
+        print "Reduced Chi-squared/residual variance/mean square error = {:.6g}".format(self.reChi2)
+        print "Standard error of regression = {:.6g}".format(self.SER)
+        print "R-squared = {:.6g}".format(self.R2)
+        print "Adjusted R-squared = {:.6g}".format(self.adjR2)
+        print "Number of iterations to convergence = {:d}".format(self.nit)
+
         return
