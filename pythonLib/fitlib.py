@@ -236,35 +236,55 @@ class lsqcurvefit:
         else:
             return np.sum(2 * (func(params, x) - y) * funcPrime(params, x).transpose() / sigma**2, axis=1)
 
+    # Make summary text in plot
+    def _makeSummaryInPlot(self, paramNames=None):
+        if paramNames:
+            paramStrList = [u'{}: {:.4g}{}{:.4g}'.format(name, val, u'\u00B1', se) 
+                            for name, val, se in zip(paramNames, self.params, self.paramSEs)]
+        else:
+            paramStrList = [u'param[{:d}]: {:.4g}{}{:.4g}'.format(i, val, u'\u00B1', se) 
+                            for i, (val, se) in enumerate(zip(self.params, self.paramSEs))]
+        return '\n'.join(paramStrList)
+
     # Public function to plot data and fitted curve
-    def plot(self, figsize=(6, 6), markeredgecolor='r', markeredgewidth='2', markersize=10,
+    def plot(self, figsize=(6, 6), numPlotPoints=500,
+             markeredgecolor='r', markeredgewidth='2', markersize=10,
              linecolor='b', linewidth='2', borderwidth='2',
              xlabel=None, ylabel=None, title=None,
-             numPlotPoints=500):
+             summary=None, paramNames=None,
+             block=False):
 
+        # Compute the x axis points for plotting the fitted line
         xPlotPoints = np.arange(min(self.x), max(self.x)+1, (max(self.x)-min(self.x))/numPlotPoints)
 
+        # Plot the data and fitted line
         fig = plt.figure(figsize=figsize)
         ax = plt.gca()
         fig.patch.set_facecolor('white')
-
         plt.plot(self.x, self.y, marker='o', linestyle='None', color='w',
                  markeredgecolor=markeredgecolor, markeredgewidth=markeredgewidth, markersize=markersize)
         plt.plot(xPlotPoints, self.func(self.params, xPlotPoints), color=linecolor, linewidth=linewidth)
 
+        # Show labels, title and summary if requested
         if xlabel:
             ax.set_xlabel(xlabel)
         if ylabel:
             ax.set_ylabel(ylabel)
         if title:
             ax.set_title(title, y=1.02)
+        if summary:
+            if type(summary) != tuple:
+                summary = (0.03, 0.15)
+            ax.text(summary[0], summary[1], self._makeSummaryInPlot(paramNames), transform=ax.transAxes, 
+                    fontsize=14, verticalalignment='top')
 
+        # Make it pretty
         plt.rc('axes', linewidth=borderwidth)
         ax.xaxis.label.set_fontsize(16)
         ax.yaxis.label.set_fontsize(16)
         ax.title.set_fontsize(16)
 
-        plt.show()
+        plt.show(block=block)
         return
 
     # Public function to print summary of the fitting statistics
