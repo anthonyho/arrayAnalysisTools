@@ -302,7 +302,7 @@ class lsqcurvefit:
                 summary = (0.98, 0.98)
             ax.text(summary[0], summary[1], self._makeSummaryInPlot(paramNames), transform=ax.transAxes,
                     fontsize=14, verticalalignment='top', horizontalalignment='right')
-            self.summarize(paramNames)
+            self.printSummary(paramNames)
 
         # Make it pretty
         plt.rc('axes', linewidth=borderwidth)
