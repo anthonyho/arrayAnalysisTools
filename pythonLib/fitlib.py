@@ -239,15 +239,16 @@ class lsqcurvefit:
     # Make summary text in plot
     def _makeSummaryInPlot(self, paramNames=None):
         if paramNames:
-            paramStrList = [u'{}: {:.4g}{}{:.4g}'.format(name, val, u'\u00B1', se) 
+            paramStrList = [u'{}: {:.4g} {} {:.4g}'.format(name, val, u'\u00B1', se) 
                             for name, val, se in zip(paramNames, self.params, self.paramSEs)]
         else:
-            paramStrList = [u'param[{:d}]: {:.4g}{}{:.4g}'.format(i, val, u'\u00B1', se) 
+            paramStrList = [u'p[{:d}]: {:.4g} {} {:.4g}'.format(i, val, u'\u00B1', se) 
                             for i, (val, se) in enumerate(zip(self.params, self.paramSEs))]
+        paramStrList.append(r'$\chi^2_{red}$: '+'{: .4g}'.format(self.reChi2))
         return '\n'.join(paramStrList)
 
     # Public function to plot data and fitted curve
-    def plot(self, figsize=(6, 6), numPlotPoints=500,
+    def plot(self, figsize=(7.5, 7.5), numPlotPoints=500,
              markeredgecolor='r', markeredgewidth='2', markersize=10,
              linecolor='b', linewidth='2', borderwidth='2',
              xlabel=None, ylabel=None, title=None,
@@ -274,7 +275,7 @@ class lsqcurvefit:
             ax.set_title(title, y=1.02)
         if summary:
             if type(summary) != tuple:
-                summary = (0.03, 0.15)
+                summary = (0.03, 0.18)
             ax.text(summary[0], summary[1], self._makeSummaryInPlot(paramNames), transform=ax.transAxes, 
                     fontsize=14, verticalalignment='top')
 
