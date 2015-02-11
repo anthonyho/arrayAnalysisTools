@@ -1,6 +1,6 @@
 # Anthony Ho, ahho@stanford.edu, 2/3/2015
 # Summary statistics functions adopted from Lauren Chircus's NLS class
-# Last update 2/10/2015
+# Last update 2/11/2015
 """Library of tools for fitting and analysis"""
 
 
@@ -16,27 +16,18 @@ import matplotlib.pyplot as plt
 # - bootstrapping
 
 
-def fTest(model1, model2):
-    if model1.DOF <= model2.DOF:
-        fScore = ((model1.RSS - model2.RSS)/(float(model1.DOF) - float(model2.DOF))) / (model2.RSS/float(model2.DOF))
-        pValue = stats.f.sf(fScore, model1.DOF, model2.DOF)
-        return fScore, pValue
-    else:
-        fScore = ((model2.RSS - model1.RSS)/(float(model2.DOF) - float(model1.DOF))) / (model1.RSS/float(model1.DOF))
-        pValue = stats.f.sf(fScore, model2.DOF, model1.DOF)
-        return fScore, pValue
-
-
 class lsqcurvefit:
     """Python class for non-linear least square fitting using scipy.optimize.minimize
 
-       Features of the fitting class include:
+       Features of this fitting class include:
        - fitting with lower/upper bounds and arbitrary equality/inequality constrains
-       - weighted fitting with errors (weight = 1/sigma^2)
+       - weighted least square fitting (weight = 1/sigma^2)
        - user-defined Jacobian for speed-up
-       - choice of minimization algorithm (default=SLSQP). See Scipy documentation for
-         the list of methods available
-       - functions to show fitted datapoints and summary of fitting statistics
+       - choice of minimization algorithm (default=SLSQP). See Scipy documentation for the list
+         of methods available
+       - automatically handle missing data (nan, inf, -inf)
+       - auxiliary functions to show fitted curve against datapoints and print summary of 
+         fitting statistics
 
     Usages:
 
@@ -45,55 +36,108 @@ class lsqcurvefit:
        fitObj = fitlib.lsqcurvefit(func, x, y, params0,
                                    bounds=None, constraints=(), jac=None,
                                    sigma=None, method='SLSQP',
-                                   maxiter=100, tol=None, epsilon=None, disp=True)
+                                   maxiter=200, tol=None, epsilon=None, disp=True)
 
-       Arguments:
-       - func needs to take the form of func(params, x)
-       - params0 needs to be a list/1-D ndarray
-       - x, y, sigma need to be 1-D ndarrays of the same length
-       - jac needs to return a 2D-ndarray of shape=(len(x), len(params))
-         i.e. a m x n matrix where m is the number of datapoints and n is the number of parameters
-       - bounds needs to be a list of tuples specifying the lower and upper bound for
-         each parameter [(pl0, pu0),(pl1, pu1),...]
-       - see Scipy documentation for scipy.optimize.minimizefor the rest of the arguments
+       Required arguments:
+       - func: callable
+           Model function to be fitted to the data. Must take the form of func(params, x)
+       - x: M-length sequence
+           Independent variable to be passed to func()
+       - y: M-length sequence
+           Dependent data 
+       - params0: N-length sequence
+           Initial guess for the parameters
+
+       Optional arguments:
+       - bounds: N-length sequence of tuples
+           Bounds for variables (only for L-BFGS-B, TNC and SLSQP). A list of tuples specifying 
+           the lower and upper bound for each parameter [(pl0, pu0),(pl1, pu1),...]. Use None 
+           for one of min or max when there is no bound in that direction
+           (default=None)
+       - constraints: dict or sequence of dict
+           Constraints definition (only for COBYLA and SLSQP). See documentation for 
+           scipy.optimize.minimize for syntax
+           (default=())
+       - jac: callable
+           Jacobian (gradient) of model function. Must take the same arguments as func() and 
+           return a 2D-ndarray of shape=(M, N) where M is the number of datapoints and N is the 
+           number of parameters
+           (default=None)
+       - sigma: M-length sequence
+           If provided, these values are used as weights in the least-squares problem as 
+           weight = 1/sigma^2
+           (default=None)
+       - method: str
+           Type of solver. See documentation for scipy.optimize.minimize for details
+           (default='SLSQP')
+       - maxiter: int
+           Maximum number of iterations to perform
+           (default=200)
+       - tol: float
+           Tolerance for termination
+       - epsilon: float
+           Step size used for numerical approximation of the jacobian of the model function
+       - disp: bool
+           Set to True to print convergence messages
+           (default=True)
 
     To plot:
 
-       ax = fitObj.plot(self, figsize=(7.5, 7.5), numPlotPoints=500,
+       ax = fitObj.plot(figsize=(7.5, 7.5), numPlotPoints=500,
                         markeredgecolor='r', markeredgewidth='2', markersize=10,
                         linecolor='b', linewidth='2', borderwidth='2',
                         xlabel=None, ylabel=None, title=None,
                         summary=None, paramNames=None, block=False)
 
-        Arguments:
-        -
+       Optional arguments:
+       - figsize: (w,h) tuple in inches
+       - numPlotPoints: number of points to use for plotting fitted curve
+       - markeredgecolor: color of the datapoints
+       - markeredgewidth: edge width of the datapoints
+       - markersize: size of the datapoints
+       - linecolor: color of the fitted curve
+       - linewidth: width of the fitted curve
+       - borderwidth: width of the border in the plot
+       - xlabel: x label
+       - ylaebl: y label
+       - title: title
+       - summary: bool or tuple. If true or tuple, show fitting statistics summary in plot
+                  If tuple, show the summary at the indicated location (in relative coord.)
+       - paramNames: names of the parameters to display 
+       - block: plotting without blocking execution
 
     To print summary:
 
-    fitObj.printSummary(self, paramNames=None)
+       fitObj.printSummary(paramNames=None)
 
-        Arguments:
-        -
+       Optional arguments:
+       - paramNames: N-length sequence of str
+           Names of the parameters to display
     """
 
     # Constructor which also does fitting
     def __init__(self, func, x, y, params0,
                  bounds=None, constraints=(), jac=None,
                  sigma=None, method='SLSQP',
-                 maxiter=100, tol=None, epsilon=None, disp=True):
+                 maxiter=200, tol=None, epsilon=None, disp=True):
 
         # Get boolean array to indicate missing data in y
-        isFiniteBoolArray = np.isfinite(y)
+        x_np = np.array(x)
+        y_np = np.array(y)
+        isFiniteBoolArray = np.isfinite(y_np)
 
         # Assign instance variables
         self.func = func
-        self.x = x[isFiniteBoolArray]  # Get rid of missing data in y
-        self.y = y[isFiniteBoolArray]  # Get rid of missing data in y
-        self.params0 = params0
+        self.x = x_np[isFiniteBoolArray]  # Get rid of missing data in y
+        self.y = y_np[isFiniteBoolArray]  # Get rid of missing data in y
+        self.params0 = np.array(params0)
         self.bounds = bounds
         self.constraints = constraints
         self.funcPrime = jac
-        self.sigma = sigma
+        if sigma:
+            self.sigma = np.array(sigma)
+        else: 
+            self.sigma = sigma
         self.method = method
         self.maxiter = maxiter
         self.tol = tol
@@ -150,13 +194,10 @@ class lsqcurvefit:
             self.paramTvals = None
             self.paramPvals = None
 
-        # Cleanups
         del disp
 
     # Sanity check of input parameters
     def _sanityCheck(self):
-        if not isinstance(self.x, np.ndarray) or not isinstance(self.y, np.ndarray):
-            raise ValueError("x and y need to be numpy.ndarrays!")
         if len(self.x) != len(self.y):
             raise ValueError("x and y need to be the same length!")
 
@@ -278,7 +319,7 @@ class lsqcurvefit:
              linecolor='b', linewidth='2', borderwidth='2',
              xlabel=None, ylabel=None, title=None,
              summary=None, paramNames=None, block=False):
-
+        """Plot the fitted curve against the datapoints """
         # Compute the x axis points for plotting the fitted line
         xPlotPoints = np.arange(min(self.x), max(self.x)+1, (max(self.x)-min(self.x))/numPlotPoints)
 
@@ -316,8 +357,8 @@ class lsqcurvefit:
 
     # Public function to print summary of the fitting statistics
     def printSummary(self, paramNames=None):
-
-        # Make parameter names if not existence
+        """Print a summary of the fitting statistics"""
+        # Make parameter names if not provided
         if not paramNames:
             paramNames = ["p[{:d}]".format(i) for i in range(len(self.params))]
 
@@ -344,3 +385,16 @@ class lsqcurvefit:
         print "Number of iterations to convergence = {:d}".format(self.nit)
 
         return
+
+
+# This function does NOT belong to the lsqcurvefit class
+def fTest(model1, model2):
+    """Do a F-test against two lsqcurvefit objects fitted with different models and return F score and p value"""
+    if model1.DOF <= model2.DOF:
+        fScore = ((model1.RSS - model2.RSS)/(float(model1.DOF) - float(model2.DOF))) / (model2.RSS/float(model2.DOF))
+        pValue = stats.f.sf(fScore, model1.DOF, model2.DOF)
+        return fScore, pValue
+    else:
+        fScore = ((model2.RSS - model1.RSS)/(float(model2.DOF) - float(model1.DOF))) / (model1.RSS/float(model1.DOF))
+        pValue = stats.f.sf(fScore, model2.DOF, model1.DOF)
+        return fScore, pValue
