@@ -25,7 +25,7 @@ class lsqcurvefit:
        - user-defined Jacobian for speed-up
        - choice of minimization algorithm (default=SLSQP). See Scipy documentation for the list
          of methods available
-       - automatically handle missing data (nan, inf, -inf)
+       - automatically handle missing data in x and y (nan, inf, -inf) and in sigma (nan)
        - auxiliary functions to show fitted curve against datapoints and print summary of
          fitting statistics
 
@@ -64,7 +64,7 @@ class lsqcurvefit:
            number of parameters
            (default=None)
        - sigma: M-length sequence
-           If provided, these values are used as weights in the least-squares problem as
+           If provided, these values are used in weighted least-squares fitting where
            weight = 1/sigma^2
            (default=None)
        - method: str
@@ -121,23 +121,27 @@ class lsqcurvefit:
                  sigma=None, method='SLSQP',
                  maxiter=200, tol=None, epsilon=None, disp=True):
 
-        # Get boolean array to indicate missing data in y
+        # Convert x, y, sigma to numpy array, get ride of missing data 
+        # in x, y and sigma and assign them to instance variables
         x_np = np.array(x)
         y_np = np.array(y)
-        isFiniteBoolArray = np.isfinite(y_np)
+        isFiniteBoolArray = np.isfinite(x_np) * np.isfinite(y_np)
+        if sigma is None:
+            self.sigma = sigma
+        else:
+            sigma_np = np.array(sigma)
+            isFiniteBoolArray = isFiniteBoolArray * ~np.isnan(sigma_np)
+            self.sigma = sigma_np[isFiniteBoolArray]
+
+        self.x = x_np[isFiniteBoolArray]
+        self.y = y_np[isFiniteBoolArray]
 
         # Assign instance variables
         self.func = func
-        self.x = x_np[isFiniteBoolArray]  # Get rid of missing data in y
-        self.y = y_np[isFiniteBoolArray]  # Get rid of missing data in y
         self.params0 = np.array(params0)
         self.bounds = bounds
         self.constraints = constraints
         self.funcPrime = jac
-        if sigma:
-            self.sigma = np.array(sigma)
-        else:
-            self.sigma = sigma
         self.method = method
         self.maxiter = maxiter
         self.tol = tol
