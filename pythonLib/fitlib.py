@@ -10,6 +10,7 @@ from scipy import optimize
 from scipy import stats
 import matplotlib.pyplot as plt
 from types import ModuleType
+from random import shuffle
 
 # To-add:
 # - Log likelihood
@@ -324,7 +325,7 @@ class lsqcurvefit:
              markeredgecolor='r', markeredgewidth='2', markersize=10,
              linecolor='b', linewidth='2', borderwidth='2',
              xlabel=None, ylabel=None, title=None,
-             summary=None, paramNames=None, block=False):
+             summary=True, paramNames=None, block=False):
         """Plot the fitted curve against the datapoints """
         # Compute the x axis points for plotting the fitted line
         xPlotPoints = np.arange(min(self.x), max(self.x)+1, (max(self.x)-min(self.x))/numPlotPoints)
@@ -394,7 +395,7 @@ class lsqcurvefit:
     # Static method to parse the fit parameters to be passed to lsqcurvefit from a file
     @staticmethod
     def parseFitParamFromFile(fitParamFilePath):
-        """ Static method to parse the fit parameters to be passed to lsqcurvefit from a file"""        
+        """Parse the fit parameters to be passed to lsqcurvefit from a file"""        
         # Define default values for the fit parameters that will be passed to the fit function
         fitParamDict = {'func': None, 
                         'params0': None, 
@@ -422,6 +423,25 @@ class lsqcurvefit:
         
         return fitParamDict
 
+    # Static method to iterate through the plots of a list of fitObj
+    @staticmethod
+    def iteratePlots(listFitObj, summary=True, random=False):
+        """Iterate through the plots of a list of fitObj. 
+        Press q to quit, k to keep current plot open, random=True to show plots in randomized order
+        """
+        orderList = range(len(listFitObj))
+        if random:
+            shuffle(orderList)
+
+        for i in orderList:
+            listFitObj[i].plot(summary=summary)
+            response = raw_input()
+            if response in ['q', 'Q']:
+                break
+            if response in ['k', 'K']:
+                continue
+            plt.close()
+            
 
 # This function does NOT belong to the lsqcurvefit class
 def fTest(model1, model2):
