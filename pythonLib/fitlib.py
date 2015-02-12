@@ -322,8 +322,8 @@ class lsqcurvefit:
 
     # Public method to plot data and fitted curve
     def plot(self, figsize=(7.5, 7.5), numPlotPoints=500,
-             markeredgecolor='r', markeredgewidth='2', markersize=10,
-             linecolor='b', linewidth='2', borderwidth='2',
+             markeredgecolor='r', markeredgewidth='3', markersize=12,
+             linecolor='b', linewidth='3', borderwidth='2.5',
              xlabel=None, ylabel=None, title=None,
              summary=True, paramNames=None, block=False):
         """Plot the fitted curve against the datapoints """
