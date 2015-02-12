@@ -140,9 +140,15 @@ class lsqcurvefit:
         self.y = y_np[isFiniteBoolArray]
 
         # Assign instance variables
+        self.nDataPoints = len(y)
+        self.nParams = len(params0)
+        self.DOF = self.nDataPoints - self.nParams
         self.func = func
         self.params0 = np.array(params0)
-        self.bounds = bounds
+        if bounds:
+            self.bounds = bounds
+        else:
+            self.bounds = [(None, None)] * self.nParams
         self.constraints = constraints
         self.funcPrime = jac
         self.method = method
@@ -150,8 +156,6 @@ class lsqcurvefit:
         self.tol = tol
         self.epsilon = epsilon
         self.disp = disp
-        self.nDataPoints = len(y)
-        self.DOF = self.nDataPoints-len(self.params0)
 
         # Sanity check of input parameters
         self._sanityCheck()
@@ -192,14 +196,10 @@ class lsqcurvefit:
         self.SER = self._compute_standardErrorRegression()
         # Compute standard errors of the fit parameters
         self.paramSEs = self._compute_paramSEs()
-        try:
-            # Compute parameters' t-statistic
-            self.paramTvals = self._compute_tStatistic()
-            # Compute parameters' p-values
-            self.paramPvals = self._compute_pValuesFromT()
-        except TypeError:
-            self.paramTvals = None
-            self.paramPvals = None
+        # Compute parameters' t-statistic
+        self.paramTvals = self._compute_tStatistic()
+        # Compute parameters' p-values
+        self.paramPvals = self._compute_pValuesFromT()
 
         del disp
 
@@ -298,7 +298,7 @@ class lsqcurvefit:
             else:
                 return np.sqrt(np.diag(covar))
         except np.linalg.linalg.LinAlgError:
-            return None
+            return np.ones(self.nParams) * np.nan
 
     # Compute the parameter estimates' t-statistic
     def _compute_tStatistic(self):

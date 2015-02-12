@@ -4,6 +4,7 @@
 
 
 import numpy as np
+import scipy.special
 
 
 # ------ Linear equation ------ #
@@ -145,3 +146,11 @@ def doubleExpKPrime(params, x):
 #       params[4] = C
 def doubleExpKResidual(params, x, y):
     return params[0]*np.exp(-(params[1]+params[3])*x) + params[2]*np.exp(-params[3]*x) + params[4] - y
+
+
+# ------ Distributions ------ #
+
+
+# Compute the pmf of Poisson distribution, pre-normalized
+def poisson(params, x):
+    return params[0]*(params[1]**x)*np.exp(-params[1])/scipy.special.gamma(x+1)
