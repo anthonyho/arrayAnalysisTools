@@ -318,6 +318,7 @@ class lsqcurvefit:
                             for i, (val, se) in enumerate(zip(self.params, self.paramSEs))]
         paramStrList.append(r"$\chi^2_{red}$: " + "{: .4g}".format(self.reChi2))
         paramStrList.append("SER: " + "{: .4g}".format(self.SER))
+        paramStrList.append("Norm. SER: " + "{: .4g}".format(self.SER/self.func(self.params, self.x[0])))
         return '\n'.join(paramStrList)
 
     # Public method to plot data and fitted curve
@@ -325,14 +326,16 @@ class lsqcurvefit:
              markeredgecolor='r', markeredgewidth='3', markersize=12,
              linecolor='b', linewidth='3', borderwidth='2.5',
              xlabel=None, ylabel=None, title=None,
-             summary=True, paramNames=None, block=False):
+             summary=True, paramNames=None,
+             block=False, useCurrFig=False):
         """Plot the fitted curve against the datapoints """
         # Compute the x axis points for plotting the fitted line
         xPlotPoints = np.arange(min(self.x), max(self.x)+1, (max(self.x)-min(self.x))/numPlotPoints)
 
         # Plot the data and fitted line
-        fig = plt.figure(figsize=figsize)
-        fig.patch.set_facecolor('w')
+        if not useCurrFig:
+            fig = plt.figure(figsize=figsize)
+            fig.patch.set_facecolor('w')
         plt.plot(self.x, self.y, marker='o', linestyle='None', color='w',
                  markeredgecolor=markeredgecolor, markeredgewidth=markeredgewidth, markersize=markersize)
         plt.plot(xPlotPoints, self.func(self.params, xPlotPoints), color=linecolor, linewidth=linewidth)
@@ -357,7 +360,8 @@ class lsqcurvefit:
         ax.yaxis.label.set_fontsize(16)
         ax.title.set_fontsize(16)
 
-        plt.show(block=block)
+        if not useCurrFig:
+            plt.show(block=block)
 
         return ax
 
@@ -425,7 +429,7 @@ class lsqcurvefit:
 
     # Static method to iterate through the plots of a list of fitObj
     @staticmethod
-    def iteratePlots(listFitObj, summary=True, random=False):
+    def iteratePlots(listFitObj, summary=True, random=False, title=None):
         """Iterate through the plots of a list of fitObj. 
         Press q to quit, k to keep current plot open, random=True to show plots in randomized order
         """
@@ -434,15 +438,51 @@ class lsqcurvefit:
             shuffle(orderList)
 
         for i in orderList:
-            listFitObj[i].plot(summary=summary)
+            if title is None:
+                listFitObj[i].plot(summary=summary, block=False)
+            else:
+                listFitObj[i].plot(summary=summary, block=False, title=title[i])
             response = raw_input()
             if response in ['q', 'Q']:
                 break
             if response in ['k', 'K']:
                 continue
             plt.close()
-            
 
+    # Static method to iterate through the plots of multiple lists of fitObj at the same time
+    @staticmethod
+    def iteratePlotsMultiple(listlistFitObj, summary=True, random=False, title=None, 
+                             figsize=None, width=5):
+        """Iterate through the plots of multiple lists of fitObj at the same time
+        Press q to quit, k to keep current plot open, random=True to show plots in randomized order
+        """
+        nSubplots = len(listlistFitObj)
+
+        orderList = range(len(listlistFitObj[0]))
+        if random:
+            shuffle(orderList)
+
+        if figsize is None:
+            figsize = (width * nSubplots, width)
+
+        for i in orderList:
+            fig = plt.figure(figsize=figsize)
+            fig.patch.set_facecolor('w')
+            for j in range(0, nSubplots):
+                plt.subplot(1, nSubplots, j+1)
+                listlistFitObj[j][i].plot(summary=summary, useCurrFig=True)
+            if title is not None:
+                plt.suptitle(title[i], fontsize=16, y=1.0)
+            fig.tight_layout()
+            plt.show(block=False)
+            response = raw_input()
+            if response in ['q', 'Q']:
+                break
+            if response in ['k', 'K']:
+                continue
+            plt.close()
+
+            
 # This function does NOT belong to the lsqcurvefit class
 def fTest(model1, model2):
     """Do a F-test against two lsqcurvefit objects fitted with different models and return F score and p value"""
