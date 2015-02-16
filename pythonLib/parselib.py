@@ -15,13 +15,13 @@ def computeMedOfDFCol(arr):
 
 # Split a column containing separator-separated values into individual
 # columns and assign to new numpy array
-def splitConcatedDFColumnIntoNDarray(column, separator):
+def splitConcatedDFColumnIntoNDarray(column, separator=':'):
     return np.array(column.str.split(separator).tolist()).astype(float)
 
 
 # Split a column containing separator-separated values into individual
 # columns and assign to new dataframe
-def splitConcatedDFColumnIntoDF(column, separator, string=False):
+def splitConcatedDFColumnIntoDF(column, separator=':', string=False):
     if string:
         return pd.DataFrame(column.str.split(separator).tolist())
     else:
@@ -30,7 +30,7 @@ def splitConcatedDFColumnIntoDF(column, separator, string=False):
 
 # Concatenate designated columns of a datadrame into a series of
 # strings, separated by separator
-def concatDFColumnsIntoSeries(df, columnsLabels, separator):
+def concatDFColumnsIntoSeries(df, columnsLabels, separator=':'):
     series = pd.Series(df[columnsLabels[0]].map(str))
     for currCol in columnsLabels[1:]:
         series = series+separator+df[currCol].map(str)
@@ -39,7 +39,7 @@ def concatDFColumnsIntoSeries(df, columnsLabels, separator):
 
 # Concatenate designated elements of a series into a string
 # separated by separator
-def concatSeriesIntoString(series, indexLabels, separator):
+def concatSeriesIntoString(series, indexLabels, separator=':'):
     string = str(series[indexLabels[0]])
     for currElement in indexLabels[1:]:
         string = string+separator+str(series[currElement])
