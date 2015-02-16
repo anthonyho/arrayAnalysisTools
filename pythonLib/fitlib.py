@@ -126,7 +126,7 @@ class lsqcurvefit:
 
 
     To plot a list of fitObj:
-    
+
        fitlib.iteratePlots(listFitObj, random=False, listTitle=None, **kwargs)
 
        Required arguments:
@@ -433,8 +433,8 @@ class lsqcurvefit:
 
         # Make it pretty
         plt.rc('axes', linewidth=borderwidth)
-        ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,3))
-        ax.ticklabel_format(axis='y', style='sci', scilimits=(-4,4))
+        ax.ticklabel_format(axis='x', style='sci', scilimits=(-3, 3))
+        ax.ticklabel_format(axis='y', style='sci', scilimits=(-4, 4))
         if fontsize is None:
             plt.rc('xtick', labelsize=tickfontsize)
             plt.rc('ytick', labelsize=tickfontsize)
@@ -511,7 +511,7 @@ class lsqcurvefit:
             fig.patch.set_facecolor('w')
             for j in range(0, nSubplots):
                 plt.subplot(1, nSubplots, j+1)
-                listlistFitObj[j][i].plot(**kwargs) 
+                listlistFitObj[j][i].plot(**kwargs)
             if listTitle is not None:
                 plt.suptitle(listTitle[i], fontsize=20, y=0.99)  # need to fix fontsize option
             fig.tight_layout(pad=2.5)
