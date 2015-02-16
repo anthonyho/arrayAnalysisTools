@@ -1,6 +1,6 @@
 # Anthony Ho, ahho@stanford.edu, 2/3/2015
 # Summary statistics methods adopted from Lauren Chircus's NLS class
-# Last update 2/11/2015
+# Last update 2/15/2015
 """Library of tools for fitting and analysis"""
 
 
@@ -32,6 +32,7 @@ class lsqcurvefit:
        - auxiliary methods to show fitted curve against datapoints and print summary of
          fitting statistics
        - auxiliary method to parse fit parameters from file to pass to lsqcurvefit
+
 
     Usages:
 
@@ -85,13 +86,23 @@ class lsqcurvefit:
            Set to True to print convergence messages
            (default=True)
 
+
+    To print summary:
+
+       fitObj.printSummary(paramNames=None)
+
+       Optional arguments:
+       - paramNames: names of the parameters to display
+
+
     To plot:
 
        ax = fitObj.plot(figsize=(7.5, 7.5), numPlotPoints=500,
-                        markeredgecolor='r', markeredgewidth='2', markersize=10,
-                        linecolor='b', linewidth='2', borderwidth='2',
+                        markeredgecolor='r', markeredgewidth='3', markersize=12,
+                        linecolor='b', linewidth='3', borderwidth='2.5',
                         xlabel=None, ylabel=None, title=None,
-                        summary=None, paramNames=None, block=False)
+                        fontsize=None, summaryfontsize=15, labelfontsize=20, tickfontsize=20,
+                        summary=True, paramNames=None, _useCurrFig=False):
 
        Optional arguments:
        - figsize: (w,h) tuple in inches
@@ -105,17 +116,50 @@ class lsqcurvefit:
        - xlabel: x label
        - ylaebl: y label
        - title: title
+       - fontsize: set all font size, overriding summaryfontsize, labelfontsize, and tickfontsize
+       - summaryfontsize: font size of the summary text
+       - labelfontsize: font size of the labels and title
+       - tickfontsize: font size of the x and y ticks
        - summary: bool or tuple. If true or tuple, show fitting statistics summary in plot
                   If tuple, show the summary at the indicated location (in relative coord.)
        - paramNames: names of the parameters to display
-       - block: plotting without blocking execution
 
-    To print summary:
 
-       fitObj.printSummary(paramNames=None)
+    To plot a list of fitObj:
+    
+       fitlib.iteratePlots(listFitObj, random=False, listTitle=None, **kwargs)
+
+       Required arguments:
+       - listFitObj: list of lsqcurvefit objects to be plotted
 
        Optional arguments:
-       - paramNames: names of the parameters to display
+       - random: randomized the order the showing listFitObj
+       - listTitle: sequence of the same length as listFitObj. List of title to be displayed as each plot
+       Take the rest of the arguments as lsqcurvefit.plot()
+
+
+    To plot multiple lists of fitObj side by side:
+
+       fitlib.iteratePlotsMultiple(listlistFitObj, random=False, listTitle=None,
+                                   figsize=None, width=5, **kwargs)
+
+       Required arguments:
+       - listlistFitObj: list of list of lsqcurvefit objects to be plotted
+
+       Optional arguments:
+       - random: randomized the order the showing listFitObj
+       - listTitle: sequence of the same length as listFitObj. List of title to be displayed as each plot
+       - figsize: size of the figure. Override width
+       - width: width and height of each individual subplot
+       Take the rest of the arguments as lsqcurvefit.plot()
+
+
+    To parse the fit parameters to be passed to lsqcurvefit from a file:
+
+       fitParamDict = parseFitParamFromFile(fitParamFilePath)
+
+       Required arguments:
+       - fitParamFilePath: path to the file containing all the arguments to be passed to lsqcurvefit
     """
 
     # Constructor which also does fitting
@@ -308,63 +352,6 @@ class lsqcurvefit:
     def _compute_pValuesFromT(self):
         return stats.t.sf(np.abs(self.paramTvals), self.DOF)*2
 
-    # Make summary text in plot
-    def _makeSummaryInPlot(self, paramNames=None):
-        if paramNames:
-            paramStrList = [u"{}: {:.4g} {} {:.4g}".format(name, val, u'\u00B1', se)
-                            for name, val, se in zip(paramNames, self.params, self.paramSEs)]
-        else:
-            paramStrList = [u"p[{:d}]: {:.4g} {} {:.4g}".format(i, val, u'\u00B1', se)
-                            for i, (val, se) in enumerate(zip(self.params, self.paramSEs))]
-        paramStrList.append(r"$\chi^2_{red}$: " + "{: .4g}".format(self.reChi2))
-        paramStrList.append("SER: " + "{: .4g}".format(self.SER))
-        paramStrList.append("Norm. SER: " + "{: .4g}".format(self.SER/self.func(self.params, self.x[0])))
-        return '\n'.join(paramStrList)
-
-    # Public method to plot data and fitted curve
-    def plot(self, figsize=(7.5, 7.5), numPlotPoints=500,
-             markeredgecolor='r', markeredgewidth='3', markersize=12,
-             linecolor='b', linewidth='3', borderwidth='2.5',
-             xlabel=None, ylabel=None, title=None,
-             summary=True, paramNames=None,
-             block=False, useCurrFig=False):
-        """Plot the fitted curve against the datapoints """
-        # Compute the x axis points for plotting the fitted line
-        xPlotPoints = np.arange(min(self.x), max(self.x)+1, (max(self.x)-min(self.x))/numPlotPoints)
-
-        # Plot the data and fitted line
-        if not useCurrFig:
-            fig = plt.figure(figsize=figsize)
-            fig.patch.set_facecolor('w')
-        plt.plot(self.x, self.y, marker='o', linestyle='None', color='w',
-                 markeredgecolor=markeredgecolor, markeredgewidth=markeredgewidth, markersize=markersize)
-        plt.plot(xPlotPoints, self.func(self.params, xPlotPoints), color=linecolor, linewidth=linewidth)
-        ax = plt.gca()
-
-        # Show labels, title and summary if requested
-        if xlabel:
-            ax.set_xlabel(xlabel)
-        if ylabel:
-            ax.set_ylabel(ylabel)
-        if title:
-            ax.set_title(title, y=1.02)
-        if summary:
-            if type(summary) != tuple:
-                summary = (0.98, 0.98)
-            ax.text(summary[0], summary[1], self._makeSummaryInPlot(paramNames), transform=ax.transAxes,
-                    fontsize=14, verticalalignment='top', horizontalalignment='right')
-
-        # Make it pretty
-        plt.rc('axes', linewidth=borderwidth)
-        ax.xaxis.label.set_fontsize(16)
-        ax.yaxis.label.set_fontsize(16)
-        ax.title.set_fontsize(16)
-
-        if not useCurrFig:
-            plt.show(block=block)
-
-        return ax
-
     # Public method to print summary of the fitting statistics
     def printSummary(self, paramNames=None):
         """Print a summary of the fitting statistics"""
@@ -396,24 +383,166 @@ class lsqcurvefit:
 
         return
 
+    # Make summary text in plot
+    def _makeSummaryInPlot(self, paramNames=None):
+        if paramNames:
+            paramStrList = [u"{}: {:.4g} {} {:.4g}".format(name, val, u'\u00B1', se)
+                            for name, val, se in zip(paramNames, self.params, self.paramSEs)]
+        else:
+            paramStrList = [u"p[{:d}]: {:.4g} {} {:.4g}".format(i, val, u'\u00B1', se)
+                            for i, (val, se) in enumerate(zip(self.params, self.paramSEs))]
+        paramStrList.append(r"$\chi^2_{red}$: " + "{: .4g}".format(self.reChi2))
+        paramStrList.append("SER: " + "{: .4g}".format(self.SER))
+        paramStrList.append("Norm. SER: " + "{: .4g}".format(self.SER/self.func(self.params, self.x[0])))
+        return '\n'.join(paramStrList)
+
+    # Public method to plot data and fitted curve
+    def plot(self, figsize=(7.5, 7.5), numPlotPoints=500,
+             markeredgecolor='r', markeredgewidth='3', markersize=12,
+             linecolor='b', linewidth='3', borderwidth='2.5',
+             xlabel=None, ylabel=None, title=None,
+             fontsize=None, summaryfontsize=15, labelfontsize=20, tickfontsize=20,
+             summary=True, paramNames=None, _useCurrFig=False):
+        """Plot the fitted curve against the datapoints """
+        # Compute the x axis points for plotting the fitted line
+        xPlotPoints = np.arange(min(self.x), max(self.x)+1, (max(self.x)-min(self.x))/numPlotPoints)
+
+        # Plot the data and fitted line
+        if not _useCurrFig:
+            fig = plt.figure(figsize=figsize)
+            fig.patch.set_facecolor('w')
+        plt.plot(self.x, self.y, marker='o', linestyle='None', color='w',
+                 markeredgecolor=markeredgecolor, markeredgewidth=markeredgewidth, markersize=markersize)
+        plt.plot(xPlotPoints, self.func(self.params, xPlotPoints), color=linecolor, linewidth=linewidth)
+        ax = plt.gca()
+
+        # Show labels, title and summary if requested
+        if xlabel:
+            ax.set_xlabel(xlabel)
+        if ylabel:
+            ax.set_ylabel(ylabel)
+        if title:
+            ax.set_title(title, y=1.02)
+        if summary:
+            if type(summary) != tuple:
+                summary = (0.98, 0.98)
+            if fontsize is not None:
+                summaryfontsize = fontsize
+            ax.text(summary[0], summary[1], self._makeSummaryInPlot(paramNames), transform=ax.transAxes,
+                    fontsize=summaryfontsize, verticalalignment='top', horizontalalignment='right')
+
+        # Make it pretty
+        plt.rc('axes', linewidth=borderwidth)
+        ax.ticklabel_format(axis='x', style='sci', scilimits=(-3,3))
+        ax.ticklabel_format(axis='y', style='sci', scilimits=(-4,4))
+        if fontsize is None:
+            plt.rc('xtick', labelsize=tickfontsize)
+            plt.rc('ytick', labelsize=tickfontsize)
+            ax.xaxis.label.set_fontsize(labelfontsize)
+            ax.yaxis.label.set_fontsize(labelfontsize)
+            ax.title.set_fontsize(labelfontsize)
+        else:
+            plt.rc('xtick', labelsize=fontsize)
+            plt.rc('ytick', labelsize=fontsize)
+            ax.xaxis.label.set_fontsize(fontsize)
+            ax.yaxis.label.set_fontsize(fontsize)
+            ax.title.set_fontsize(fontsize)
+
+        if not _useCurrFig:
+            plt.show(block=False)
+
+        return ax
+
+    # Static method to iterate through the plots of a list of fitObj
+    @staticmethod
+    def iteratePlots(listFitObj, random=False, listTitle=None, **kwargs):
+        """Iterate through the plots of a list of fitObj.
+        Press q to quit, k to keep current plot open, random=True to show plots in randomized order
+        """
+        # Override arguments that shouldn't be accessible by users:
+        kwargs['_useCurrFig'] = False
+
+        # Shuffle order of listFitObj if random=True
+        orderList = range(len(listFitObj))
+        if random:
+            shuffle(orderList)
+
+        # Plot through listFitObj one by one
+        for i in orderList:
+            if listTitle is None:
+                kwargs['title'] = None
+            else:
+                kwargs['title'] = listTitle[i]
+            listFitObj[i].plot(**kwargs)
+            response = raw_input()
+            if response in ['k', 'K']:
+                continue
+            elif response in ['q', 'Q']:
+                plt.close()
+                break
+            else:
+                plt.close()
+
+    # Static method to iterate through the plots of multiple lists of fitObj at the same time
+    @staticmethod
+    def iteratePlotsMultiple(listlistFitObj, random=False, listTitle=None,
+                             figsize=None, width=5, **kwargs):
+        """Iterate through the plots of multiple lists of fitObj at the same time
+        Press q to quit, k to keep current plot open, random=True to show plots in randomized order
+        """
+        nSubplots = len(listlistFitObj)
+
+        # Override arguments that shouldn't be accessible by users:
+        kwargs['_useCurrFig'] = True
+        kwargs['title'] = None
+
+        # Shuffle order of listFitObj if random=True
+        orderList = range(len(listlistFitObj[0]))
+        if random:
+            shuffle(orderList)
+
+        # Define figure size
+        if figsize is None:
+            figsize = (width * nSubplots, width)
+
+        # Plot through listFitObj one by one
+        for i in orderList:
+            fig = plt.figure(figsize=figsize)
+            fig.patch.set_facecolor('w')
+            for j in range(0, nSubplots):
+                plt.subplot(1, nSubplots, j+1)
+                listlistFitObj[j][i].plot(**kwargs) 
+            if listTitle is not None:
+                plt.suptitle(listTitle[i], fontsize=20, y=0.99)  # need to fix fontsize option
+            fig.tight_layout(pad=2.5)
+            plt.show(block=False)
+            response = raw_input()
+            if response in ['k', 'K']:
+                continue
+            elif response in ['q', 'Q']:
+                plt.close()
+                break
+            else:
+                plt.close()
+
     # Static method to parse the fit parameters to be passed to lsqcurvefit from a file
     @staticmethod
     def parseFitParamFromFile(fitParamFilePath):
-        """Parse the fit parameters to be passed to lsqcurvefit from a file"""        
+        """Parse the fit parameters to be passed to lsqcurvefit from a file"""
         # Define default values for the fit parameters that will be passed to the fit function
-        fitParamDict = {'func': None, 
-                        'params0': None, 
-                        'bounds': None, 
-                        'constraints': (), 
-                        'jac': None, 
-                        'sigma': None, 
-                        'method': 'SLSQP', 
-                        'maxiter': 200, 
+        fitParamDict = {'func': None,
+                        'params0': None,
+                        'bounds': None,
+                        'constraints': (),
+                        'jac': None,
+                        'sigma': None,
+                        'method': 'SLSQP',
+                        'maxiter': 200,
                         'tol': None,
-                        'epsilon': None, 
+                        'epsilon': None,
                         'disp': False}
 
-        # Import fit parameters from fitParamFile 
+        # Import fit parameters from fitParamFile
         (_, fitParamFilename) = os.path.split(fitParamFilePath)
         (fitParamFileBasename, _) = os.path.splitext(fitParamFilename)
 
@@ -424,65 +553,10 @@ class lsqcurvefit:
                                    for property_, value in vars(fitParam).iteritems()
                                    if property_[:2] != '__' and not isinstance(value, ModuleType)}
         fitParamDict.update(userDefinedFitParamDict)
-        
+
         return fitParamDict
 
-    # Static method to iterate through the plots of a list of fitObj
-    @staticmethod
-    def iteratePlots(listFitObj, summary=True, random=False, title=None):
-        """Iterate through the plots of a list of fitObj. 
-        Press q to quit, k to keep current plot open, random=True to show plots in randomized order
-        """
-        orderList = range(len(listFitObj))
-        if random:
-            shuffle(orderList)
 
-        for i in orderList:
-            if title is None:
-                listFitObj[i].plot(summary=summary, block=False)
-            else:
-                listFitObj[i].plot(summary=summary, block=False, title=title[i])
-            response = raw_input()
-            if response in ['q', 'Q']:
-                break
-            if response in ['k', 'K']:
-                continue
-            plt.close()
-
-    # Static method to iterate through the plots of multiple lists of fitObj at the same time
-    @staticmethod
-    def iteratePlotsMultiple(listlistFitObj, summary=True, random=False, title=None, 
-                             figsize=None, width=5):
-        """Iterate through the plots of multiple lists of fitObj at the same time
-        Press q to quit, k to keep current plot open, random=True to show plots in randomized order
-        """
-        nSubplots = len(listlistFitObj)
-
-        orderList = range(len(listlistFitObj[0]))
-        if random:
-            shuffle(orderList)
-
-        if figsize is None:
-            figsize = (width * nSubplots, width)
-
-        for i in orderList:
-            fig = plt.figure(figsize=figsize)
-            fig.patch.set_facecolor('w')
-            for j in range(0, nSubplots):
-                plt.subplot(1, nSubplots, j+1)
-                listlistFitObj[j][i].plot(summary=summary, useCurrFig=True)
-            if title is not None:
-                plt.suptitle(title[i], fontsize=16, y=1.0)
-            fig.tight_layout()
-            plt.show(block=False)
-            response = raw_input()
-            if response in ['q', 'Q']:
-                break
-            if response in ['k', 'K']:
-                continue
-            plt.close()
-
-            
 # This function does NOT belong to the lsqcurvefit class
 def fTest(model1, model2):
     """Do a F-test against two lsqcurvefit objects fitted with different models and return F score and p value"""
