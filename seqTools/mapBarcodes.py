@@ -20,6 +20,7 @@ def main():
 
     # Get options and arguments from command line
     parser = argparse.ArgumentParser(description="map barcodes")
+    parser.add_argument('-c', '--count', action='store_true', help="set to true if the count of sequences within a barcode block is at the end of annotation (default=false)")
     parser.add_argument('bcDictFilePath', help="path to the barcode-annotation dictionary file")
     parser.add_argument('seqsFilePath', help="path to the CPseq-type file to be annotated")
     parser.add_argument('outputFilePath', help="path to the output file")
@@ -40,8 +41,11 @@ def main():
     # Load seqFile
     seqsDF = pd.read_csv(args.seqsFilePath, sep='\t')
 
-    # Map barcodes and represent missing keys entries with 'NA:nan:nan:nan:::'
-    allAnnotations = seqsDF['barcode'].apply(bcDict.get, args=None).replace({None: 'NA:nan:nan:nan:::'})
+    # Map barcodes and represent missing keys entries with 'NA:nan:nan:nan:::' or 'NA:nan:nan:nan::::' if in count mode
+    if args.count:
+        allAnnotations = seqsDF['barcode'].apply(bcDict.get, args=None).replace({None: 'NA:nan:nan:nan::::'})
+    else:
+        allAnnotations = seqsDF['barcode'].apply(bcDict.get, args=None).replace({None: 'NA:nan:nan:nan:::'})
 
     # Insert annotations to dataframe
     seqsDF.insert(0, 'annotation', allAnnotations)
