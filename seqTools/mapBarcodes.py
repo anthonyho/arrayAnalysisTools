@@ -6,7 +6,7 @@
 # CPseq-type file from the barcode-annotation dictionary
 #
 # Anthony Ho, ahho@stanford.edu, 2/2/2015
-# Last update 2/2/2015
+# Last update 2/23/2015
 
 
 # Import libraries
