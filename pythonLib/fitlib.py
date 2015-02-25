@@ -543,9 +543,10 @@ class lsqcurvefit:
                         'disp': False}
 
         # Import fit parameters from fitParamFile
-        (_, fitParamFilename) = os.path.split(fitParamFilePath)
+        (fitParamDir, fitParamFilename) = os.path.split(fitParamFilePath)
         (fitParamFileBasename, _) = os.path.splitext(fitParamFilename)
 
+        sys.path.insert(0, fitParamDir)
         fitParam = __import__(fitParamFileBasename)
 
         # Assign fit parameters read from fitParamFile into fitParamDict
