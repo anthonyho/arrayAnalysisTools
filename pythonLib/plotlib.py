@@ -4,6 +4,7 @@
 
 
 import matplotlib.pyplot as plt
+import pandas as pd
 
 
 # Handy function to make a plot look better
@@ -25,5 +26,72 @@ def makepretty(ax):
     ax.xaxis.label.set_fontsize(16)
     ax.yaxis.label.set_fontsize(16)
     ax.title.set_fontsize(16)
+
+    return
+
+
+# Make rank-sorted plot from a sequence
+def rankSortedPlot(series, ascending=False,
+                   logx=False, logy=False,  # Need to enable logx and logy
+                   xlim=None, ylim=None,
+                   name=None, legend=True, legendloc=1, legendfontsize=20,
+                   xlabel=None, ylabel=None, labelfontsize=20, tickfontsize=20,
+                   markersize=6, borderwidth=1.5, _useCurrFig=False):
+    """Plot rank-sorted plot from a sequence"""
+
+    #
+    if not isinstance(series, pd.core.series.Series):
+        series = pd.Series(series)
+    if series.name and not name:
+        name = series.name
+
+    #
+    sortedSeries = series.order(ascending=ascending)
+    plt.plot(series.index, sortedSeries, marker='.', linestyle='None',
+             markersize=markersize, label=name)
+    ax = plt.gca()
+
+    # 
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+    if legend:
+        plt.legend(loc=legendloc, numpoints=1, fontsize=legendfontsize)
+
+    #
+    plt.xlim(xlim)
+    plt.ylim(ylim)
+
+    #
+    plt.rc('axes', linewidth=borderwidth)
+    plt.rc('xtick', labelsize=tickfontsize)
+    plt.rc('ytick', labelsize=tickfontsize)
+    ax.xaxis.label.set_fontsize(labelfontsize)
+    ax.yaxis.label.set_fontsize(labelfontsize)
+
+    if not _useCurrFig:
+        fig = plt.gcf()
+        fig.patch.set_facecolor('w')
+        plt.show(block=False)
+
+    return ax
+
+
+# 
+def rankSortedPlotMultiple(listSeries, listnames=None, figsize=(7.5, 7.5), **kwargs):
+    """Plot rank-sorted plots of multiple sequences"""
+    fig = plt.figure(figsize=figsize)
+
+    #
+    for i in range(len(listSeries)):
+        if listnames:
+            rankSortedPlot(listSeries[i], name=listnames[i], _useCurrFig=True, **kwargs)
+        else:
+            rankSortedPlot(listSeries[i], _useCurrFig=True, **kwargs)
+
+    #
+    fig.patch.set_facecolor('w')
+    plt.show(block=False)
 
     return
