@@ -47,7 +47,7 @@ class lsqcurvefit:
 
        Required arguments:
        - func: callable
-           Model function to be fitted to the data. Must take the form of func(params, x) or 
+           Model function to be fitted to the data. Must take the form of func(params, x) or
            func(params, x, constants) if constant parameters are defined
        - x: M-length sequence
            Independent variable to be passed to func()
@@ -64,7 +64,7 @@ class lsqcurvefit:
            (default=None)
        - constants: sequence
            Constant parameter(s) to be passed to func() as func(params, x, constants)
-           (You could achieve the same by constraining p_i = LB_i = UB_i = constant, but the error 
+           (You could achieve the same by constraining p_i = LB_i = UB_i = constant, but the error
            estimates for all parameters will be way off)
            (default=None)
        - bounds: N-length sequence of tuples
@@ -463,7 +463,7 @@ class lsqcurvefit:
                     fontsize=summaryfontsize, verticalalignment='top', horizontalalignment='right')
 
         # Make it pretty
-        # Set width of plot border 
+        # Set width of plot border
         plt.rc('axes', linewidth=borderwidth)
         # Set axis ticks to scientific notation
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3, 3))
