@@ -32,7 +32,7 @@ def makepretty(ax):
 
 # Make rank-sorted plot from a sequence
 def rankSortedPlot(series, ascending=False,
-                   logx=False, logy=False,  # Need to enable logx and logy
+                   logx=False, logy=False,
                    xlim=None, ylim=None,
                    name=None, legend=True, legendloc=1, legendfontsize=20,
                    xlabel=None, ylabel=None, labelfontsize=20, tickfontsize=20,
@@ -51,13 +51,17 @@ def rankSortedPlot(series, ascending=False,
              markersize=markersize, label=name)
     ax = plt.gca()
 
-    # 
+    # This should be changed to some standard lib functions
     if xlabel:
         ax.set_xlabel(xlabel)
     if ylabel:
         ax.set_ylabel(ylabel)
     if legend:
         plt.legend(loc=legendloc, numpoints=1, fontsize=legendfontsize)
+    if logy:
+        ax.set_yscale('log')
+    if logx:
+        ax.set_xscale('log')
 
     #
     plt.xlim(xlim)
