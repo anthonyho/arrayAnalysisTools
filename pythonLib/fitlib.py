@@ -29,6 +29,7 @@ class lsqcurvefit:
        - choice of minimization algorithm (default=SLSQP). See Scipy documentation for the list
          of methods available
        - automatically handle missing data in x and y (nan, inf, -inf) and in sigma (nan)
+       - constant parameters passing to model function
        - auxiliary methods to show fitted curve against datapoints and print summary of
          fitting statistics
        - auxiliary method to parse fit parameters from file to pass to lsqcurvefit
@@ -39,13 +40,15 @@ class lsqcurvefit:
     To fit:
 
        fitObj = fitlib.lsqcurvefit(func, x, y, params0,
-                                   bounds=None, constraints=(), jac=None,
+                                   jac=None, constants=None,
+                                   bounds=None, constraints=(),
                                    sigma=None, method='SLSQP',
                                    maxiter=200, tol=None, epsilon=None, disp=True)
 
        Required arguments:
        - func: callable
-           Model function to be fitted to the data. Must take the form of func(params, x)
+           Model function to be fitted to the data. Must take the form of func(params, x) or 
+           func(params, x, constants) if constant parameters are defined
        - x: M-length sequence
            Independent variable to be passed to func()
        - y: M-length sequence
@@ -54,6 +57,16 @@ class lsqcurvefit:
            Initial guess for the parameters
 
        Optional arguments:
+       - jac: callable
+           Jacobian (gradient) of model function. Must take the same arguments as func() and
+           return a 2D-ndarray of shape=(M, N) where M is the number of datapoints and N is the
+           number of parameters
+           (default=None)
+       - constants: sequence
+           Constant parameter(s) to be passed to func() as func(params, x, constants)
+           (You could achieve the same by constraining p_i = LB_i = UB_i = constant, but the error 
+           estimates for all parameters will be way off)
+           (default=None)
        - bounds: N-length sequence of tuples
            Bounds for variables (only for L-BFGS-B, TNC and SLSQP). A list of tuples specifying
            the lower and upper bound for each parameter [(pl0, pu0),(pl1, pu1),...]. Use None
@@ -63,11 +76,6 @@ class lsqcurvefit:
            Constraints definition (only for COBYLA and SLSQP). See documentation for
            scipy.optimize.minimize for syntax
            (default=())
-       - jac: callable
-           Jacobian (gradient) of model function. Must take the same arguments as func() and
-           return a 2D-ndarray of shape=(M, N) where M is the number of datapoints and N is the
-           number of parameters
-           (default=None)
        - sigma: M-length sequence
            If provided, these values are used in weighted least-squares fitting where
            weight = 1/sigma^2
@@ -164,7 +172,8 @@ class lsqcurvefit:
 
     # Constructor which also does fitting
     def __init__(self, func, x, y, params0,
-                 bounds=None, constraints=(), jac=None,
+                 jac=None, constants=None,
+                 bounds=None, constraints=(),
                  sigma=None, method='SLSQP',
                  maxiter=200, tol=None, epsilon=None, disp=True):
 
@@ -189,12 +198,13 @@ class lsqcurvefit:
         self.DOF = self.nDataPoints - self.nParams
         self.func = func
         self.params0 = np.array(params0)
+        self.funcPrime = jac
+        self.constants = constants
         if bounds:
             self.bounds = bounds
         else:
             self.bounds = [(None, None)] * self.nParams
         self.constraints = constraints
-        self.funcPrime = jac
         self.method = method
         self.maxiter = maxiter
         self.tol = tol
@@ -261,7 +271,7 @@ class lsqcurvefit:
             RSSprime = None
 
         return optimize.minimize(self._compute_RSS, self.params0,
-                                 args=(self.x, self.y, self.func, self.funcPrime, self.sigma),
+                                 args=(self.x, self.y, self.func, self.funcPrime, self.constants, self.sigma),
                                  bounds=self.bounds, constraints=self.constraints, jac=RSSprime,
                                  method=self.method,
                                  tol=self.tol, options={'maxiter': self.maxiter, 'disp': self.disp})
@@ -269,38 +279,52 @@ class lsqcurvefit:
     # Objective function (residual sum of squares) to be minimized.
     # Compute sum_i[ (func(p,x_i)-y_i)^2 ] or, if sigma is given,
     # sum_i[ w_i*(func(p,x_i)-y_i)^2 ] where w_i = 1/sigma_i^2
-    def _compute_RSS(self, params, x, y, func, _, sigma=None):
-        if sigma is None:
-            return np.sum((func(params, x) - y)**2)
+    def _compute_RSS(self, params, x, y, func, _, constants=None, sigma=None):
+        if constants is None:
+            argsList = [params, x]
         else:
-            return np.sum(((func(params, x) - y)/sigma)**2)
+            argsList = [params, x, constants]
+        if sigma is None:
+            return np.sum((func(*argsList) - y)**2)
+        else:
+            return np.sum(((func(*argsList) - y)/sigma)**2)
 
     # Derivative of the objective function (residual sum of squares) to be minimized.
     # Compute the partial derivatives of sum_i[ (func(p,x_i)-y_i)^2 ] or, if sigma
     # is given, the partial derivatives of sum_i[ w_i*(func(p,x_i)-y_i)^2 ] where
     # w_i = 1/sigma_i^2
-    def _compute_RSSprime(self, params, x, y, func, funcPrime, sigma=None):
-        if sigma is None:
-            return np.sum(2 * (func(params, x) - y) * funcPrime(params, x).transpose(), axis=1)
+    def _compute_RSSprime(self, params, x, y, func, funcPrime, constants=None, sigma=None):
+        if constants is None:
+            argsList = [params, x]
         else:
-            return np.sum(2 * (func(params, x) - y) * funcPrime(params, x).transpose() / sigma**2, axis=1)
+            argsList = [params, x, constants]
+        if sigma is None:
+            return np.sum(2 * (func(*argsList) - y) * funcPrime(*argsList).transpose(), axis=1)
+        else:
+            return np.sum(2 * (func(*argsList) - y) * funcPrime(*argsList).transpose() / sigma**2, axis=1)
 
     # Compute the Jacobian of func at params that minimizes RSS
     # Use user-supplied Jacobian if provided, otherwise compute numerically
     def _compute_jacobianFunc(self):
         if self.funcPrime:
-            return self.funcPrime(self.params, self.x)
+            if self.constants is None:
+                return self.funcPrime(self.params, self.x)
+            else:
+                return self.funcPrime(self.params, self.x, self.constants)
         else:
             if self.epsilon:
                 eps = self.epsilon
             else:
                 eps = np.sqrt(np.finfo(np.float).eps)
-            return np.array([optimize.approx_fprime(self.params, self.func, eps, xi) for xi in self.x])
+            if self.constants is None:
+                return np.array([optimize.approx_fprime(self.params, self.func, eps, xi) for xi in self.x])
+            else:
+                return np.array([optimize.approx_fprime(self.params, self.func, eps, xi, self.constants) for xi in self.x])
 
     # Compute R-squared
     def _compute_Rsquared(self):
-        SSres = self._compute_RSS(self.params, self.x, self.y, self.func, None, self.sigma)
-        SStot = self._compute_RSS(self.params, self.x, np.mean(self.y), self.func, None, self.sigma)
+        SSres = self._compute_RSS(self.params, self.x, self.y, self.func, None, self.constants, self.sigma)
+        SStot = self._compute_RSS(self.params, self.x, np.mean(self.y), self.func, None, self.constants, self.sigma)
         return 1 - SSres/SStot
 
     # Compute adjusted R-squared
@@ -393,7 +417,11 @@ class lsqcurvefit:
                             for i, (val, se) in enumerate(zip(self.params, self.paramSEs))]
         paramStrList.append(r"$\chi^2_{red}$: " + "{: .4g}".format(self.reChi2))
         paramStrList.append("SER: " + "{: .4g}".format(self.SER))
-        paramStrList.append("Norm. SER: " + "{: .4g}".format(self.SER/self.func(self.params, self.x[0])))
+        if self.constants is None:
+            funcArgsList = [self.params, self.x[0]]
+        else:
+            funcArgsList = [self.params, self.x[0], self.constants]
+        paramStrList.append("Norm. SER: " + "{: .4g}".format(self.SER/self.func(*funcArgsList)))
         return '\n'.join(paramStrList)
 
     # Public method to plot data and fitted curve
@@ -413,7 +441,11 @@ class lsqcurvefit:
             fig.patch.set_facecolor('w')
         plt.plot(self.x, self.y, marker='o', linestyle='None', color='w',
                  markeredgecolor=markeredgecolor, markeredgewidth=markeredgewidth, markersize=markersize)
-        plt.plot(xPlotPoints, self.func(self.params, xPlotPoints), color=linecolor, linewidth=linewidth)
+        if self.constants is None:
+            funcArgsList = [self.params, xPlotPoints]
+        else:
+            funcArgsList = [self.params, xPlotPoints, self.constants]
+        plt.plot(xPlotPoints, self.func(*funcArgsList), color=linecolor, linewidth=linewidth)
         ax = plt.gca()
 
         # Show labels, title and summary if requested

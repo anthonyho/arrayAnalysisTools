@@ -80,7 +80,7 @@ def singleExpKResidual(params, x, y):
     return params[0]*np.exp(-params[1]*x) + params[2] - y
 
 
-# ------ Double exponential with tau ------ #
+# ------ Double exponential with taus ------ #
 
 
 # Compute (A1*exp(-t/tau1) + A2)*exp(-t/tau2) + C
@@ -114,7 +114,7 @@ def doubleExpResidual(params, x, y):
     return params[0]*np.exp(-x*(1/params[1]+1/params[3])) + params[2]*np.exp(-x/params[3]) + params[4] - y
 
 
-# ------ Double exponential with k ------ #
+# ------ Double exponential with k's ------ #
 
 
 # Compute (A1*exp(-k1t) + A2)*exp(-k2t) + C
@@ -146,6 +146,71 @@ def doubleExpKPrime(params, x):
 #       params[4] = C
 def doubleExpKResidual(params, x, y):
     return params[0]*np.exp(-(params[1]+params[3])*x) + params[2]*np.exp(-params[3]*x) + params[4] - y
+
+
+# ------ Double exponential with taus, constant tau2 ------ #
+
+
+# Compute (A1*exp(-t/tau1) + A2)*exp(-t/tau2) + C
+# where params[0] = A1
+#       params[1] = tau1
+#       params[2] = A2
+#       params[3] = C
+#       constants[0] = tau2
+def doubleExpConstT2(params, x, constants):
+    return params[0]*np.exp(-x*(1/params[1]+1/constants[0])) + params[2]*np.exp(-x/constants[0]) + params[3]
+
+
+# Compute the Jacobian of doubleExpConstT2
+# Returns a 2D-ndarray of shape (len(x), len(params))
+def doubleExpConstT2Prime(params, x, constants):
+    partial_p0s = np.exp(-x*(1/params[1]+1/constants[0]))
+    partial_p1s = params[0]*x*np.exp(-x*(1/params[1]+1/constants[0]))/(params[1]**2)
+    partial_p2s = np.exp(-x/constants[0])
+    partial_p3s = np.ones(len(x))
+    return np.column_stack((partial_p0s, partial_p1s, partial_p2s, partial_p3s))
+
+
+# Compute the residual of (A1*exp(-t/tau1) + A2)*exp(-t/tau2) + C - y
+# where params[0] = A1
+#       params[1] = tau1
+#       params[2] = A2
+#       params[3] = C
+#       constants[0] = tau2
+def doubleExpConstT2Residual(params, x, y, constants):
+    return params[0]*np.exp(-x*(1/params[1]+1/constants[0])) + params[2]*np.exp(-x/constants[0]) + params[3] - y
+
+
+# ------ Double exponential with taus, constant tau2 and C ------ #
+
+
+# Compute (A1*exp(-t/tau1) + A2)*exp(-t/tau2) + C
+# where params[0] = A1
+#       params[1] = tau1
+#       params[2] = A2
+#       constants[0] = tau2
+#       constants[1] = C
+def doubleExpConstT2C(params, x, constants):
+    return params[0]*np.exp(-x*(1/params[1]+1/constants[0])) + params[2]*np.exp(-x/constants[0]) + constants[1]
+
+
+# Compute the Jacobian of doubleExpConstT2C
+# Returns a 2D-ndarray of shape (len(x), len(params))
+def doubleExpConstT2CPrime(params, x, constants):
+    partial_p0s = np.exp(-x*(1/params[1]+1/constants[0]))
+    partial_p1s = params[0]*x*np.exp(-x*(1/params[1]+1/constants[0]))/(params[1]**2)
+    partial_p2s = np.exp(-x/constants[0])
+    return np.column_stack((partial_p0s, partial_p1s, partial_p2s))
+
+
+# Compute the residual of (A1*exp(-t/tau1) + A2)*exp(-t/tau2) + C - y
+# where params[0] = A1
+#       params[1] = tau1
+#       params[2] = A2
+#       constants[0] = tau2
+#       constants[1] = C
+def doubleExpConstT2CResidual(params, x, y, constants):
+    return params[0]*np.exp(-x*(1/params[1]+1/constants[0])) + params[2]*np.exp(-x/constants[0]) + constants[1] - y
 
 
 # ------ Distributions ------ #
