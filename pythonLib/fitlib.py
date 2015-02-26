@@ -109,7 +109,7 @@ class lsqcurvefit:
                         markeredgecolor='r', markeredgewidth='3', markersize=12,
                         linecolor='b', linewidth='3', borderwidth='2.5',
                         xlabel=None, ylabel=None, title=None,
-                        fontsize=None, summaryfontsize=15, labelfontsize=20, tickfontsize=20,
+                        fontsize=None, summaryfontsize=18, labelfontsize=20, tickfontsize=20,
                         summary=True, paramNames=None, _useCurrFig=False):
 
        Optional arguments:
@@ -149,7 +149,7 @@ class lsqcurvefit:
     To plot multiple lists of fitObj side by side:
 
        fitlib.iteratePlotsMultiple(listlistFitObj, random=False, listTitle=None,
-                                   figsize=None, width=5, **kwargs)
+                                   figsize=None, width=5, titlefontsize=20, **kwargs)
 
        Required arguments:
        - listlistFitObj: list of list of lsqcurvefit objects to be plotted
@@ -159,6 +159,7 @@ class lsqcurvefit:
        - listTitle: sequence of the same length as listFitObj. List of title to be displayed as each plot
        - figsize: size of the figure. Override width
        - width: width and height of each individual subplot
+       - titlefotnsize: font size of the "super title" of all subplots
        Take the rest of the arguments as lsqcurvefit.plot()
 
 
@@ -376,37 +377,6 @@ class lsqcurvefit:
     def _compute_pValuesFromT(self):
         return stats.t.sf(np.abs(self.paramTvals), self.DOF)*2
 
-    # Public method to print summary of the fitting statistics
-    def printSummary(self, paramNames=None):
-        """Print a summary of the fitting statistics"""
-        # Make parameter names if not provided
-        if not paramNames:
-            paramNames = ["p[{:d}]".format(i) for i in range(len(self.params))]
-
-        # Define row format for tabular output
-        rowFormatHeader = "{:>15}" * 6
-        rowFormatBody = "{:>15}" + "{:>15.6g}" * 4 + "{:>15}"
-
-        # Showing summary
-        print "Fitted data with {}\n".format(self.func.__name__)
-
-        print rowFormatHeader.format("Parameter", "Estimate", "Std. error",
-                                     "t-statistic", "p-value", "bounds")
-        for name, est, se, tval, pval, bound in zip(paramNames, self.params,
-                                                    self.paramSEs, self.paramTvals,
-                                                    self.paramPvals, self.bounds):
-            print rowFormatBody.format(name, est, se, tval, pval, bound)
-
-        print "\nDegrees of freedom = {:d}".format(self.DOF)
-        print "Residual sum of squares = {:.6g}".format(self.RSS)
-        print "Reduced Chi-squared/residual variance/mean square error = {:.6g}".format(self.reChi2)
-        print "Standard error of regression = {:.6g}".format(self.SER)
-        print "R-squared = {:.6g}".format(self.R2)
-        print "Adjusted R-squared = {:.6g}".format(self.adjR2)
-        print "Number of iterations to convergence = {:d}".format(self.nit)
-
-        return
-
     # Make summary text in plot
     def _makeSummaryInPlot(self, paramNames=None):
         if paramNames:
@@ -424,12 +394,41 @@ class lsqcurvefit:
         paramStrList.append("Norm. SER: " + "{: .4g}".format(self.SER/self.func(*funcArgsList)))
         return '\n'.join(paramStrList)
 
+    # Public method to print summary of the fitting statistics
+    def printSummary(self, paramNames=None):
+        """Print a summary of the fitting statistics"""
+        # Make parameter names if not provided
+        if not paramNames:
+            paramNames = ["p[{:d}]".format(i) for i in range(len(self.params))]
+
+        # Define row format for tabular output
+        rowFormatHeader = "{:>15}" * 6
+        rowFormatBody = "{:>15}" + "{:>15.6g}" * 4 + "{:>15}"
+
+        # Showing summary
+        print "Fitted data with {}\n".format(self.func.__name__)
+        # Parameter estimates and statistics in tabular form
+        print rowFormatHeader.format("Parameter", "Estimate", "Std. error",
+                                     "t-statistic", "p-value", "bounds")
+        for name, est, se, tval, pval, bound in zip(paramNames, self.params,
+                                                    self.paramSEs, self.paramTvals,
+                                                    self.paramPvals, self.bounds):
+            print rowFormatBody.format(name, est, se, tval, pval, bound)
+        # The rest of the fitting statistics
+        print "\nDegrees of freedom = {:d}".format(self.DOF)
+        print "Residual sum of squares = {:.6g}".format(self.RSS)
+        print "Reduced Chi-squared/residual variance/mean square error = {:.6g}".format(self.reChi2)
+        print "Standard error of regression = {:.6g}".format(self.SER)
+        print "R-squared = {:.6g}".format(self.R2)
+        print "Adjusted R-squared = {:.6g}".format(self.adjR2)
+        print "Number of iterations to convergence = {:d}".format(self.nit)
+
     # Public method to plot data and fitted curve
     def plot(self, figsize=(7.5, 7.5), numPlotPoints=500,
              markeredgecolor='r', markeredgewidth='3', markersize=12,
              linecolor='b', linewidth='3', borderwidth='2.5',
              xlabel=None, ylabel=None, title=None,
-             fontsize=None, summaryfontsize=15, labelfontsize=20, tickfontsize=20,
+             fontsize=None, summaryfontsize=18, labelfontsize=20, tickfontsize=20,
              summary=True, paramNames=None, _useCurrFig=False):
         """Plot the fitted curve against the datapoints """
         # Compute the x axis points for plotting the fitted line
@@ -439,12 +438,12 @@ class lsqcurvefit:
         if not _useCurrFig:
             fig = plt.figure(figsize=figsize)
             fig.patch.set_facecolor('w')
-        plt.plot(self.x, self.y, marker='o', linestyle='None', color='w',
-                 markeredgecolor=markeredgecolor, markeredgewidth=markeredgewidth, markersize=markersize)
         if self.constants is None:
             funcArgsList = [self.params, xPlotPoints]
         else:
             funcArgsList = [self.params, xPlotPoints, self.constants]
+        plt.plot(self.x, self.y, marker='o', linestyle='None', color='w',
+                 markeredgecolor=markeredgecolor, markeredgewidth=markeredgewidth, markersize=markersize)
         plt.plot(xPlotPoints, self.func(*funcArgsList), color=linecolor, linewidth=linewidth)
         ax = plt.gca()
 
@@ -464,15 +463,19 @@ class lsqcurvefit:
                     fontsize=summaryfontsize, verticalalignment='top', horizontalalignment='right')
 
         # Make it pretty
+        # Set width of plot border 
         plt.rc('axes', linewidth=borderwidth)
+        # Set axis ticks to scientific notation
         ax.ticklabel_format(axis='x', style='sci', scilimits=(-3, 3))
         ax.ticklabel_format(axis='y', style='sci', scilimits=(-4, 4))
+        # Set individual fontsizes if fontsize is not specified
         if fontsize is None:
             plt.rc('xtick', labelsize=tickfontsize)
             plt.rc('ytick', labelsize=tickfontsize)
             ax.xaxis.label.set_fontsize(labelfontsize)
             ax.yaxis.label.set_fontsize(labelfontsize)
             ax.title.set_fontsize(labelfontsize)
+        # Set all fontsizes to fontsize if fontsize is specified
         else:
             plt.rc('xtick', labelsize=fontsize)
             plt.rc('ytick', labelsize=fontsize)
@@ -518,7 +521,7 @@ class lsqcurvefit:
     # Static method to iterate through the plots of multiple lists of fitObj at the same time
     @staticmethod
     def iteratePlotsMultiple(listlistFitObj, random=False, listTitle=None,
-                             figsize=None, width=5, **kwargs):
+                             figsize=None, width=5, titlefontsize=20, **kwargs):
         """Iterate through the plots of multiple lists of fitObj at the same time
         Press q to quit, k to keep current plot open, random=True to show plots in randomized order
         """
@@ -545,7 +548,7 @@ class lsqcurvefit:
                 plt.subplot(1, nSubplots, j+1)
                 listlistFitObj[j][i].plot(**kwargs)
             if listTitle is not None:
-                plt.suptitle(listTitle[i], fontsize=20, y=0.99)  # need to fix fontsize option
+                plt.suptitle(listTitle[i], fontsize=titlefontsize, y=0.99)
             fig.tight_layout(pad=2.5)
             plt.show(block=False)
             response = raw_input()
@@ -562,6 +565,7 @@ class lsqcurvefit:
     def parseFitParamFromFile(fitParamFilePath):
         """Parse the fit parameters to be passed to lsqcurvefit from a file"""
         # Define default values for the fit parameters that will be passed to the fit function
+        # This should be updated when new argument is added to fitlib.lsqcurvefit()
         fitParamDict = {'func': None,
                         'params0': None,
                         'jac': None,
