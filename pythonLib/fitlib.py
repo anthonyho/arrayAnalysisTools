@@ -564,9 +564,10 @@ class lsqcurvefit:
         # Define default values for the fit parameters that will be passed to the fit function
         fitParamDict = {'func': None,
                         'params0': None,
+                        'jac': None,
+                        'constants': None,
                         'bounds': None,
                         'constraints': (),
-                        'jac': None,
                         'sigma': None,
                         'method': 'SLSQP',
                         'maxiter': 200,
