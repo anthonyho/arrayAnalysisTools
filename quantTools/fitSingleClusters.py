@@ -23,6 +23,7 @@ def main():
     # Get options and arguments from command line
     parser = argparse.ArgumentParser(description="fit single clusters")
     parser.add_argument('-n', '--numCore', type=int, default=1, help="number of cores to use (default=1)")
+    parser.add_argument('-v', '--verbose', type=int, default=0, help="verbosity of progress. 0 = no verbosity. (default=0)")
     parser.add_argument('fitParamFilePath', help="path to the file that specifies fitting parameters")
     parser.add_argument('inputFilePath', help="path to the file containing the raw signals of the clusters to be fitted")
     parser.add_argument('outputFilePath', help="path to the output file")
@@ -48,8 +49,8 @@ def main():
     allTimes = parselib.splitConcatedDFColumnIntoNDarray(allClusters['times'], ':')
 
     # Fit single clusters
-    fitResults = Parallel(n_jobs=args.numCore, verbose=10)(delayed(fitlib.lsqcurvefit)(x=time, y=signal, **fitParamDict)
-                                                           for time, signal in izip(allTimes, allSignals))
+    fitResults = Parallel(n_jobs=args.numCore, verbose=args.verbose)(delayed(fitlib.lsqcurvefit)(x=time, y=signal, **fitParamDict)
+                                                                     for time, signal in izip(allTimes, allSignals))
 
     # Add attributes as defined in outputAttrs as columns in the allClusters dataframe
     for attr in outputAttrs:
