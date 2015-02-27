@@ -1,6 +1,6 @@
 # Anthony Ho, ahho@stanford.edu, 2/3/2015
 # Summary statistics methods adopted from Lauren Chircus's NLS class
-# Last update 2/15/2015
+# Last update 2/26/2015
 """Library of tools for fitting and analysis"""
 
 
@@ -105,16 +105,21 @@ class lsqcurvefit:
 
     To plot:
 
-       ax = fitObj.plot(figsize=(7.5, 7.5), numPlotPoints=500,
-                        markeredgecolor='r', markeredgewidth='3', markersize=12,
-                        linecolor='b', linewidth='3', borderwidth='2.5',
-                        xlabel=None, ylabel=None, title=None,
+       ax = fitObj.plot(figsize=(7.5, 7.5), numPlotPoints=500, norm=False,
+                        markeredgecolor='r', markeredgewidth=3, markersize=12,
+                        linecolor='b', linewidth=3, borderwidth=2.5,
+                        xlabel=None, ylabel=None, title=None, xlim=None, ylim=None,
                         fontsize=None, summaryfontsize=18, labelfontsize=20, tickfontsize=20,
-                        summary=True, paramNames=None, _useCurrFig=False):
+                        summary=True, paramNames=None)
 
        Optional arguments:
        - figsize: (w,h) tuple in inches
        - numPlotPoints: number of points to use for plotting fitted curve
+       - norm: 'first' to normalize to the first datapoint
+               'last' to normalize to the last datapoint
+               'max' to normalize to the maximum datapoint
+               'min' to normalize to the minimium datapoint
+               False to not do any normalization
        - markeredgecolor: color of the datapoints
        - markeredgewidth: edge width of the datapoints
        - markersize: size of the datapoints
@@ -124,6 +129,8 @@ class lsqcurvefit:
        - xlabel: x label
        - ylaebl: y label
        - title: title
+       - xlim: tuple to indicate the x limits
+       - ylim: tuple to indicate the y limits
        - fontsize: set all font size, overriding summaryfontsize, labelfontsize, and tickfontsize
        - summaryfontsize: font size of the summary text
        - labelfontsize: font size of the labels and title
@@ -133,7 +140,25 @@ class lsqcurvefit:
        - paramNames: names of the parameters to display
 
 
-    To plot a list of fitObj:
+    To plot a list of fitObj in the same figure:
+
+       fitlib.plotMultiple(listFitObj, figsize=(7.5, 7.5), colormap='gist_rainbow',
+                           listLabel=None, legendloc=1, legendfontsize=20, legendwidth=2.5, **kwargs):
+
+       Required arguments:
+       - listFitObj: list of lsqcurvefit objects to be plotted
+
+       Optional arguments:
+       - figsize: size of the figure
+       - colormap: colormap to use to the plots
+       - listTitle: sequence of the same length as listFitObj. List of labels to be displayed in the legend
+       - legendloc: location of the legend if listLabel is provided
+       - legendfontsize: font size of the legend if listLabel is provided
+       - legendwidth: borderwidth of the legend box if listLabel is provided
+       Take the rest of the arguments as lsqcurvefit.plot()
+
+
+    To iteratively plot a list of fitObj:
 
        fitlib.iteratePlots(listFitObj, random=False, listTitle=None, **kwargs)
 
@@ -146,7 +171,7 @@ class lsqcurvefit:
        Take the rest of the arguments as lsqcurvefit.plot()
 
 
-    To plot multiple lists of fitObj side by side:
+    To iteratively plot multiple lists of fitObj side by side:
 
        fitlib.iteratePlotsMultiple(listlistFitObj, random=False, listTitle=None,
                                    figsize=None, width=5, titlefontsize=20, **kwargs)
@@ -424,30 +449,49 @@ class lsqcurvefit:
         print "Number of iterations to convergence = {:d}".format(self.nit)
 
     # Public method to plot data and fitted curve
-    def plot(self, figsize=(7.5, 7.5), numPlotPoints=500,
-             markeredgecolor='r', markeredgewidth='3', markersize=12,
-             linecolor='b', linewidth='3', borderwidth='2.5',
-             xlabel=None, ylabel=None, title=None,
+    def plot(self, figsize=(7.5, 7.5), numPlotPoints=500, norm=False,
+             markeredgecolor='r', markeredgewidth=3, markersize=12,
+             linecolor='b', linewidth=3, borderwidth=2.5,
+             xlabel=None, ylabel=None, title=None, xlim=None, ylim=None,
              fontsize=None, summaryfontsize=18, labelfontsize=20, tickfontsize=20,
-             summary=True, paramNames=None, _useCurrFig=False):
+             summary=True, paramNames=None,
+             _label=None, _useCurrFig=False):
         """Plot the fitted curve against the datapoints """
         # Compute the x axis points for plotting the fitted line
         xPlotPoints = np.arange(min(self.x), max(self.x)+1, float(max(self.x)-min(self.x))/numPlotPoints)
 
-        # Plot the data and fitted line
+        # Make figure
         if not _useCurrFig:
             fig = plt.figure(figsize=figsize)
             fig.patch.set_facecolor('w')
+        # Construct argument list to pass to func()
         if self.constants is None:
             funcArgsList = [self.params, xPlotPoints]
         else:
             funcArgsList = [self.params, xPlotPoints, self.constants]
-        plt.plot(self.x, self.y, marker='o', linestyle='None', color='w',
+        # Figure out normalization
+        if norm == 'first':
+            normFactor = self.y[0]
+        elif norm == 'last':
+            normFactor = self.y[-1]
+        elif norm == 'max':
+            normFactor = max(self.y)
+        elif norm == 'min':
+            normFactor = min(self.y)
+        else:
+            normFactor = 1
+        # Plot the data and fitted line
+        plt.plot(self.x, self.y/normFactor, marker='o', linestyle='None', color='w',
                  markeredgecolor=markeredgecolor, markeredgewidth=markeredgewidth, markersize=markersize)
-        plt.plot(xPlotPoints, self.func(*funcArgsList), color=linecolor, linewidth=linewidth)
+        plt.plot(xPlotPoints, self.func(*funcArgsList)/normFactor,
+                 color=linecolor, linewidth=linewidth, label=_label)
         ax = plt.gca()
 
-        # Show labels, title and summary if requested
+        # Set limits and show labels, title and summary if requested
+        if xlim:
+            ax.set_xlim(xlim)
+        if ylim:
+            ax.set_ylim(ylim)
         if xlabel:
             ax.set_xlabel(xlabel)
         if ylabel:
@@ -483,6 +527,7 @@ class lsqcurvefit:
             ax.yaxis.label.set_fontsize(fontsize)
             ax.title.set_fontsize(fontsize)
 
+        # Show figure
         if not _useCurrFig:
             plt.show(block=False)
 
@@ -490,19 +535,23 @@ class lsqcurvefit:
 
     # Static method to plot multiple fitObj in the same plot
     @staticmethod
-    def plotMultiple(listFitObj, figsize=(7.5, 7.5), **kwargs):
+    def plotMultiple(listFitObj, figsize=(7.5, 7.5), colormap='gist_rainbow',
+                     listLabel=None, legendloc=1, legendfontsize=20, legendwidth=2.5, **kwargs):
         """Plot multiple fitObj in the same plot"""
-        # Override arguments that shouldn't be accessible by users:                                                                                                                                                                                                                                                 
+        # Override arguments that shouldn't be accessible by users:
         kwargs['_useCurrFig'] = True
         kwargs['summary'] = False
         kwargs.pop('linecolor', None)
         kwargs.pop('markeredgecolor', None)
+        kwargs.pop('_label', None)
 
-        # Get number of fitObj
+        # Constants
         nFitObj = len(listFitObj)
+        if not listLabel:
+            listLabel = [None] * nFitObj
 
         # Define color map
-        cm = plt.get_cmap('gist_rainbow')
+        cm = plt.get_cmap(colormap)
 
         # Make figure
         fig = plt.figure(figsize=figsize)
@@ -510,8 +559,15 @@ class lsqcurvefit:
 
         # Plot all fitObjs
         for i in range(nFitObj):
-            ax = listFitObj[i].plot(linecolor=cm(1.*i/nFitObj), markeredgecolor=cm(1.*i/nFitObj), **kwargs)
+            ax = listFitObj[i].plot(linecolor=cm(1.*i/nFitObj), markeredgecolor=cm(1.*i/nFitObj),
+                                    _label=listLabel[i], **kwargs)
 
+        # Show legend if requested
+        if any(listLabel):
+            legend = plt.legend(loc=legendloc, numpoints=1, fontsize=legendfontsize)
+            legend.get_frame().set_linewidth(legendwidth)
+
+        # SHow figure
         plt.show(block=False)
 
         return ax
