@@ -27,8 +27,48 @@ def makepretty(ax):
     ax.yaxis.label.set_fontsize(16)
     ax.title.set_fontsize(16)
 
-    return
 
+# Handy function to take the commonly used plot modifiers and 
+# apply them to plot
+def setproperties(figsize=(10, 10), xlim=None, ylim=None, xlabel=None, ylabel=None,
+                  title=None, legend=None, legendloc=1,
+                  logx=False, logy=False, borderwidth=2.5,
+                  legendfontsize=20, tickfontsize=20, labelfontsize=20, titlefontsize=18):
+
+    # Get figure and axis handles
+    fig = plt.gcf()
+    ax = plt.gca()
+    
+    # Set background color to white
+    fig.patch.set_facecolor('w')
+
+    plt.rcParams['figure.figsize'] = figsize
+
+    # Set limits and show labels, title and summary if requested
+    if xlim:
+        ax.set_xlim(xlim)
+    if ylim:
+        ax.set_ylim(ylim)
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+    if title:
+        ax.set_title(title, y=1.02)
+    if legend:
+        plt.legend(loc=legendloc, numpoints=1, fontsize=legendfontsize)
+    if logx:
+        ax.set_xscale('log')
+    if logy:
+        ax.set_yscale('log')
+
+    # Make it pretty
+    plt.rc('axes', linewidth=borderwidth)
+    plt.rc('xtick', labelsize=tickfontsize)
+    plt.rc('ytick', labelsize=tickfontsize)
+    ax.xaxis.label.set_fontsize(labelfontsize)
+    ax.yaxis.label.set_fontsize(labelfontsize)
+    ax.title.set_fontsize(titlefontsize)
 
 # Make rank-sorted plot from a sequence
 def rankSortedPlot(series, ascending=False,
@@ -82,7 +122,7 @@ def rankSortedPlot(series, ascending=False,
     return ax
 
 
-# 
+# ---
 def rankSortedPlotMultiple(listSeries, listnames=None, figsize=(7.5, 7.5), **kwargs):
     """Plot rank-sorted plots of multiple sequences"""
     fig = plt.figure(figsize=figsize)
