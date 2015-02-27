@@ -432,7 +432,7 @@ class lsqcurvefit:
              summary=True, paramNames=None, _useCurrFig=False):
         """Plot the fitted curve against the datapoints """
         # Compute the x axis points for plotting the fitted line
-        xPlotPoints = np.arange(min(self.x), max(self.x)+1, (max(self.x)-min(self.x))/numPlotPoints)
+        xPlotPoints = np.arange(min(self.x), max(self.x)+1, float(max(self.x)-min(self.x))/numPlotPoints)
 
         # Plot the data and fitted line
         if not _useCurrFig:
@@ -485,6 +485,34 @@ class lsqcurvefit:
 
         if not _useCurrFig:
             plt.show(block=False)
+
+        return ax
+
+    # Static method to plot multiple fitObj in the same plot
+    @staticmethod
+    def plotMultiple(listFitObj, figsize=(7.5, 7.5), **kwargs):
+        """Plot multiple fitObj in the same plot"""
+        # Override arguments that shouldn't be accessible by users:                                                                                                                                                                                                                                                 
+        kwargs['_useCurrFig'] = True
+        kwargs['summary'] = False
+        kwargs.pop('linecolor', None)
+        kwargs.pop('markeredgecolor', None)
+
+        # Get number of fitObj
+        nFitObj = len(listFitObj)
+
+        # Define color map
+        cm = plt.get_cmap('gist_rainbow')
+
+        # Make figure
+        fig = plt.figure(figsize=figsize)
+        fig.patch.set_facecolor('w')
+
+        # Plot all fitObjs
+        for i in range(nFitObj):
+            ax = listFitObj[i].plot(linecolor=cm(1.*i/nFitObj), markeredgecolor=cm(1.*i/nFitObj), **kwargs)
+
+        plt.show(block=False)
 
         return ax
 
