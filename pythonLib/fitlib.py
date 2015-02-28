@@ -545,7 +545,7 @@ class lsqcurvefit:
         kwargs.pop('markeredgecolor', None)
         kwargs.pop('_label', None)
 
-        # Constants
+        # Initialize
         nFitObj = len(listFitObj)
         if not listLabel:
             listLabel = [None] * nFitObj
@@ -567,7 +567,7 @@ class lsqcurvefit:
             legend = plt.legend(loc=legendloc, numpoints=1, fontsize=legendfontsize)
             legend.get_frame().set_linewidth(legendwidth)
 
-        # SHow figure
+        # Show figure
         plt.show(block=False)
 
         return ax
