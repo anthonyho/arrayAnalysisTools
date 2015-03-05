@@ -56,7 +56,7 @@ def main():
 
     allClustersIndAnnt = allClusters.set_index('annotation')
     allClustersIndAnnt.insert(1, 'count', groupedCounts)
-    allClustersGroupedSorted = allClustersIndAnnt.sort('count', ascending=False).reset_index()
+    allClustersGroupedSorted = allClustersIndAnnt.reset_index().sort(['count', 'annotation'], ascending=[False, True])
 
     # Write to output file
     allClustersGroupedSorted.to_csv(args.outputFilePrefix+groupedClustersExt, sep='\t', index=False)
