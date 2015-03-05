@@ -19,7 +19,6 @@ def main():
 
     # Get options and arguments from command line
     parser = argparse.ArgumentParser(description="compress variants")
-    parser.add_argument('-c', '--count', action='store_true', help="set to true if the count of sequences within a barcode block is at the end of annotation (default=false)")
     parser.add_argument('inputFilePath', help="path to the input file")
     parser.add_argument('outputFilePrefix', help="path to the output file without extension")
     args = parser.parse_args()
@@ -40,9 +39,8 @@ def main():
     # Read clusters from inputFile
     allClusters = pd.read_csv(args.inputFilePath, sep='\t')
 
-    # Drop the last colon-separated field (barcode block count) from annotations if count mode is on
-    if args.count:
-        allClusters['annotation'] = allClusters['annotation'].replace(":[0-9]+$", ":", regex=True)  # need to check regex
+    # Drop the last colon-separated field (barcode block count) from annotations (but keep the last colon!)
+    allClusters['annotation'] = allClusters['annotation'].replace(":[0-9]+$", ":", regex=True)
 
     # Group by annotation
     grouped = allClusters.groupby('annotation')

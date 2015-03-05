@@ -153,7 +153,7 @@ def main():
     if args.count:
         allAnnotationsAndCounts = allAnnotations + ':' + allQuerySeqs['count'].map(str)
     else:
-        allAnnotationsAndCounts = allAnnotations
+        allAnnotationsAndCounts = allAnnotations + ':'
 
     # Insert allAnnotations as a column in allQuerySeqs at the user-specific location
     allQuerySeqs.insert(args.outCol, 'annotation', allAnnotationsAndCounts)
