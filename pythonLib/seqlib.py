@@ -8,6 +8,15 @@ import numpy as np
 import string
 
 
+# Get all other bases as a list
+def allOtherBases(base):
+    allBases = ['A', 'T', 'C', 'G']
+    base = base.upper()
+    if base in allBases:
+        allBases.remove(base)
+    return allBases
+
+
 # Find reverse complement
 def reverseComplement(seq):
     complements = string.maketrans("ATCGN", "TAGCN")
