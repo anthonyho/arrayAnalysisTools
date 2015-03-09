@@ -9,8 +9,11 @@ import string
 
 
 # Get all other bases as a list
-def allOtherBases(base):
-    allBases = ['A', 'T', 'C', 'G']
+def allOtherBases(base, rna=False):
+    if rna:
+        allBases = ['A', 'U', 'C', 'G']
+    else:
+        allBases = ['A', 'T', 'C', 'G']
     base = base.upper()
     if base in allBases:
         allBases.remove(base)

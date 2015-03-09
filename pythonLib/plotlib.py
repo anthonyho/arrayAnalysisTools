@@ -350,7 +350,7 @@ def plotVariants(df, listAnnt, field='params2', transform=None, unit='min', **kw
 
 # Plot the activities and counts of single mutants given a df of all clusters and list of positions
 # Wrapper of plotVariants, which is a wrapper of pltoSingleMutants
-def plotSingleMutants(df, consensus, listPos, muttype='m',
+def plotSingleMutants(df, consensus, listSeqPos, muttype='m',
                       colorbymut=True, fullname=False, collapse=False, **kwargs):
     """Plot the activities and counts of single mutants given a df of all clusters, name of consensus 
     sequence, and list of positions
@@ -368,14 +368,14 @@ def plotSingleMutants(df, consensus, listPos, muttype='m',
     numBarDict = {'m': 3, 'i': 3, 'd': 1}
     numBar = np.sum([numBarDict.get(i, 0) for i in muttype])
     gap = int(numBar) / 3
-    xtickspos = [range((numBar+gap)*pos+1, (numBar+gap)*pos+numBar+1) for pos in range(0, len(listPos))]
+    xtickspos = [range((numBar+gap)*pos+1, (numBar+gap)*pos+numBar+1) for pos in range(0, len(listBasePos))]
     xtickspos = np.array([item for sublist in xtickspos for item in sublist])
 
     # Make the list of annotations to plot
     listAnnt = []
     listName = []
     listColor = []
-    for pos in listPos:
+    for pos in listSeqPos:
 
         # Add mismatches
         if 'm' in muttype:
