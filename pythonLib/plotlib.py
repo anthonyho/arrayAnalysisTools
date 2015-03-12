@@ -1,26 +1,27 @@
 # Anthony Ho, ahho@stanford.edu, 1/15/2015
-# Last update 2/27/2015
+# Last update 3/10/2015
 """Python module containing some handy plotting tools"""
 
 
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib.ticker import LogFormatter
 import seaborn as sns
 import pandas as pd
 import seqlib
 
 
 # Handy function to set the commonly used plot modifiers and apply to plot/figure
-def setproperties(fig=None, ax=None, figsize=(10, 10),
+def setproperties(fig=None, ax=None, figsize=None,
                   suptitle=None, title=None,
                   legend=None, legendloc=1, legendwidth=2.5,
                   xlabel=None, ylabel=None, xlim=None, ylim=None,
                   scix=False, sciy=False, scilimitsx=(-3, 3), scilimitsy=(-3, 3),
                   logx=False, logy=False, majorgrid=None, minorgrid=None,
-                  borderwidth=2.5, pad=1.6,
-                  fontsize=None, legendfontsize=20, tickfontsize=20, 
-                  labelfontsize=20, titlefontsize=18,
+                  borderwidth=2.5, tight=True, pad=1.6,
+                  fontsize=None, legendfontsize=20, tickfontsize=20,
+                  labelfontsize=20, titlefontsize=18, suptitlefontsize=20,
                   xticklabelrot=None, yticklabelrot=None):
     """ Convenient tool to set properties of a plot in a single command"""
     # Get figure and axis handles
@@ -32,25 +33,26 @@ def setproperties(fig=None, ax=None, figsize=(10, 10),
     # Set background color to white
     fig.patch.set_facecolor('w')
 
-    # Define figure size
-    plt.rcParams['figure.figsize'] = figsize
+    # Define figure size if provided
+    if figsize:
+        fig.set_size_inches(figsize, forward=True)
 
     # Set titles if provided
-    if suptitle:
+    if suptitle is not None:
         if fontsize is None:
-            fig.suptitle(suptitle, fontsize=titlefontsize, y=0.99)
+            fig.suptitle(suptitle, fontsize=suptitlefontsize, y=0.99)
         else:
             fig.suptitle(suptitle, fontsize=fontsize, y=0.99)
-    if title:
+    if title is not None:
         ax.set_title(title, y=1.02)
     # Show legend if requested
     if legend:
         legend = plt.legend(loc=legendloc, numpoints=1, fontsize=legendfontsize)
         legend.get_frame().set_linewidth(legendwidth)
     # Set x and y labels if provided
-    if xlabel:
+    if xlabel is not None:
         ax.set_xlabel(xlabel)
-    if ylabel:
+    if ylabel is not None:
         ax.set_ylabel(ylabel)
     # Set x and y limits if provided
     if xlim:
@@ -72,37 +74,39 @@ def setproperties(fig=None, ax=None, figsize=(10, 10),
         ax.grid(b=majorgrid, which='major')
     if minorgrid is not None:
         ax.grid(b=minorgrid, which='minor')
-    
+
     # Rotate x and y tick labels if requested
-    if xticklabelrot:
-        xticklabels = ax.get_xticklabels() 
+    if xticklabelrot is not None:
+        xticklabels = ax.get_xticklabels()
         for ticklabel in xticklabels:
             ticklabel.set_rotation(xticklabelrot)
-    if yticklabelrot:
-        yticklabels = ax.get_yticklabels() 
+    if yticklabelrot is not None:
+        yticklabels = ax.get_yticklabels()
         for ticklabel in yticklabels:
             ticklabel.set_rotation(yticklabelrot)
 
-    # Set borderwidth
-    plt.rc('axes', linewidth=borderwidth)
+    # Set borderwidth (not visible if using seaborn default theme)
+    for axis in ['top','bottom','left','right']:
+        ax.spines[axis].set_linewidth(borderwidth)
 
     # Set individual fontsizes if fontsize is not specified
     if fontsize is None:
-        plt.rc('xtick', labelsize=tickfontsize)
-        plt.rc('ytick', labelsize=tickfontsize)
+        plt.setp(ax.get_xticklabels(), fontsize=tickfontsize)
+        plt.setp(ax.get_yticklabels(), fontsize=tickfontsize)
         ax.xaxis.label.set_fontsize(labelfontsize)
         ax.yaxis.label.set_fontsize(labelfontsize)
         ax.title.set_fontsize(titlefontsize)
     # Set all fontsizes to fontsize if fontsize is specified
     else:
-        plt.rc('xtick', labelsize=fontsize)
-        plt.rc('ytick', labelsize=fontsize)
+        plt.setp(ax.get_xticklabels(), fontsize=fontsize)
+        plt.setp(ax.get_yticklabels(), fontsize=fontsize)
         ax.xaxis.label.set_fontsize(fontsize)
         ax.yaxis.label.set_fontsize(fontsize)
         ax.title.set_fontsize(fontsize)
 
     # Set tight figure and padding
-    fig.tight_layout(pad=pad)
+    if tight:
+        fig.tight_layout(pad=pad)
 
 
 # Handy function to make a plot look better
@@ -189,8 +193,8 @@ def rankSortedPlotMultiple(listSeries, listName=None, colormap='gist_rainbow',
 
 
 # Plot box and/or violin plots of variant activities along with their counts
-# This is the most low level of the plotActCount-related script that is not 
-# intended to be used on its own; consider using plotVariants or 
+# This is the most low level of the plotActCount-related script that is not
+# intended to be used on its own; consider using plotVariants or
 # plotSingleMutants instead
 def plotActCount(listVarDF, field, listName=None, color=None,
                  transform=None, ref=None, plotmode='b', bootstrap=2000, inner=None,
@@ -226,7 +230,7 @@ def plotActCount(listVarDF, field, listName=None, color=None,
                     else varDF['annotation'].iloc[0]
                     for varDF in listVarDF]
 
-    # Transform the variants' activities according to the transform function 
+    # Transform the variants' activities according to the transform function
     # if it is provided
     if transform:
         listAct = [transform(varDF[field].values) for varDF in listVarDF]
@@ -248,7 +252,7 @@ def plotActCount(listVarDF, field, listName=None, color=None,
     if 'b' in plotmode and 'v' in plotmode:
         axBox = axes[0]
         axViolin = axes[1]
-    elif 'b' in plotmode and not 'v' in plotmode:
+    elif 'b' in plotmode and 'v' not in plotmode:
         axBox = axes[0]
     elif 'b' not in plotmode and 'v' in plotmode:
         axViolin = axes[0]
@@ -282,7 +286,7 @@ def plotActCount(listVarDF, field, listName=None, color=None,
 
     if show:
         plt.show(block=False)
-    
+
     return fig, fig.axes
 
 
@@ -336,6 +340,10 @@ def plotVariants(df, listAnnt, field='params2', transform=None, unit='min', **kw
         kwargs['logAct'] = True
         kwargs['actLabel'] = r'$\mathrm{\mathsf{k_{obs}\ fold\ change}}$'
         kwargs['ref'] = 1
+    elif transform is None:
+        def transformFunc(x): return x
+        if computeRefFromAnnt:
+            kwargs['ref'] = transformFunc(df2.loc[[refAnnt]][field]).median()
     else:
         transformFunc = transform
         if computeRefFromAnnt:
@@ -352,7 +360,7 @@ def plotVariants(df, listAnnt, field='params2', transform=None, unit='min', **kw
 # Wrapper of plotVariants, which is a wrapper of pltoSingleMutants
 def plotSingleMutants(df, consensus, listSeqPos, muttype='m',
                       colorbymut=True, fullname=False, collapse=False, **kwargs):
-    """Plot the activities and counts of single mutants given a df of all clusters, name of consensus 
+    """Plot the activities and counts of single mutants given a df of all clusters, name of consensus
     sequence, and list of positions
     This function defaults to plotting time/rate constants, but can be used to plot something else too"""
     # Define constants
@@ -368,7 +376,7 @@ def plotSingleMutants(df, consensus, listSeqPos, muttype='m',
     numBarDict = {'m': 3, 'i': 3, 'd': 1}
     numBar = np.sum([numBarDict.get(i, 0) for i in muttype])
     gap = int(numBar) / 3
-    xtickspos = [range((numBar+gap)*pos+1, (numBar+gap)*pos+numBar+1) for pos in range(0, len(listBasePos))]
+    xtickspos = [range((numBar+gap)*pos+1, (numBar+gap)*pos+numBar+1) for pos in range(0, len(listSeqPos))]
     xtickspos = np.array([item for sublist in xtickspos for item in sublist])
 
     # Make the list of annotations to plot
@@ -391,7 +399,7 @@ def plotSingleMutants(df, consensus, listSeqPos, muttype='m',
             listAnnt.extend(mAnnts)
             listName.extend(mNames)
             listColor.extend(mColors)
-        
+
         # Add insertions
         if 'i' in muttype:
             # Make the list of annotations of the 4 possible insertions at the current position
@@ -436,3 +444,167 @@ def plotSingleMutants(df, consensus, listSeqPos, muttype='m',
 
     return plotVariants(df, listAnnt, listName=listName, color=listColor, _xticks=xtickspos,
                         xticklabelrot=90, **kwargs)
+
+
+# Draw a box around a specific cell in a heatmap
+def _drawBox(ax, xpos, ypos, color='g', linewidth=4):
+    ax.plot([xpos, xpos], [ypos, ypos+1], color=color, linewidth=linewidth)
+    ax.plot([xpos+1, xpos+1], [ypos, ypos+1], color=color, linewidth=linewidth)
+    ax.plot([xpos, xpos+1], [ypos, ypos], color=color, linewidth=linewidth)
+    ax.plot([xpos, xpos+1], [ypos+1, ypos+1], color=color, linewidth=linewidth)
+    return
+
+
+# High level function to plot base triple heat maps
+def plotBaseTriples(dfUnqClusters, dfMut, field='params2.median', transform=None, ref=None,
+                    orderBaseTriple=None, figsize=(12, 12), suptitle=None, actLabel=None,
+                    vmin=None, vmax=None, cmap=None, c_bad='0.65', robust=True,
+                    logscale=False, unit='min', show=True, **kwargs):
+
+    # Define unit. Default is min
+    if unit in ['second', 's', 'sec']:
+        unitTime = 1
+    else:
+        unitTime = 60
+
+    # Make dfUnqClusters indexed by annotation if not already
+    if dfUnqClusters.index.name == 'annotation':
+        dfUnqClusters2 = dfUnqClusters.copy()
+    else:
+        dfUnqClusters2 = dfUnqClusters.set_index('annotation')
+
+    # See if user has provided an reference annotation; if so, compute
+    # reference activity from reference annotation
+    computeRefFromAnnt = isinstance(ref, basestring)
+
+    # Define some commonly used transform functions
+    if transform == 'kobs':
+        def transformFunc(x): return 1. / x * unitTime
+        logscale = False
+        actLabel = r'$\mathrm{\mathsf{k_{obs}\ (min^{-1})}}$'
+        default_cmap = 'YlOrRd'
+        if computeRefFromAnnt:
+            ref = transformFunc(dfUnqClusters2.loc[ref][field])
+    elif transform == 'logkobs':
+        def transformFunc(x): return 1. / x * unitTime
+        logscale = True
+        actLabel = r'$\mathrm{\mathsf{k_{obs}\ (min^{-1})}}$'
+        default_cmap = 'YlOrRd'
+        if computeRefFromAnnt:
+            ref = transformFunc(dfUnqClusters2.loc[ref][field])
+    elif transform == 'kobsfold':
+        if computeRefFromAnnt:
+            ref = (1. / dfUnqClusters2.loc[ref][field] * unitTime)
+        def transformFunc(x): return ref / (1. / x * unitTime)
+        logscale = False
+        actLabel = r'$\mathrm{\mathsf{k_{obs}\ fold\ change}}$'
+        default_cmap = 'YlOrRd_r'
+    elif transform == 'logkobsfold':
+        if computeRefFromAnnt:
+            ref = (1. / dfUnqClusters2.loc[ref][field] * unitTime)
+        def transformFunc(x): return ref / (1. / x * unitTime)
+        logscale = True
+        actLabel = r'$\mathrm{\mathsf{k_{obs}\ fold\ change}}$'
+        default_cmap = 'YlOrRd_r'
+    elif transform is None:
+        def transformFunc(x): return x
+        default_cmap = 'YlOrRd'
+        if computeRefFromAnnt:
+            ref = transformFunc(dfUnqClusters2.loc[ref][field])
+    else:
+        transformFunc = transform
+        if computeRefFromAnnt:
+            ref = transformFunc(dfUnqClusters2.loc[ref][field])
+        default_cmap = 'YlOrRd'
+
+    # Get the reordering index of 3 bases within the base triple if orderBaseTriple is provided
+    # First base is the non-base-paired base, last two bases are base paired
+    if orderBaseTriple is not None:
+        listSeqPos = [mut[:-1] for mut in dfMut['mutations'][0]]
+        orderListSeqPos = [listSeqPos.index(seqPos) for seqPos in orderBaseTriple]
+    else:
+        orderListSeqPos = [0, 1, 2]
+
+    # Construct a new series of the transformed activity as specified by field
+    # of the all the base triple variants
+    seriesAct = transformFunc(dfUnqClusters2.loc[dfMut['annotation']][field])
+
+    # Get multiindex from the list of tuples of mutations in dfMut 
+    # and reassign index as multiindex
+    seriesAct.index = pd.MultiIndex.from_tuples(dfMut['mutations'])
+
+    # Reorder index levels according to orderListSeqPos
+    seriesAct = seriesAct.reorder_levels(orderListSeqPos)
+    
+    # Get the finite numbers for calculations
+    seriesAct_finite = seriesAct[np.isfinite(seriesAct)]
+
+    # Get all 4 mutations at the each of the base position
+    listMutFirstBase = seriesAct.index.levels[0]
+    listMutSecondBase = seriesAct.index.levels[1]
+    listMutThirdBase = seriesAct.index.levels[2][::-1]
+    
+    # Find the multi-index of the WT variant
+    WT_firstbase = [i for i, mut in enumerate(listMutFirstBase) if mut[0] == mut[-1]][0]
+    WT_secondbase = [i for i, mut in enumerate(listMutSecondBase) if mut[0] == mut[-1]][0]
+    WT_thirdbase = [i for i, mut in enumerate(listMutThirdBase) if mut[0] == mut[-1]][0]
+
+    # Make figure
+    fig, axes = plt.subplots(2, 2, figsize=figsize)
+    axes = axes.flatten()
+    fig.tight_layout(rect=[0, 0, .88, 0.96])
+    cbar_ax = fig.add_axes([.875, .1, .03, .8])
+
+    # Set parameters for plotting
+    if vmin is None:
+        vmin = np.percentile(seriesAct_finite, 2) if robust else min(seriesAct_finite)
+    if vmax is None:
+        vmax = np.percentile(seriesAct_finite, 98) if robust else max(seriesAct_finite)
+    if logscale:
+        norm = mpl.colors.LogNorm(vmin=vmin, vmax=vmax)
+        ticks = np.logspace(np.log10(vmin), np.log10(vmax), 16)
+        formatter = LogFormatter(10, labelOnlyBase=False)
+    else:
+        norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+        ticks = None
+        formatter = None
+    if cmap is None:  # incorporate diverging colormaps at sometime
+        cmap = plt.get_cmap(default_cmap)
+    elif isinstance(cmap, basestring):
+        cmap = plt.get_cmap(cmap)
+    cmap.set_bad(c_bad, 1)
+
+    # Plotting the 4 different heatmaps
+    for i, mut in enumerate(listMutFirstBase):
+
+        # Get the 2D-ized DF of all the variants with the particular mutation in the first base
+        currDF = seriesAct.loc[mut].unstack(level=-1).sort_index(axis=1, ascending=False)
+        mask = ~np.isfinite(currDF)
+
+        # Plot heatmap
+        sns.heatmap(currDF, ax=axes[i], square=True, mask=mask, cbar=False,
+                    vmin=vmin, vmax=vmax, cmap=cmap, norm=norm)
+        # Draw a box around the WT variant
+        if i == WT_firstbase:
+            _drawBox(axes[i], WT_thirdbase, 3-WT_secondbase)
+        setproperties(ax=axes[i], yticklabelrot=90,
+                      title=mut, titlefontsize=25,
+                      suptitle=suptitle, suptitlefontsize=25,
+                      tight=False, **kwargs)
+
+        # Plot colorbar
+        if i == 0:
+            cbar = mpl.colorbar.ColorbarBase(cbar_ax, cmap=cmap, norm=norm, ticks=ticks, format=formatter)
+            cbar.ax.tick_params(labelsize=16)
+            if actLabel is not None:
+                cbar.set_label(actLabel, fontsize=22)
+            
+    if show:
+        plt.show(block=False)
+
+    return fig, axes, cbar_ax
+
+
+# Convenient function to make base triple text
+def notateBaseTriple(listSeqPos):
+    return u"{} {} {}{}{}".format(listSeqPos[0], u'\u2022', listSeqPos[1], u'\u2013', listSeqPos[2])

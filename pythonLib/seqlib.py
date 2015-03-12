@@ -1,11 +1,43 @@
 # Anthony Ho, ahho@stanford.edu, 1/28/2015
-# Last update 2/3/2015
+# Last update 3/10/2015
 """Library of sequence analysis, alignemnt and annotation tools"""
 
 
 import subprocess
 import numpy as np
+import pandas as pd
 import string
+from itertools import product
+
+
+# Get a list of annotations of saturated mutations in all given positions
+def getSatMutations(listSeqPos, consensus='', rna=False):
+
+    # Make default list of all bases
+    if rna:
+        allBases = ['A', 'U', 'C', 'G']
+    else:
+        allBases = ['A', 'T', 'C', 'G']
+    # Extract the list for positions from listSeqPos for sorting
+    listPos = [seqPos[1:] for seqPos in listSeqPos]
+    # Sort listPos and listSeqPos by listPos
+    listPos, listSeqPos = zip(*sorted(zip(listPos, listSeqPos)))
+    # Get a list of list of all single mutations
+    listListSingleMutations = [[seqPos+base for base in allBases] for seqPos in listSeqPos]
+    # Get a list of tuple of all possible mutations
+    listTupleSatMutations = list(product(*listListSingleMutations))
+
+    # Convert the list of tuple of all possible mutations into
+    # a list of annotations of all possible mutations
+    listAnnotations = []
+    for var in listTupleSatMutations:
+        mutations = [mut for mut in var if mut[0] != mut[-1]]
+        numMut = len(mutations)
+        annotation = consensus + ':' + str(numMut) + ':0:0:' + ','.join(mutations) + ':::'
+        listAnnotations.append(annotation)
+
+    return pd.DataFrame({'mutations': listTupleSatMutations,
+                         'annotation': listAnnotations})
 
 
 # Get all other bases as a list

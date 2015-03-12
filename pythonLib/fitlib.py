@@ -212,7 +212,7 @@ class lsqcurvefit:
             self.sigma = sigma
         else:
             sigma_np = np.array(sigma)
-            isFiniteBoolArray = isFiniteBoolArray * ~np.isnan(sigma_np)
+            isFiniteBoolArray = isFiniteBoolArray * ~np.isnan(sigma_np)  # Note the use of ~isnan instead of isfinite to allow the use of 1/inf weight
             self.sigma = sigma_np[isFiniteBoolArray]
 
         self.x = x_np[isFiniteBoolArray]
