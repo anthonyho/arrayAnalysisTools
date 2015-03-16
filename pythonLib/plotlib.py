@@ -55,9 +55,9 @@ def setproperties(fig=None, ax=None, figsize=None,
     if ylabel is not None:
         ax.set_ylabel(ylabel)
     # Set x and y limits if provided
-    if xlim:
+    if xlim is not None:
         ax.set_xlim(xlim)
-    if ylim:
+    if ylim is not None:
         ax.set_ylim(ylim)
     # Apply scientific notation to x and y tick marks if requested
     if scix:
@@ -86,7 +86,7 @@ def setproperties(fig=None, ax=None, figsize=None,
             ticklabel.set_rotation(yticklabelrot)
 
     # Set borderwidth (not visible if using seaborn default theme)
-    for axis in ['top','bottom','left','right']:
+    for axis in ['top', 'bottom', 'left', 'right']:
         ax.spines[axis].set_linewidth(borderwidth)
 
     # Set individual fontsizes if fontsize is not specified
@@ -269,12 +269,22 @@ def plotActCount(listVarDF, field, listName=None, color=None,
 
     # Make violin plot
     if 'v' in plotmode:
+        axViolin2 = axViolin.twinx()  # Make an invisible second y-axis to deal with issues with plotting violin plots in log space
         if ref:
             axViolin.plot(xlim, [ref]*2, linestyle='--', color='k')
-        sns.violinplot(listAct, positions=_xticks, color=color,
-                       widths=barwidth, alpha=0.8, inner=inner, ax=axViolin)
+        if logAct:
+            listLogAct = [np.log10(act) for act in listAct]
+            sns.violinplot(listLogAct, positions=_xticks, color=color,
+                           widths=barwidth, alpha=0.8, inner=inner, ax=axViolin2)
+        else:
+            sns.violinplot(listAct, positions=_xticks, color=color,
+                           widths=barwidth, alpha=0.8, inner=inner, ax=axViolin)
+        # Make the left y-axis to plot in log scale
         setproperties(ax=axViolin, logy=logAct, ylabel=actLabel,
                       ylim=actLim, majorgrid=True, **kwargs)
+        # Make the right y-axis to plot the already logged data in linear scale
+        setproperties(ax=axViolin2, ylim=np.log10(actLim), majorgrid=True, **kwargs)
+        axViolin2.get_yaxis().set_visible(False)
 
     # Make count bar chart
     axCount.bar(_xticks-barwidth/2, listFilteredCount, width=barwidth)
@@ -458,7 +468,7 @@ def _drawBox(ax, xpos, ypos, color='g', linewidth=4):
 # High level function to plot base triple heat maps
 def plotBaseTriples(dfUnqClusters, dfMut, field='params2.median', transform=None, ref=None,
                     orderBaseTriple=None, figsize=(12, 12), suptitle=None, actLabel=None,
-                    vmin=None, vmax=None, cmap=None, c_bad='0.65', robust=True,
+                    vmin=None, vmax=None, cmap=None, c_bad='0.55', robust=True,
                     logscale=False, unit='min', show=True, **kwargs):
 
     # Define unit. Default is min
@@ -482,40 +492,54 @@ def plotBaseTriples(dfUnqClusters, dfMut, field='params2.median', transform=None
         def transformFunc(x): return 1. / x * unitTime
         logscale = False
         actLabel = r'$\mathrm{\mathsf{k_{obs}\ (min^{-1})}}$'
-        default_cmap = 'YlOrRd'
         if computeRefFromAnnt:
             ref = transformFunc(dfUnqClusters2.loc[ref][field])
+        if ref:
+            default_cmap = 'RdBu'
+        else:
+            default_cmap = 'YlOrRd'
     elif transform == 'logkobs':
         def transformFunc(x): return 1. / x * unitTime
         logscale = True
         actLabel = r'$\mathrm{\mathsf{k_{obs}\ (min^{-1})}}$'
-        default_cmap = 'YlOrRd'
         if computeRefFromAnnt:
             ref = transformFunc(dfUnqClusters2.loc[ref][field])
+        if ref:
+            default_cmap = 'RdBu'
+        else:
+            default_cmap = 'YlOrRd'
     elif transform == 'kobsfold':
         if computeRefFromAnnt:
-            ref = (1. / dfUnqClusters2.loc[ref][field] * unitTime)
-        def transformFunc(x): return ref / (1. / x * unitTime)
+            ref_kobs = (1. / dfUnqClusters2.loc[ref][field] * unitTime)
+        def transformFunc(x): return ref_kobs / (1. / x * unitTime)
         logscale = False
         actLabel = r'$\mathrm{\mathsf{k_{obs}\ fold\ change}}$'
-        default_cmap = 'YlOrRd_r'
+        ref = 1
+        default_cmap = 'RdBu_r'
     elif transform == 'logkobsfold':
         if computeRefFromAnnt:
-            ref = (1. / dfUnqClusters2.loc[ref][field] * unitTime)
-        def transformFunc(x): return ref / (1. / x * unitTime)
+            ref_kobs = (1. / dfUnqClusters2.loc[ref][field] * unitTime)
+        def transformFunc(x): return ref_kobs / (1. / x * unitTime)
         logscale = True
         actLabel = r'$\mathrm{\mathsf{k_{obs}\ fold\ change}}$'
-        default_cmap = 'YlOrRd_r'
+        ref = 1
+        default_cmap = 'RdBu_r'
     elif transform is None:
         def transformFunc(x): return x
-        default_cmap = 'YlOrRd'
         if computeRefFromAnnt:
             ref = transformFunc(dfUnqClusters2.loc[ref][field])
+        if ref:
+            default_cmap = 'RdBu'
+        else:
+            default_cmap = 'YlOrRd'
     else:
         transformFunc = transform
         if computeRefFromAnnt:
             ref = transformFunc(dfUnqClusters2.loc[ref][field])
-        default_cmap = 'YlOrRd'
+        if ref:
+            default_cmap = 'RdBu'
+        else:
+            default_cmap = 'YlOrRd'
 
     # Get the reordering index of 3 bases within the base triple if orderBaseTriple is provided
     # First base is the non-base-paired base, last two bases are base paired
@@ -529,13 +553,13 @@ def plotBaseTriples(dfUnqClusters, dfMut, field='params2.median', transform=None
     # of the all the base triple variants
     seriesAct = transformFunc(dfUnqClusters2.loc[dfMut['annotation']][field])
 
-    # Get multiindex from the list of tuples of mutations in dfMut 
+    # Get multiindex from the list of tuples of mutations in dfMut
     # and reassign index as multiindex
     seriesAct.index = pd.MultiIndex.from_tuples(dfMut['mutations'])
 
     # Reorder index levels according to orderListSeqPos
     seriesAct = seriesAct.reorder_levels(orderListSeqPos)
-    
+
     # Get the finite numbers for calculations
     seriesAct_finite = seriesAct[np.isfinite(seriesAct)]
 
@@ -543,7 +567,7 @@ def plotBaseTriples(dfUnqClusters, dfMut, field='params2.median', transform=None
     listMutFirstBase = seriesAct.index.levels[0]
     listMutSecondBase = seriesAct.index.levels[1]
     listMutThirdBase = seriesAct.index.levels[2][::-1]
-    
+
     # Find the multi-index of the WT variant
     WT_firstbase = [i for i, mut in enumerate(listMutFirstBase) if mut[0] == mut[-1]][0]
     WT_secondbase = [i for i, mut in enumerate(listMutSecondBase) if mut[0] == mut[-1]][0]
@@ -556,23 +580,37 @@ def plotBaseTriples(dfUnqClusters, dfMut, field='params2.median', transform=None
     cbar_ax = fig.add_axes([.875, .1, .03, .8])
 
     # Set parameters for plotting
+    # Set robust vmin and vmax
     if vmin is None:
         vmin = np.percentile(seriesAct_finite, 2) if robust else min(seriesAct_finite)
     if vmax is None:
         vmax = np.percentile(seriesAct_finite, 98) if robust else max(seriesAct_finite)
+    # Take log if requested. Transform vmin and vmax if ref is provided
     if logscale:
-        norm = mpl.colors.LogNorm(vmin=vmin, vmax=vmax)
-        ticks = np.logspace(np.log10(vmin), np.log10(vmax), 16)
+        seriesAct = np.log10(seriesAct)
+        vmin, vmax = np.log10(vmin), np.log10(vmax)
+        if ref:
+            ref = np.log10(ref)
+            vlim = max(abs(vmin - ref), abs(vmax - ref))
+            vmin, vmax = -vlim + ref, vlim + ref
+            ticks = np.hstack([np.logspace(vmin, ref, 8), np.logspace(ref, vmax, 8)])
+        else:
+            ticks = np.logspace(vmin, vmax, 8)
+        cbar_norm = mpl.colors.LogNorm(vmin=10**vmin, vmax=10**vmax)
         formatter = LogFormatter(10, labelOnlyBase=False)
     else:
-        norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+        if ref:
+            vlim = max(abs(vmin - ref), abs(vmax - ref))
+            vmin, vmax = -vlim + ref, vlim + ref
         ticks = None
+        cbar_norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
         formatter = None
-    if cmap is None:  # incorporate diverging colormaps at sometime
+    # Define colormap
+    if cmap is None:
         cmap = plt.get_cmap(default_cmap)
     elif isinstance(cmap, basestring):
         cmap = plt.get_cmap(cmap)
-    cmap.set_bad(c_bad, 1)
+    cmap.set_bad(c_bad, 0.8)
 
     # Plotting the 4 different heatmaps
     for i, mut in enumerate(listMutFirstBase):
@@ -583,22 +621,22 @@ def plotBaseTriples(dfUnqClusters, dfMut, field='params2.median', transform=None
 
         # Plot heatmap
         sns.heatmap(currDF, ax=axes[i], square=True, mask=mask, cbar=False,
-                    vmin=vmin, vmax=vmax, cmap=cmap, norm=norm)
+                    vmin=vmin, vmax=vmax, cmap=cmap, center=ref)
         # Draw a box around the WT variant
         if i == WT_firstbase:
             _drawBox(axes[i], WT_thirdbase, 3-WT_secondbase)
         setproperties(ax=axes[i], yticklabelrot=90,
                       title=mut, titlefontsize=25,
                       suptitle=suptitle, suptitlefontsize=25,
-                      tight=False, **kwargs)
+                      borderwidth=0, tight=False, **kwargs)
 
         # Plot colorbar
         if i == 0:
-            cbar = mpl.colorbar.ColorbarBase(cbar_ax, cmap=cmap, norm=norm, ticks=ticks, format=formatter)
+            cbar = mpl.colorbar.ColorbarBase(cbar_ax, cmap=cmap, norm=cbar_norm, ticks=ticks, format=formatter)
             cbar.ax.tick_params(labelsize=16)
             if actLabel is not None:
                 cbar.set_label(actLabel, fontsize=22)
-            
+
     if show:
         plt.show(block=False)
 
@@ -608,3 +646,6 @@ def plotBaseTriples(dfUnqClusters, dfMut, field='params2.median', transform=None
 # Convenient function to make base triple text
 def notateBaseTriple(listSeqPos):
     return u"{} {} {}{}{}".format(listSeqPos[0], u'\u2022', listSeqPos[1], u'\u2013', listSeqPos[2])
+
+
+# Rethink the complexity of wrapper functions, aka break plotBaseTriple into two functions
