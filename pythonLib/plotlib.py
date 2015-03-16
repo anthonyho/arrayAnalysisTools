@@ -223,6 +223,7 @@ def plotActCount(listVarDF, field, listName=None, color=None,
             inner = 'box'
         else:
             inner = 'stick'
+    minorgridLogAct = logAct
 
     # Get variants' names from annotation if listName is not provided
     if not listName:
@@ -264,8 +265,8 @@ def plotActCount(listVarDF, field, listName=None, color=None,
         sns.boxplot(listAct, positions=_xticks, color=color,
                     showmeans=True, bootstrap=bootstrap,
                     widths=barwidth, ax=axBox)
-        setproperties(ax=axBox, logy=logAct, ylabel=actLabel,
-                      ylim=actLim, majorgrid=True, **kwargs)
+        setproperties(ax=axBox, logy=logAct, ylabel=actLabel, ylim=actLim,
+                      majorgrid=True, minorgrid=minorgridLogAct, **kwargs)
 
     # Make violin plot
     if 'v' in plotmode:
@@ -280,10 +281,10 @@ def plotActCount(listVarDF, field, listName=None, color=None,
             sns.violinplot(listAct, positions=_xticks, color=color,
                            widths=barwidth, alpha=0.8, inner=inner, ax=axViolin)
         # Make the left y-axis to plot in log scale
-        setproperties(ax=axViolin, logy=logAct, ylabel=actLabel,
-                      ylim=actLim, majorgrid=True, **kwargs)
+        setproperties(ax=axViolin, logy=logAct, ylabel=actLabel, ylim=actLim,
+                      majorgrid=True, minorgrid=minorgridLogAct, **kwargs)
         # Make the right y-axis to plot the already logged data in linear scale
-        setproperties(ax=axViolin2, ylim=np.log10(actLim), majorgrid=True, **kwargs)
+        setproperties(ax=axViolin2, ylim=np.log10(actLim))
         axViolin2.get_yaxis().set_visible(False)
 
     # Make count bar chart
