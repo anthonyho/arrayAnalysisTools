@@ -223,7 +223,10 @@ def plotActCount(listVarDF, field, listName=None, color=None,
             inner = 'box'
         else:
             inner = 'stick'
-    minorgridLogAct = logAct
+    if actLim is not None:
+        logActLim = np.log10(actLim)
+    else:
+        logActLim = actLim
 
     # Get variants' names from annotation if listName is not provided
     if not listName:
@@ -266,7 +269,7 @@ def plotActCount(listVarDF, field, listName=None, color=None,
                     showmeans=True, bootstrap=bootstrap,
                     widths=barwidth, ax=axBox)
         setproperties(ax=axBox, logy=logAct, ylabel=actLabel, ylim=actLim,
-                      majorgrid=True, minorgrid=minorgridLogAct, **kwargs)
+                      majorgrid=True, minorgrid=logAct, **kwargs)
 
     # Make violin plot
     if 'v' in plotmode:
@@ -282,9 +285,9 @@ def plotActCount(listVarDF, field, listName=None, color=None,
                            widths=barwidth, alpha=0.8, inner=inner, ax=axViolin)
         # Make the left y-axis to plot in log scale
         setproperties(ax=axViolin, logy=logAct, ylabel=actLabel, ylim=actLim,
-                      majorgrid=True, minorgrid=minorgridLogAct, **kwargs)
+                      majorgrid=True, minorgrid=logAct, **kwargs)
         # Make the right y-axis to plot the already logged data in linear scale
-        setproperties(ax=axViolin2, ylim=np.log10(actLim))
+        setproperties(ax=axViolin2, ylim=logActLim)
         axViolin2.get_yaxis().set_visible(False)
 
     # Make count bar chart
@@ -470,7 +473,8 @@ def _drawBox(ax, xpos, ypos, color='g', linewidth=4):
 def plotBaseTriples(dfUnqClusters, dfMut, field='params2.median', transform=None, ref=None,
                     orderBaseTriple=None, figsize=(12, 12), suptitle=None, actLabel=None,
                     vmin=None, vmax=None, cmap=None, c_bad='0.55', robust=True,
-                    logscale=False, unit='min', show=True, **kwargs):
+                    logscale=False, unit='min', show=True,
+                    titlefontsize=28, suptitlefontsize=26, **kwargs):
 
     # Define unit. Default is min
     if unit in ['second', 's', 'sec']:
@@ -577,8 +581,8 @@ def plotBaseTriples(dfUnqClusters, dfMut, field='params2.median', transform=None
     # Make figure
     fig, axes = plt.subplots(2, 2, figsize=figsize)
     axes = axes.flatten()
-    fig.tight_layout(rect=[0, 0, .88, 0.96])
-    cbar_ax = fig.add_axes([.875, .1, .03, .8])
+    fig.tight_layout(rect=[0, 0, .87, 0.96])
+    cbar_ax = fig.add_axes([.865, .1, .03, .8])
 
     # Set parameters for plotting
     # Set robust vmin and vmax
@@ -627,16 +631,16 @@ def plotBaseTriples(dfUnqClusters, dfMut, field='params2.median', transform=None
         if i == WT_firstbase:
             _drawBox(axes[i], WT_thirdbase, 3-WT_secondbase)
         setproperties(ax=axes[i], yticklabelrot=90,
-                      title=mut, titlefontsize=25,
-                      suptitle=suptitle, suptitlefontsize=25,
+                      title=mut, titlefontsize=titlefontsize,
+                      suptitle=suptitle, suptitlefontsize=suptitlefontsize,
                       borderwidth=0, tight=False, **kwargs)
 
         # Plot colorbar
         if i == 0:
             cbar = mpl.colorbar.ColorbarBase(cbar_ax, cmap=cmap, norm=cbar_norm, ticks=ticks, format=formatter)
-            cbar.ax.tick_params(labelsize=16)
+            cbar.ax.tick_params(labelsize=17)
             if actLabel is not None:
-                cbar.set_label(actLabel, fontsize=22)
+                cbar.set_label(actLabel, fontsize=24)
 
     if show:
         plt.show(block=False)
@@ -648,5 +652,105 @@ def plotBaseTriples(dfUnqClusters, dfMut, field='params2.median', transform=None
 def notateBaseTriple(listSeqPos):
     return u"{} {} {}{}{}".format(listSeqPos[0], u'\u2022', listSeqPos[1], u'\u2013', listSeqPos[2])
 
+
+# Plot tertiary contact-single point mutant cooperivity
+# tmp, need to be fixed
+def plotTertSMcoop(dfUnqClusters, listConsensus, listSeqPos, refConsensus, field='params2.median', listConsensusName=None,
+                   vmin=None, vmax=None, cmap='RdBu', c_bad='0.55', robust=True,
+                   figsize=None, figunitheight=1, figunitwidth=1, maxfigwidth=32,
+                   actLabel=r'$\mathrm{\mathsf{\Delta\Delta G^{\ddag}\ (kcal\ mol^{-1})}}$',
+                   show=True, **kwargs):
+    """Plot tertiary contact-single point mutant cooperivity heatmap"""
+    # Define constants
+    R = 1.9872041e-3
+    T = 293.0
+
+    # Make dfUnqClusters indexed by annotation if not already
+    if dfUnqClusters.index.name == 'annotation':
+        dfUnqClusters2 = dfUnqClusters.copy()
+    else:
+        dfUnqClusters2 = dfUnqClusters.set_index('annotation')
+
+    # Make an empty dataframe for the TC-SPM matrix
+    mat_kobs = pd.DataFrame(columns=listConsensus)
+    mat_ddG = pd.DataFrame(columns=listConsensus)
+
+    # Make an empty series for the consensus variants
+    seriesConsensusAct = pd.Series(index=listConsensus)
+
+    # Make the list of annotations to plot
+    listConsensusAct = []
+    for con in listConsensus:
+
+        listAnnt = []
+        listName = []
+        for pos in listSeqPos:
+
+            # Get base at the current position
+            currBase = pos[0]
+            # Get the 3 other bases at the current position
+            allOtherBases = seqlib.allOtherBases(currBase)
+            # Make the list of annotations of the 3 possible mismatches at the current position
+            mAnnts = [con+':1:0:0:'+pos+base+':::' for base in allOtherBases]
+            mNames = [pos+base for base in allOtherBases]
+            # Add to listAnnt and listName
+            listAnnt.extend(mAnnts)
+            listName.extend(mNames)
+
+        # Get the activity of the consensus variants
+        seriesConsensusAct[con] = 1./dfUnqClusters2.loc[con+':0:0:0::::'][field]*60
+        # Add the list of activity of the annotations from the current consensus as a column
+        mat_kobs[con] = (1./dfUnqClusters2.loc[listAnnt][field]*60).tolist()
+
+    # Compute delta delta G from k_obs
+    for con in listConsensus:
+        mat_ddG[con] = - R * T * np.log((mat_kobs[con] * seriesConsensusAct[refConsensus]) 
+                                        / (mat_kobs[refConsensus] * seriesConsensusAct[con]))
+
+    #
+    if listConsensusName is not None:
+        mat_kobs.columns = listConsensusName
+        mat_ddG.columns = listConsensusName
+
+    # 
+    mat_kobs.columns.name = 'Tertiary contact knockouts'
+    mat_ddG.columns.name = 'Tertiary contact knockouts'
+
+    # Set single mutant names
+    mat_kobs['Single point mutants'] = listName
+    mat_kobs = mat_kobs.set_index('Single point mutants').transpose()
+    mat_ddG['Single point mutants'] = listName
+    mat_ddG = mat_ddG.set_index('Single point mutants').transpose()
+
+    # Define colormap
+    if isinstance(cmap, basestring):
+        cmap = plt.get_cmap(cmap)
+    cmap.set_bad(c_bad, 0.8)
+
+    # Make mask for nan data
+    mask = ~np.isfinite(mat_ddG)
+    
+    # Plot heatmap
+    if not figsize:
+        figwidth = min(figunitwidth * len(listAnnt), maxfigwidth)
+        figheight = figunitheight * len(listConsensus) + 0.5
+        figsize = (figwidth, figheight)
+    fig, ax = plt.subplots(1, 1, figsize=figsize)
+    cbar_ax = fig.add_axes([.78, .83, .2, .05])
+    sns.heatmap(mat_ddG, ax=ax, square=True, mask=mask, robust=robust,
+                vmin=vmin, vmax=vmax, center=0, cmap=cmap,
+                cbar_ax=cbar_ax, cbar_kws={'orientation': 'horizontal'})
+    setproperties(ax=cbar_ax, fontsize=21, xlabel=actLabel)
+    setproperties(ax=ax, tickfontsize=22, yticklabelrot=0,
+                  labelfontsize=28, tight=True, pad=1.0)
+
+    if show:
+        plt.show(block=False)
+
+    return
+
+
+
+    
 
 # Rethink the complexity of wrapper functions, aka break plotBaseTriple into two functions
