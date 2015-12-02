@@ -219,3 +219,93 @@ def doubleExpConstT2CResidual(params, x, y, constants):
 # Compute the pmf of Poisson distribution, pre-normalized
 def poisson(params, x):
     return params[0]*(params[1]**x)*np.exp(-params[1])/scipy.special.gamma(x+1)
+
+
+# ------ Folding ------ #
+
+
+# Compute the fraction folded as a function of temperature
+# i.e. 1 / (exp(dH/RT)*exp(-dS/R) + 1) + C
+# where params[0] = dH
+#       params[1] = dS
+#       params[2] = C
+def fractionFoldedVsTemp(params, x):
+    R = 1.98722/1000
+    T = 273.15 + x
+    dH = float(params[0])
+    dS = float(params[1])/1000
+    C = float(params[2])
+    return 1/(np.exp(dH/R/T)*np.exp(-dS/R)+1) + C
+
+
+# Compute the fraction folded as a function of temperature
+# i.e. 1 / (exp(dH/RT)*exp(-dS/R) + 1) + C
+# where params[0] = dH
+#       params[1] = dS
+#       constants[0] = C
+def fractionFoldedVsTempC(params, x, constants):
+    R = 1.98722/1000
+    T = 273.15 + x
+    dH = params[0]
+    dS = float(params[1])/1000
+    C = float(constants[0])
+    return 1/(np.exp(dH/R/T)*np.exp(-dS/R)+1) + C
+
+
+# Compute the fraction unfolded as a function of temperature
+# i.e. 1 - 1 / (exp(dH/RT)*exp(-dS/R) + 1) + C
+# where params[0] = dH
+#       params[1] = dS
+#       params[2] = C
+def fractionUnfoldedVsTemp(params, x):
+    R = 1.98722/1000
+    T = 273.15 + x
+    dH = params[0]
+    dS = float(params[1])/1000
+    C = float(params[2])
+    return 1-1/(np.exp(dH/R/T)*np.exp(-dS/R)+1) + C
+
+
+# Compute the fraction unfolded as a function of temperature
+# i.e. 1 - 1 / (exp(dH/RT)*exp(-dS/R) + 1) + C
+# where params[0] = dH
+#       params[1] = dS
+#       constants[0] = C
+def fractionUnfoldedVsTempC(params, x, constants):
+    R = 1.98722/1000
+    T = 273.15 + x
+    dH = params[0]
+    dS = float(params[1])/1000
+    C = float(constants[0])
+    return 1-1/(np.exp(dH/R/T)*np.exp(-dS/R)+1) + C
+
+
+# Compute the fluorescence of the donor due to unfolding as a function of temperature
+# assuming that there is a residual fluorescence C when totally unfolded
+# i.e. [1 - 1 / (exp(dH/RT)*exp(-dS/R) + 1)] + C * 1 / (exp(dH/RT)*exp(-dS/R) + 1)
+# where params[0] = dH
+#       params[1] = dS
+#       params[2] = C
+def FRETvsTemp(params, x):
+    R = 1.98722/1000
+    T = 273.15 + x
+    dH = params[0]
+    dS = float(params[1])/1000
+    C = float(params[2])
+    return 1-1/(np.exp(dH/R/T)*np.exp(-dS/R)+1) + C/(np.exp(dH/R/T)*np.exp(-dS/R)+1)
+
+
+# Compute the fluorescence of the donor due to unfolding as a function of temperature
+# assuming that there is a residual fluorescence C when totally unfolded
+# i.e. [1 - 1 / (exp(dH/RT)*exp(-dS/R) + 1)] + C * 1 / (exp(dH/RT)*exp(-dS/R) + 1)
+# where params[0] = dH
+#       params[1] = dS
+#       constants[2] = C
+def FRETvsTempC(params, x, constants):
+    R = 1.98722/1000
+    T = 273.15 + x
+    dH = params[0]
+    dS = float(params[1])/1000
+    C = float(constants[0])
+    return 1-1/(np.exp(dH/R/T)*np.exp(-dS/R)+1) + C/(np.exp(dH/R/T)*np.exp(-dS/R)+1)
+

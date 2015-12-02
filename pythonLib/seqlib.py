@@ -40,22 +40,53 @@ def getSatMutations(listSeqPos, consensus='', rna=False):
                          'annotation': listAnnotations})
 
 
+# Get all four bases as a list
+def allBases(rna=False):
+    if rna:
+        return ['A', 'U', 'C', 'G']
+    else:
+        return ['A', 'T', 'C', 'G']
+
+
 # Get all other bases as a list
-def allOtherBases(base, rna=False):
+def allOtherBases(bases, rna=False):
     if rna:
         allBases = ['A', 'U', 'C', 'G']
     else:
         allBases = ['A', 'T', 'C', 'G']
-    base = base.upper()
-    if base in allBases:
-        allBases.remove(base)
+    for base in bases:
+        base = base.upper()
+        if base in allBases:
+            allBases.remove(base)
     return allBases
 
 
 # Find reverse complement
-def reverseComplement(seq):
-    complements = string.maketrans("ATCGN", "TAGCN")
-    return seq.upper().translate(complements)[::-1]
+def reverseComplement(seq, rna=False):
+    if rna:
+        complements = string.maketrans("AUCGN", "UAGCN")
+        return convertToRNA(seq).translate(complements)[::-1]
+    else:
+        complements = string.maketrans("ATCGN", "TAGCN")
+        return convertToDNA(seq).translate(complements)[::-1]
+
+
+# Standardize the sequence to all upper case and to the correct DNA/RNA base
+def standardize(seq, rna=False):
+    if rna:
+        return convertToRNA(seq)
+    else:
+        return convertToDNA(seq)
+    
+
+# Convert RNA sequences to DNA
+def convertToDNA(seq):
+    return seq.upper().replace('U', 'T')
+
+
+# Convert DNA sequences to RNA
+def convertToRNA(seq):
+    return seq.upper().replace('T', 'U')
 
 
 # Compute Phred Q score, default is Phred-33
