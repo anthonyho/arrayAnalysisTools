@@ -27,14 +27,14 @@ case ${answer:0:1} in
 	    kill $python_jobs
 	fi
 	# Kill the MATLAB instances
-	matlab_regJobs=$(ps aux | grep -E "$user.*[m]atlab.*GenerateRegistrationOffsetMap" | awk '{print $2}')
+	matlab_regJobs=$(ps aux | grep -iE "$user.*[m]atlab.*GenerateRegistrationOffsetMap" | awk '{print $2}')
 	echo "Found matlab registration jobs" $matlab_regJobs
 	if [ ! -z "$matlab_regJobs" ]
 	then
 	    echo "Killing matlab registration jobs" $matlab_regJobs "now..."
 	    kill $matlab_regJobs
 	fi
-	matlab_quantJobs=$(ps aux | grep -E "$user.*[m]atlab.*AnalyseImage" | awk '{print $2}')
+	matlab_quantJobs=$(ps aux | grep -iE "$user.*[m]atlab.*AnalyseImage" | awk '{print $2}')
 	echo "Found matlab quantification jobs" $matlab_quantJobs
 	if [ ! -z "$matlab_quantJobs" ]
 	then
