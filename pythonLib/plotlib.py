@@ -27,7 +27,8 @@ def setproperties(fig=None, ax=None, figsize=None,
                   borderwidth=2.5, tight=True, pad=1.6,
                   fontsize=None, legendfontsize=20, tickfontsize=20,
                   labelfontsize=20, titlefontsize=18, suptitlefontsize=20,
-                  xticklabelrot=None, yticklabelrot=None):
+                  xticklabelrot=None, yticklabelrot=None, 
+                  equal=False):
     """ Convenient tool to set properties of a plot in a single command"""
     # Get figure and axis handles
     if not fig:
@@ -112,6 +113,10 @@ def setproperties(fig=None, ax=None, figsize=None,
     # Set tight figure and padding
     if tight:
         fig.tight_layout(pad=pad)
+
+    # Set equal aspect
+    if equal:
+        ax.set_aspect('equal', adjustable='box')
 
 
 # Plot scatter plot colored by local density
