@@ -1,5 +1,5 @@
 # Anthony Ho, ahho@stanford.edu, 1/15/2015
-# Last update 3/10/2015
+# Last update 2/12/2016
 """Python module containing some handy plotting tools"""
 
 
@@ -9,8 +9,12 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import LogFormatter
 import seaborn as sns
 import pandas as pd
+from scipy.stats import gaussian_kde
 import seqlib
 
+
+
+### ---------- Common plot functions ---------- ###
 
 # Handy function to set the commonly used plot modifiers and apply to plot/figure
 def setproperties(fig=None, ax=None, figsize=None,
@@ -109,6 +113,31 @@ def setproperties(fig=None, ax=None, figsize=None,
         fig.tight_layout(pad=pad)
 
 
+# Plot scatter plot colored by local density
+def scatterDensity(data, data2=None, 
+                   cmap=plt.cm.jet, sort=True, **kwargs):
+    """Plot scatter plot colored by local density"""
+    # Convert data to numpy array
+    if data2 is None:
+        data_np = np.array(data)
+        x = data_np[:,0]
+        y = data_np[:,1]
+    else:
+        x = np.array(data)
+        y = np.array(data2)
+
+    # Compute kernel density and sort data by z score if true
+    xy = np.vstack([x,y])
+    z = gaussian_kde(xy)(xy)
+    if sort:
+        idx = z.argsort()
+        x, y, z = x[idx], y[idx], z[idx]
+
+    # Plot and return
+    return plt.scatter(x, y, c=np.log10(z), cmap=cmap,
+                       edgecolor='face', marker='o', **kwargs)
+
+
 # Handy function to make a plot look better
 # Deprecated - use setproperties() instead
 def makepretty(ax):
@@ -130,6 +159,176 @@ def makepretty(ax):
     ax.yaxis.label.set_fontsize(16)
     ax.title.set_fontsize(16)
 
+
+
+### ---------- Chemical nose plot functions ---------- ###
+
+# Plot raw signals histogram
+def plotRawSignalsHist(data_aggPF, name, fullName):
+    colors = sns.color_palette("Paired", 12)
+    plt.figure(figsize=(10,7))
+    ax = plt.subplot(1,1,1)
+    sns.distplot(data_aggPF['sm_signals']['median'], color=colors[1], label='Cy3-read 7\' + QO1-BHQ1 + ' + fullName)
+    sns.distplot(data_aggPF['QO_signals']['median'], color=colors[4], label='Cy3-read 7\' + QO1-BHQ1')
+    sns.distplot(data_aggPF['r7_signals']['median'], color=colors[3], label='Cy3-read 7\' only')
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles[::-1], labels[::-1], loc=1, fontsize=16)  # Define legend and reverse order
+    setproperties(xlim=(0, 800), 
+                  xlabel='Median raw signal', ylabel='Relative frequency', 
+                  labelfontsize=25, tickfontsize=25)
+    plt.savefig('figures/'+name+'_rawSignalsHist.png')
+
+
+# Plot normalized signals histogram
+def plotNormSignalsHist(data_aggPF, name, fullName):
+    colors = sns.color_palette("Paired", 12)
+    plt.figure(figsize=(15,7))
+    ax1 = plt.subplot(1,2,1)
+    data_aggPF['sm_norm_signals']['median'].hist(bins=100, range=(0, 1),
+                                                 color=colors[0], label='Cy3-read 7\' + QO1-BHQ1 + ' + fullName)
+    data_aggPF['QO_norm_signals']['median'].hist(bins=100, range=(0, 1),
+                                                 color=colors[1], label='Cy3-read 7\' + QO1-BHQ1')
+    handles, labels = ax1.get_legend_handles_labels()
+    ax1.legend(handles[::-1], labels[::-1], loc=1, fontsize=16)  # Define legend and reverse order
+    setproperties(xlabel='Median normalized signal', ylabel='Number of sequence variants', 
+                  labelfontsize=25, tickfontsize=25)
+    ax2 = plt.subplot(1,2,2)
+    data_aggPF['sm_norm_signals']['median'].hist(bins=100, range=(0.1, 1),
+                                                 color=colors[0], label='Cy3-read 7\' + QO1-BHQ1 + ' + fullName)
+    data_aggPF['QO_norm_signals']['median'].hist(bins=100, range=(0.1, 1),
+                                                 color=colors[1], label='Cy3-read 7\' + QO1-BHQ1')
+    setproperties(xlabel='Median normalized signal', ylabel='Number of sequence variants', 
+                  labelfontsize=25, tickfontsize=25)
+    handles, labels = ax2.get_legend_handles_labels()
+    ax2.legend(handles[::-1], labels[::-1], loc=1, fontsize=16)  # Define legend and reverse order
+    plt.savefig('figures/'+name+'_normSignalsHist.png')
+
+
+# Plot the normalized signals along the sequence coordinate
+def plotNormSignalsTrack(data_aggPF, name, fullName):
+    colors = sns.color_palette("Paired", 12)
+    plt.figure(figsize=(15,5))
+    plt.plot(range(0, len(data_aggPF)), data_aggPF['sm_norm_signals']['median'], linewidth=0.5,
+             color=colors[0], label='Cy3-read 7\' + QO1-BHQ1 + '+fullName)
+    plt.plot(range(0, len(data_aggPF)), data_aggPF['QO_norm_signals']['median'], linewidth=0.5,
+             color=colors[1], label='Cy3-read 7\' + QO1-BHQ1')
+    setproperties(xlim=(0, len(data_aggPF)), ylim=(0, 1), 
+                  xlabel='Sequence variants', ylabel='Meidan normalized signal', 
+                  legend=True, legendloc=2, legendfontsize=16,
+                  labelfontsize=25, tickfontsize=25)
+    plt.savefig('figures/'+name+'_normSignalsTrack.png')
+
+
+# Plot the normalized signals along the sequence coordinate, zoomed in to specific region
+def plotNormSignalsTrackZoom(data_aggPF, name, fullName, start, end):
+    colors = sns.color_palette("Paired", 12)
+    plt.figure(figsize=(15,5))
+    plt.plot(range(start, end), data_aggPF['sm_norm_signals']['median'][start:end], linewidth=1.2,
+             color=colors[0], label='Cy3-read 7\' + QO1-BHQ1 + '+fullName)
+    plt.plot(range(start, end), data_aggPF['QO_norm_signals']['median'][start:end], linewidth=1.2,
+             color=colors[1], label='Cy3-read 7\' + QO1-BHQ1')
+    setproperties(ylim=(0, 1),
+                  xlabel='Sequence variants', ylabel='Meidan normalized signal', 
+                  legend=True, legendloc=2, legendfontsize=16,
+                  labelfontsize=25, tickfontsize=25)
+    plt.savefig('figures/'+name+'_normSignalsTrackZoom_'+str(start)+'_'+str(end)+'.png')
+
+
+# Plot the background substrated, normalized switching signals along the sequence coordinate
+def plotNormSwitchingSignalsTrack(data_aggPF, name, fullName):
+    colors = sns.color_palette("Paired", 12)
+    plt.figure(figsize=(15,5))
+    plt.plot(range(0, len(data_aggPF)), data_aggPF['sm_norm_diff_signals_2']['median'], linewidth=0.5,
+             color=colors[5], label='Cy3-read 7\' + QO1-BHQ1 + ' + fullName + ', background substrated')
+    setproperties(xlim=(0, len(data_aggPF)), ylim=(-0.2, 0.8), 
+                  xlabel='Sequence variants', ylabel='Meidan normalized signal', 
+                  legend=True, legendloc=2, legendfontsize=16,
+                  labelfontsize=25, tickfontsize=25)
+    plt.savefig('figures/'+name+'_normDiffSignalsTrack.png')
+
+
+# Plot the background substrated, normalized switching signals along the sequence coordinate, zoomed in to specific region
+def plotNormSwitchingSignalsTrackZoom(data_aggPF, name, fullName, start, end):
+    colors = sns.color_palette("Paired", 12)
+    plt.figure(figsize=(15,5))
+    plt.plot(range(start, end), data_aggPF['sm_norm_diff_signals_2']['median'][start:end], linewidth=1.2,
+             color=colors[5], label='Cy3-read 7\' + QO1-BHQ1 + ' + fullName + ', background substrated')
+    setproperties(ylim=(-0.2, 0.8), 
+                  xlabel='Sequence variants', ylabel='Meidan normalized signal', 
+                  legend=True, legendloc=2, legendfontsize=16,
+                  labelfontsize=25, tickfontsize=25)
+    plt.savefig('figures/'+name+'_normDiffSignalsTrackZoom_'+str(start)+'_'+str(end)+'.png')
+
+
+# Plot the background substrated, normalized switching signals along the sequence coordinate
+def plotNormSwitchingSignalsSortedTrack(data_aggPF, name, fullName):
+    colors = sns.color_palette("Paired", 12)
+    plt.figure(figsize=(15,5))
+    n = len(data_aggPF)
+    x = range(0, n)
+    sortedData = data_aggPF['sm_norm_diff_signals_2'].sort('median', ascending=False)
+    y = sortedData['median']
+    upper_bound = y + sortedData['sem']
+    lower_bound = y - sortedData['sem']
+    plt.plot(x, y, linewidth=2,
+             color=colors[5], label='Cy3-read 7\' + QO1-BHQ1 + ' + fullName + ', background substrated, rank sorted')
+    plt.fill_between(x, upper_bound, lower_bound, color=colors[4], alpha=0.5)
+    setproperties(xlim=(0, n), ylim=(-0.2, 0.8), 
+                  xlabel='Sorted sequence variants', ylabel='Meidan normalized signal', 
+                  legend=True, legendloc=2, legendfontsize=16,
+                  labelfontsize=25, tickfontsize=25)
+    plt.savefig('figures/'+name+'_normDiffSignalsTrackSorted.png')
+
+
+# Plot all normalized signals along the sequence coordinates
+def plotNormSignalsSortedTrackAll(allData_aggPF, names, fullNames):
+    colors = sns.color_palette("Paired", 12)
+    plt.figure(figsize=(15,6))
+    max_n = max([len(data_aggPF) for data_aggPF in allData_aggPF])
+    for i, data_aggPF in enumerate(allData_aggPF):
+        n = len(data_aggPF)
+        x = range(0, n)
+        plt.plot(x, data_aggPF['sm_norm_signals']['median'].order(ascending=False), linewidth=2, linestyle='dashed',
+                 color=colors[i*2+1], label='Cy3-read 7\' + QO1-BHQ1 + '+fullNames[i])
+        plt.plot(x, data_aggPF['QO_norm_signals']['median'].order(ascending=False), linewidth=2,
+                 color=colors[i*2+1], label='Cy3-read 7\' + QO1-BHQ1')
+    setproperties(xlim=(0, max_n), ylim=(0, 1), 
+                  xlabel='Sorted sequence variants', ylabel='Meidan normalized signal', 
+                  legend=True, legendloc=1, legendfontsize=16,
+                  labelfontsize=25, tickfontsize=25)
+    plt.savefig('figures/all6_normSignalsTrackSorted.png')
+
+
+# Plot all background substrated, normalized switching signals along the sequence coordinates
+def plotNormSwitchingSignalsSortedTrackAll(allData_aggPF, names, fullNames):
+    colors = sns.color_palette("Paired", 12)
+    plt.figure(figsize=(15,5))
+    max_n = max([len(data_aggPF) for data_aggPF in allData_aggPF])
+    for i, data_aggPF in enumerate(allData_aggPF):
+        n = len(data_aggPF)
+        x = range(0, n)
+        sortedData = data_aggPF['sm_norm_diff_signals_2'].sort('median', ascending=False)
+        y = sortedData['median']
+        #upper_bound = y + sortedData['sem']
+        #lower_bound = y - sortedData['sem']
+        plt.plot(x, y, linewidth=2,
+                 color=colors[i*2+1], label='Cy3-read 7\' + QO1-BHQ1 + ' + fullNames[i] + ', background substrated, rank sorted')
+        #plt.fill_between(x, upper_bound, lower_bound, color=colors[i*2], alpha=0.5)
+    setproperties(xlim=(0, max_n), ylim=(-0.2, 0.8), 
+                  xlabel='Sorted sequence variants', ylabel='Meidan normalized signal', 
+                  legend=True, legendloc=1, legendfontsize=16,
+                  labelfontsize=25, tickfontsize=25)
+    plt.savefig('figures/all6_normDiffSignalsTrackSorted.png')
+
+
+# 
+def clusteredHeatmap():
+    return
+
+
+
+
+### ---------- Tetrahymena plot functions ---------- ###
 
 # Plot a rank-sorted plot from a sequence
 def rankSortedPlot(series, ascending=False, name=None,
@@ -751,6 +950,4 @@ def plotTertSMcoop(dfUnqClusters, listConsensus, listSeqPos, refConsensus, field
 
 
 
-    
-
-# Rethink the complexity of wrapper functions, aka break plotBaseTriple into two functions
+## Rethink the complexity of wrapper functions, aka break plotBaseTriple into two functions
