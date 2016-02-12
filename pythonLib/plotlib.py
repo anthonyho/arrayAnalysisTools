@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.ticker import LogFormatter
+from matplotlib.colors import LogNorm
 import seaborn as sns
 import pandas as pd
 from scipy.stats import gaussian_kde
@@ -115,7 +116,8 @@ def setproperties(fig=None, ax=None, figsize=None,
 
 # Plot scatter plot colored by local density
 def scatterDensity(data, data2=None, 
-                   cmap=plt.cm.jet, sort=True, **kwargs):
+                   cmap=plt.cm.jet, colorbar=False, 
+                   log=False, norm=None, sort=True, **kwargs):
     """Plot scatter plot colored by local density"""
     # Convert data to numpy array
     if data2 is None:
@@ -134,8 +136,15 @@ def scatterDensity(data, data2=None,
         x, y, z = x[idx], y[idx], z[idx]
 
     # Plot and return
-    return plt.scatter(x, y, c=np.log10(z), cmap=cmap,
-                       edgecolor='face', marker='o', **kwargs)
+    if log and (norm is None):
+        norm = LogNorm()
+    ax1 = plt.scatter(x, y, c=z, cmap=cmap, norm=norm, 
+                     edgecolor='face', marker='o', **kwargs)
+    if colorbar:
+        ax2 = plt.colorbar()
+        return ax1, ax2
+    else:
+        return ax1
 
 
 # Handy function to make a plot look better
