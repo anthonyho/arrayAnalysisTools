@@ -1,4 +1,4 @@
-# Anthony Ho, ahho@stanford.edu, 1/15/2015
+# Anthony Ho, ahho@stanford.edu, 1/26/2015
 # Last update 2/12/2016
 """Python module containing plot functions for chemical nose project"""
 
@@ -6,6 +6,40 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotlib
+
+
+figureDir = 'figures/'
+
+
+# Plot 
+def plotSmQuenchScatter(data_aggPF, name, fullName):
+    x = data_aggPF['QO_norm_signals']['median']
+    y = data_aggPF['sm_norm_signals']['median']
+    plt.figure(figsize=(7, 7))
+    plotlib.scatterDensity(x, y, alpha=0.7, log=True)
+    plotlib.setproperties(xlim=(-0.08, 1), ylim=(-0.08, 1), 
+                          xlabel='Normalized quenched signals', 
+                          ylabel='Normalized quenched signals \nin the prescence of '+name, 
+                          title=fullName,
+                          labelfontsize=25, tickfontsize=25, equal=True)
+    plt.savefig(figureDir+'/'+name+'_smQuenchScatter.png')
+
+
+# Plot
+def plotSwitchQuenchScatter(data_aggPF, name, fullName):
+    x = data_aggPF['QO_norm_signals']['median']
+    y = data_aggPF['sm_norm_diff_signals_2']['median']
+    plt.figure(figsize=(7, 7))
+    plotlib.scatterDensity(x, y, alpha=0.7, log=True)
+    plotlib.setproperties(xlim=(-0.08, 1), ylim=(-0.08, 1), 
+                          xlabel='Normalized quenched signals', 
+                          ylabel='Normalized switching signals', 
+                          title=fullName,
+                          labelfontsize=25, tickfontsize=25, equal=True)
+    plt.savefig(figureDir+'/'+name+'_switchQuenchScatter.png')
+
+
 
 
 
