@@ -1,5 +1,5 @@
 # Anthony Ho, ahho@stanford.edu, 1/26/2015
-# Last update 2/12/2016
+# Last update 2/15/2016
 """Python module containing plot functions for chemical nose project"""
 
 
