@@ -165,8 +165,8 @@ def scatterDensity(data, data2=None,
     # Plot and return
     if log and (norm is None):
         norm = LogNorm()
-    ax1 = plt.scatter(x, y, c=z, cmap=cmap, norm=norm, 
-                     edgecolor='face', marker='o', **kwargs)
+    ax1 = plt.scatter(x, y, c=z, cmap=cmap, norm=norm,
+                      edgecolor='face', marker='o', **kwargs)
     if colorbar:
         ax2 = plt.colorbar()
         return ax1, ax2
