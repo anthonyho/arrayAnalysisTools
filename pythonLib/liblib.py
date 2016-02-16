@@ -25,6 +25,6 @@ def bootstrap(data, numSamples, statistic, alpha):
 # and return a Pandas series
 def aggParallel(dfGrouped, func, name, numCores, *args, **kwargs):
     '''Computes a summary statistics to a grouped Pandas dataframe in parallel'''
-    return pd.Series(Parallel(n_jobs=numCores)(delayed(func)(group, *args, **kwargs) for name, group in dfGrouped), 
+    return pd.Series(Parallel(n_jobs=numCores)(delayed(func)(group, *args, **kwargs) for name, group in dfGrouped),
                      name=name,
-                     index=dfGrouped.indices)
+                     index=sorted(dfGrouped.indices.keys()))

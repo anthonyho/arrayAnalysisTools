@@ -5,8 +5,6 @@
 
 import numpy as np
 import pandas as pd
-from joblib import Parallel, delayed
-import multiprocessing
 import liblib
 
 
@@ -25,14 +23,14 @@ def normalize(data_r7, data_QO, data_sm):
 
 
 # Group by and summarize data
-def summarize(data, numCores):
+def summarize(data, numCores, numSamples, alpha):
     # Group by barcodes
     data_grouped = data.groupby('barcode', sort=True)
     # Compute summary statistics for the variables not being bootstrapped
     data_agg_notbs = data_grouped['r7_signals', 'QO_signals', 'sm_signals', 'QO_norm_signals', 'sm_norm_signals', 'sm_norm_diff_signals_1'].agg(['size', 'median', 'sem'])
     # Compute summary statistics for the variables being bootstrapped
     data_agg_bs_other = data_grouped['sm_norm_diff_signals_2'].agg(['size', 'median'])
-    data_agg_bs_err = liblib.aggParallel(data_grouped['sm_norm_diff_signals_2'], liblib.bootstrap, 'bserr', numCores, 5, np.median, 0.05)
+    data_agg_bs_err = liblib.aggParallel(data_grouped['sm_norm_diff_signals_2'], liblib.bootstrap, 'bserr', numCores, numSamples, np.median, alpha)
     data_agg_bs = pd.concat({'sm_norm_diff_signals_2': pd.concat([data_agg_bs_other, data_agg_bs_err], axis=1)}, axis=1)
     # Combine summary statistics 
     data_agg = pd.concat([data_agg_notbs, data_agg_bs], axis=1)
