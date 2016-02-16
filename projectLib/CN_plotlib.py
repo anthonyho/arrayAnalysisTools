@@ -13,35 +13,150 @@ figureDir = 'figures/'
 
 
 # Plot 
-def plotSmQuenchScatter(data_aggPF, name, fullName):
+def plotScatter_r7_sm(data_aggPF, name, fullName):
+    x = data_aggPF['r7_signals']['median']
+    y = data_aggPF['sm_signals']['median']
+    plt.figure(figsize=(7, 7))
+    plotlib.scatterDensity(x, y, alpha=0.7, log=True)
+    ub = max(np.percentile(x, 99.9), np.percentile(y, 99.9)) * 1.1
+    plotlib.setproperties(xlim=(0, ub), ylim=(0, ub), 
+                          xlabel='All cluster signals', 
+                          ylabel='Switching signals', 
+                          title=fullName,
+                          labelfontsize=25, tickfontsize=25, equal=True)
+    plt.savefig(figureDir+'/'+name+'_scatter_r7_sm.png')
+
+
+# Plot 
+def plotScatter_r7_QO(data_aggPF, name, fullName):
+    x = data_aggPF['r7_signals']['median']
+    y = data_aggPF['QO_signals']['median']
+    plt.figure(figsize=(7, 7))
+    plotlib.scatterDensity(x, y, alpha=0.7, log=True)
+    ub = max(np.percentile(x, 99.9), np.percentile(y, 99.9)) * 1.1
+    plotlib.setproperties(xlim=(0, ub), ylim=(0, ub), 
+                          xlabel='All cluster signals', 
+                          ylabel='Quenched signals', 
+                          title=fullName,
+                          labelfontsize=25, tickfontsize=25, equal=True)
+    plt.savefig(figureDir+'/'+name+'_scatter_r7_QO.png')
+
+
+# Plot 
+def plotScatter_QO_sm(data_aggPF, name, fullName):
+    x = data_aggPF['QO_signals']['median']
+    y = data_aggPF['sm_signals']['median']
+    plt.figure(figsize=(7, 7))
+    plotlib.scatterDensity(x, y, alpha=0.7, log=True)
+    ub = max(np.percentile(x, 99.9), np.percentile(y, 99.9)) * 1.1
+    plotlib.setproperties(xlim=(0, ub), ylim=(0, ub), 
+                          xlabel='Quenched signals', 
+                          ylabel='Switching signals', 
+                          title=fullName,
+                          labelfontsize=25, tickfontsize=25, equal=True)
+    plt.savefig(figureDir+'/'+name+'_scatter_QO_sm.png')
+
+
+# Plot 
+def plotScatterNorm_QO_sm(data_aggPF, name, fullName):
     x = data_aggPF['QO_norm_signals']['median']
     y = data_aggPF['sm_norm_signals']['median']
     plt.figure(figsize=(7, 7))
     plotlib.scatterDensity(x, y, alpha=0.7, log=True)
-    plotlib.setproperties(xlim=(-0.08, 1), ylim=(-0.08, 1), 
-                          xlabel='Normalized quenched signals', 
-                          ylabel='Normalized quenched signals \nin the prescence of '+name, 
-                          title=fullName,
-                          labelfontsize=25, tickfontsize=25, equal=True)
-    plt.savefig(figureDir+'/'+name+'_smQuenchScatter.png')
-
-
-# Plot
-def plotSwitchQuenchScatter(data_aggPF, name, fullName):
-    x = data_aggPF['QO_norm_signals']['median']
-    y = data_aggPF['sm_norm_diff_signals_2']['median']
-    plt.figure(figsize=(7, 7))
-    plotlib.scatterDensity(x, y, alpha=0.7, log=True)
-    plotlib.setproperties(xlim=(-0.08, 1), ylim=(-0.08, 1), 
+    plotlib.setproperties(xlim=(-0.09, 1), ylim=(-0.09, 1), 
                           xlabel='Normalized quenched signals', 
                           ylabel='Normalized switching signals', 
                           title=fullName,
                           labelfontsize=25, tickfontsize=25, equal=True)
-    plt.savefig(figureDir+'/'+name+'_switchQuenchScatter.png')
+    plt.savefig(figureDir+'/'+name+'_scatterNorm_QO_sm.png')
+
+
+# Plot 
+def plotScatterNorm_QO_ds1(data_aggPF, name, fullName):
+    x = data_aggPF['QO_norm_signals']['median']
+    y = data_aggPF['sm_norm_diff_signals_1']['median']
+    plt.figure(figsize=(7, 7))
+    plotlib.scatterDensity(x, y, alpha=0.7, log=True)
+    plotlib.setproperties(xlim=(-0.09, 1), ylim=(-0.09, 1), 
+                          xlabel='Normalized quenched signals', 
+                          ylabel='Normalized differential signals 1', 
+                          title=fullName,
+                          labelfontsize=25, tickfontsize=25, equal=True)
+    plt.savefig(figureDir+'/'+name+'_scatterNorm_QO_ds1.png')
+
+
+# Plot 
+def plotScatterNorm_QO_ds2(data_aggPF, name, fullName):
+    x = data_aggPF['QO_norm_signals']['median']
+    y = data_aggPF['sm_norm_diff_signals_2']['median']
+    plt.figure(figsize=(7, 7))
+    plotlib.scatterDensity(x, y, alpha=0.7, log=True)
+    plotlib.setproperties(xlim=(-0.09, 1), ylim=(-0.09, 1), 
+                          xlabel='Normalized quenched signals', 
+                          ylabel='Normalized differential signals 2', 
+                          title=fullName,
+                          labelfontsize=25, tickfontsize=25, equal=True)
+    plt.savefig(figureDir+'/'+name+'_scatterNorm_QO_ds2.png')
+
+
+# Plot 
+def plotScatterNorm_sm_ds1(data_aggPF, name, fullName):
+    x = data_aggPF['sm_norm_signals']['median']
+    y = data_aggPF['sm_norm_diff_signals_1']['median']
+    plt.figure(figsize=(7, 7))
+    plotlib.scatterDensity(x, y, alpha=0.7, log=True)
+    plotlib.setproperties(xlim=(-0.09, 1), ylim=(-0.09, 1), 
+                          xlabel='Normalized switching signals', 
+                          ylabel='Normalized differential signals 1', 
+                          title=fullName,
+                          labelfontsize=25, tickfontsize=25, equal=True)
+    plt.savefig(figureDir+'/'+name+'_scatterNorm_sm_ds1.png')
+
+
+# Plot 
+def plotScatterNorm_sm_ds2(data_aggPF, name, fullName):
+    x = data_aggPF['sm_norm_signals']['median']
+    y = data_aggPF['sm_norm_diff_signals_2']['median']
+    plt.figure(figsize=(7, 7))
+    plotlib.scatterDensity(x, y, alpha=0.7, log=True)
+    plotlib.setproperties(xlim=(-0.09, 1), ylim=(-0.09, 1), 
+                          xlabel='Normalized switching signals', 
+                          ylabel='Normalized differential signals 2', 
+                          title=fullName,
+                          labelfontsize=25, tickfontsize=25, equal=True)
+    plt.savefig(figureDir+'/'+name+'_scatterNorm_sm_ds2.png')
+
+
+# Plot 
+def plotScatterNorm_ds1_ds2(data_aggPF, name, fullName):
+    x = data_aggPF['sm_norm_diff_signals_1']['median']
+    y = data_aggPF['sm_norm_diff_signals_2']['median']
+    plt.figure(figsize=(7, 7))
+    plotlib.scatterDensity(x, y, alpha=0.7, log=True)
+    plotlib.setproperties(xlim=(-0.09, 1), ylim=(-0.09, 1), 
+                          xlabel='Normalized differential signals 1', 
+                          ylabel='Normalized differential signals 2', 
+                          title=fullName,
+                          labelfontsize=25, tickfontsize=25, equal=True)
+    plt.savefig(figureDir+'/'+name+'_scatterNorm_ds1_ds2.png')
+
+
+# Plot 
+def plotScatterNorm_ds2_bserr(data_aggPF, name, fullName):
+    x = data_aggPF['sm_norm_diff_signals_2']['median']
+    y = data_aggPF['sm_norm_diff_signals_2']['bserr'].apply(lambda x: float(x.split(',')[1][:-1]) - float(x.split(',')[0][1:]))
+    plt.figure(figsize=(7, 7))
+    plotlib.scatterDensity(x, y, alpha=0.7, log=True)
+    plotlib.setproperties(xlabel='Normalized differential signals 2', 
+                          ylabel='Bootstrapped error', 
+                          title=fullName,
+                          labelfontsize=25, tickfontsize=25, equal=True)
+    plt.savefig(figureDir+'/'+name+'_scatterNorm_ds2_bserr.png')
 
 
 
 
+## -------------- ########
 
 # Plot raw signals histogram
 def plotRawSignalsHist(data_aggPF, name, fullName):
