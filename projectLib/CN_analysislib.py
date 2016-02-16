@@ -13,16 +13,6 @@ import multiprocessing
 dataDir = 'processedData/'
 
 
-# Bootstrap error 
-def bootstrap(data, numSamples, statistic, alpha):
-    '''Returns bootstrap estimate of 100.0 * (1 - alpha) CI for statistic'''
-    n = len(data)
-    idx = np.random.randint(0, n, (numSamples, n))
-    data_npArray = np.array(data)
-    samples = data_npArray[idx]
-    stat = np.sort(statistic(samples, 1))
-    return (stat[int((alpha / 2.0) * numSamples)],
-            stat[int((1 - alpha / 2.0) * numSamples)])
 
 
 # 
