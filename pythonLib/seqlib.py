@@ -15,9 +15,9 @@ def getSatMutations(listSeqPos, consensus='', rna=False):
 
     # Make default list of all bases
     if rna:
-        allBases = ['A', 'U', 'C', 'G']
+        allBases = ['A', 'C', 'G', 'U']
     else:
-        allBases = ['A', 'T', 'C', 'G']
+        allBases = ['A', 'C', 'G', 'T']
     # Extract the list for positions from listSeqPos for sorting
     listPos = [seqPos[1:] for seqPos in listSeqPos]
     # Sort listPos and listSeqPos by listPos
@@ -43,17 +43,17 @@ def getSatMutations(listSeqPos, consensus='', rna=False):
 # Get all four bases as a list
 def allBases(rna=False):
     if rna:
-        return ['A', 'U', 'C', 'G']
+        return ['A', 'C', 'G', 'U']
     else:
-        return ['A', 'T', 'C', 'G']
+        return ['A', 'C', 'G', 'T']
 
 
 # Get all other bases as a list
 def allOtherBases(bases, rna=False):
     if rna:
-        allBases = ['A', 'U', 'C', 'G']
+        allBases = ['A', 'C', 'G', 'U']
     else:
-        allBases = ['A', 'T', 'C', 'G']
+        allBases = ['A', 'C', 'G', 'T']
     for base in bases:
         base = base.upper()
         if base in allBases:
