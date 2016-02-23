@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import seaborn as sns
 from scipy.stats import gaussian_kde
+import seqlib
 
 
 ### ---------- Handy plotting tools ---------- ###
@@ -172,3 +173,86 @@ def scatterDensity(data, data2=None,
         return ax1, ax2
     else:
         return ax1
+
+
+# Plot double mutant heatmap by grepping the activities of all the 
+# double mutants given a reference sequence and a library sequence 
+# with degenerate positions denoted with N
+def doubleMutant(data, refVariant, libSeq, 
+                 startPos=1, refSignal=None, normToRefSignal=True, 
+                 vmin=None, vmax=None, cmap='RdBu_r', center=0, cbarLabel=None,
+                 triangle=None, invertY=True, **kwargs):
+    '''Plot double mutant heatmap given a reference and library sequence'''
+    # add masking option
+
+    # Define reference signal as the signal of the reference variant if 
+    # refSignal not provided
+    if refSignal is None:
+        refSignal = data[refVariant]
+    # Normalize data to reference signal if normToRefSignal=True
+    if normToRefSignal:
+        data_norm = data / refSignal
+    else:
+        data_norm = data
+    
+    # Get library positions and create labels for mutants
+    libPos = [i for (i, base) in enumerate(libSeq.upper()) if base == 'N']
+    mutantLabels = [refVariant[i]+str(i+startPos)+otherBase 
+                    for i in libPos for otherBase in seqlib.allOtherBases(refVariant[i])]
+
+    # Grep the mutants and fill in the signals
+    dim = len(mutantLabels)
+    doubleMutantSignals = np.zeros(shape=(dim, dim))
+    for i, mutation1 in enumerate(mutantLabels):
+        for j, mutation2 in enumerate(mutantLabels):
+            # Get the index for the degenerate base along the sequence
+            pos1 = int(mutation1[1:-1]) - startPos
+            otherBase1 = mutation1[-1]
+            pos2 = int(mutation2[1:-1]) - startPos
+            otherBase2 = mutation2[-1]
+            # Create the current mutant sequence
+            currSeq = list(refVariant)
+            currSeq[pos1] = otherBase1
+            currSeq[pos2] = otherBase2
+            currSeq = ''.join(currSeq)
+            # Grep the signal and fill in the double mutant matrix
+            if not (currSeq in data_norm.index):
+                doubleMutantSignals[i, j] = np.nan
+            elif pos1 != pos2:
+                doubleMutantSignals[i, j] = data_norm[currSeq]
+            elif (pos1 == pos2) and (otherBase1 == otherBase2):
+                doubleMutantSignals[i, j] = data_norm[currSeq]
+            else:
+                doubleMutantSignals[i, j] = np.nan
+    
+    # Create mask for triangular matrix if requested
+    mask = np.zeros_like(doubleMutantSignals)
+    if triangle == 'lower':
+        mask[np.triu_indices_from(mask)] = True
+    elif triangle == 'upper':
+        mask[np.tril_indices_from(mask)] = True
+
+    # Plot the double mutant matrix
+    ax = sns.heatmap(doubleMutantSignals, 
+                     mask=mask,
+                     square=True,
+                     robust=True,
+                     vmin=vmin,
+                     vmax=vmax,
+                     cmap=cmap, 
+                     center=center,
+                     xticklabels=mutantLabels, 
+                     yticklabels=mutantLabels, 
+                     cbar_kws={'label': cbarLabel}, 
+                     **kwargs)
+    cax = plt.gcf().axes[-1]
+    if invertY:
+        ax.invert_yaxis()
+
+    # Draw white lines separating the triplets
+    for x in range(3, dim, 3):
+        ax.plot([x, x], [0, dim], color='white', linewidth=2)
+    for y in range(3, dim, 3):
+        ax.plot([0, dim], [y, y], color='white', linewidth=2)
+
+    return ax, cax
