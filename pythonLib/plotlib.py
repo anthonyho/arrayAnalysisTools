@@ -174,6 +174,39 @@ def scatterDensity(data, data2=None,
     else:
         return ax1
 
+# Generate the double mutant matrix
+def doubleMutantMatrix(data, refVariant, libSeq, startPos):
+    """Auxiliary function to generate the doubel mutant matrix"""
+    # Get library positions and create labels for mutants
+    libPos = [i for (i, base) in enumerate(libSeq.upper()) if base == 'N']
+    mutantLabels = [refVariant[i]+str(i+startPos)+otherBase 
+                    for i in libPos for otherBase in seqlib.allOtherBases(refVariant[i])]
+    # Grep the mutants and fill in the signals
+    dim = len(mutantLabels)
+    doubleMutantSignals = np.zeros(shape=(dim, dim))
+    for i, mutation1 in enumerate(mutantLabels):
+        for j, mutation2 in enumerate(mutantLabels):
+            # Get the index for the degenerate base along the sequence
+            pos1 = int(mutation1[1:-1]) - startPos
+            otherBase1 = mutation1[-1]
+            pos2 = int(mutation2[1:-1]) - startPos
+            otherBase2 = mutation2[-1]
+            # Create the current mutant sequence
+            currSeq = list(refVariant)
+            currSeq[pos1] = otherBase1
+            currSeq[pos2] = otherBase2
+            currSeq = ''.join(currSeq)
+            # Grep the signal and fill in the double mutant matrix
+            if not (currSeq in data.index):
+                doubleMutantSignals[i, j] = np.nan
+            elif pos1 != pos2:
+                doubleMutantSignals[i, j] = data[currSeq]
+            elif (pos1 == pos2) and (otherBase1 == otherBase2):
+                doubleMutantSignals[i, j] = data[currSeq]
+            else:
+                doubleMutantSignals[i, j] = np.nan
+    return doubleMutantSignals, mutantLabels
+
 
 # Plot double mutant heatmap by grepping the activities of all the 
 # double mutants given a reference sequence and a library sequence 
@@ -192,37 +225,10 @@ def doubleMutant(data, refVariant, libSeq,
         data_norm = data / refSignal
     else:
         data_norm = data
-    
-    # Get library positions and create labels for mutants
-    libPos = [i for (i, base) in enumerate(libSeq.upper()) if base == 'N']
-    mutantLabels = [refVariant[i]+str(i+startPos)+otherBase 
-                    for i in libPos for otherBase in seqlib.allOtherBases(refVariant[i])]
 
-    # Grep the mutants and fill in the signals
-    dim = len(mutantLabels)
-    doubleMutantSignals = np.zeros(shape=(dim, dim))
-    for i, mutation1 in enumerate(mutantLabels):
-        for j, mutation2 in enumerate(mutantLabels):
-            # Get the index for the degenerate base along the sequence
-            pos1 = int(mutation1[1:-1]) - startPos
-            otherBase1 = mutation1[-1]
-            pos2 = int(mutation2[1:-1]) - startPos
-            otherBase2 = mutation2[-1]
-            # Create the current mutant sequence
-            currSeq = list(refVariant)
-            currSeq[pos1] = otherBase1
-            currSeq[pos2] = otherBase2
-            currSeq = ''.join(currSeq)
-            # Grep the signal and fill in the double mutant matrix
-            if not (currSeq in data_norm.index):
-                doubleMutantSignals[i, j] = np.nan
-            elif pos1 != pos2:
-                doubleMutantSignals[i, j] = data_norm[currSeq]
-            elif (pos1 == pos2) and (otherBase1 == otherBase2):
-                doubleMutantSignals[i, j] = data_norm[currSeq]
-            else:
-                doubleMutantSignals[i, j] = np.nan
-    
+    # Generate the double mutant matrix
+    doubleMutantSignals, mutantLabels = doubleMutantMatrix(data_norm, refVariant, libSeq, startPos)
+
     # Create mask for triangular matrix if requested
     mask = np.zeros_like(doubleMutantSignals, dtype=bool)
     if triangle == 'lower':
@@ -232,24 +238,18 @@ def doubleMutant(data, refVariant, libSeq,
         mask[np.triu_indices_from(mask)] = True
         mask = np.invert(mask)
 
-    # Plot the double mutant matrix
+    # Plot the double mutant heatmap
     ax = sns.heatmap(doubleMutantSignals, 
-                     mask=mask,
-                     square=True,
-                     robust=True,
-                     vmin=vmin,
-                     vmax=vmax,
-                     cmap=cmap, 
-                     center=center,
-                     xticklabels=mutantLabels, 
-                     yticklabels=mutantLabels, 
-                     cbar_kws={'label': cbarLabel}, 
-                     **kwargs)
+                     mask=mask, square=True, robust=True,
+                     vmin=vmin, vmax=vmax, center=center, cmap=cmap, 
+                     xticklabels=mutantLabels, yticklabels=mutantLabels, 
+                     cbar_kws={'label': cbarLabel}, **kwargs)
     cax = plt.gcf().axes[-1]
     if invertY:
         ax.invert_yaxis()
 
     # Draw white lines separating the triplets
+    dim = len(mutantLabels)
     for x in range(3, dim, 3):
         ax.plot([x, x], [0, dim], color='white', linewidth=2)
     for y in range(3, dim, 3):

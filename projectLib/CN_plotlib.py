@@ -1,5 +1,5 @@
 # Anthony Ho, ahho@stanford.edu, 1/26/2015
-# Last update 2/15/2016
+# Last update 2/22/2016
 """Python module containing plot functions for chemical nose project"""
 
 
@@ -11,6 +11,9 @@ import plotlib
 
 figureDir = 'figures/'
 
+
+
+## -------------- ##
 
 # Plot 
 def plotScatter_r7_sm(data_aggPF, name, fullName):
@@ -156,7 +159,7 @@ def plotScatterNorm_ds2_bserr(data_aggPF, name, fullName):
 
 
 
-## -------------- ########
+## -------------- ##
 
 # Plot raw signals histogram
 def plotRawSignalsHist(data_aggPF, name, fullName):
@@ -314,4 +317,42 @@ def plotNormSwitchingSignalsSortedTrackAll(allData_aggPF, names, fullNames):
                   legend=True, legendloc=1, legendfontsize=16,
                   labelfontsize=25, tickfontsize=25)
     plt.savefig('figures/all6_normDiffSignalsTrackSorted.png')
+
+
+
+
+## -------------- ##
+
+
+# Plot double mutant heatmap for one small molecule
+def doubleMutant(allData_aggPF, mutantSM, dataSM, names):
+    # Define variables
+    data = allData_aggPF[dataSM]['sm_norm_diff_signals_2']['median']
+    mutantRefVariant = allData_aggPF[mutantSM]['sm_norm_diff_signals_2']['median'].idxmax()
+    dataRefVariant = allData_aggPF[dataSM]['sm_norm_diff_signals_2']['median'].idxmax()
+    refSignal = allData_aggPF[dataSM]['sm_norm_diff_signals_2']['median'][dataRefVariant]
+    libSeq = 'NNGGATTTTCCNNNNACGAAGTNNTCCCGAG'
+    startPos = 14
+    cbarLabel = 'Switching signals normalized to '+names[dataSM].lower()+'0'
+    title = 'Mutants of '+names[mutantSM].lower()+'0, in the presence of '+names[dataSM]
+    # Compute vmin and vmax manually
+    normRefData = allData_aggPF[dataSM]['sm_norm_diff_signals_2']['median'] / refSignal
+    doubleMutantSignals, mutantLabels = plotlib.doubleMutantMatrix(normRefData, dataRefVariant, libSeq, startPos)
+    doubleMutantSignals = doubleMutantSignals[~np.isnan(doubleMutantSignals)]
+    vmin = np.percentile(doubleMutantSignals, 1)
+    vmax = np.percentile(doubleMutantSignals, 99)
+    vlim = max(abs(vmin), abs(vmax))
+    vmin, vmax = -vlim, vlim
+    # Make heatmap
+    plt.figure(figsize=(12,10))
+    ax, cax = plotlib.doubleMutant(data, mutantRefVariant, libSeq, 
+                                   startPos=startPos, refSignal=refSignal,
+                                   vmin=vmin, vmax=vmax, cbarLabel=cbarLabel,
+                                   triangle='lower', invertY=False)
+    cax.tick_params(labelsize=20)
+    cax.yaxis.label.set_fontsize(20)
+    plotlib.setproperties(title=title, labelfontsize=20, titlefontsize=20)
+    
+    plt.savefig(figureDir+'/'+names[dataSM]+'_'+names[mutantSM].lower()+'0_doubleMutant.png')
+    return ax, cax
 
