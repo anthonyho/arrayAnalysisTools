@@ -182,9 +182,7 @@ def doubleMutant(data, refVariant, libSeq,
                  startPos=1, refSignal=None, normToRefSignal=True, 
                  vmin=None, vmax=None, cmap='RdBu_r', center=0, cbarLabel=None,
                  triangle=None, invertY=True, **kwargs):
-    '''Plot double mutant heatmap given a reference and library sequence'''
-    # add masking option
-
+    """Plot double mutant heatmap given a reference and library sequence"""
     # Define reference signal as the signal of the reference variant if 
     # refSignal not provided
     if refSignal is None:
@@ -226,11 +224,13 @@ def doubleMutant(data, refVariant, libSeq,
                 doubleMutantSignals[i, j] = np.nan
     
     # Create mask for triangular matrix if requested
-    mask = np.zeros_like(doubleMutantSignals)
+    mask = np.zeros_like(doubleMutantSignals, dtype=bool)
     if triangle == 'lower':
-        mask[np.triu_indices_from(mask)] = True
-    elif triangle == 'upper':
         mask[np.tril_indices_from(mask)] = True
+        mask = np.invert(mask)
+    elif triangle == 'upper':
+        mask[np.triu_indices_from(mask)] = True
+        mask = np.invert(mask)
 
     # Plot the double mutant matrix
     ax = sns.heatmap(doubleMutantSignals, 
