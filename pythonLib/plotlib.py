@@ -17,7 +17,7 @@ import seqlib
 # Handy function to set the commonly used plot modifiers and apply to plot/figure
 def setproperties(fig=None, ax=None, figsize=None,
                   suptitle=None, title=None,
-                  legend=None, legendloc=1, legendwidth=2.5,
+                  legend=None, legendloc=1, legendwidth=2.5, legendbox=None,
                   xlabel=None, ylabel=None, xlim=None, ylim=None,
                   scix=False, sciy=False, scilimitsx=(-3, 3), scilimitsy=(-3, 3),
                   logx=False, logy=False, majorgrid=None, minorgrid=None,
@@ -50,7 +50,7 @@ def setproperties(fig=None, ax=None, figsize=None,
         ax.set_title(title, y=1.02)
     # Show legend if requested
     if legend:
-        legend = plt.legend(loc=legendloc, numpoints=1, fontsize=legendfontsize)
+        legend = plt.legend(loc=legendloc, numpoints=1, fontsize=legendfontsize, frameon=legendbox)
         legend.get_frame().set_linewidth(legendwidth)
     # Set x and y labels if provided
     if xlabel is not None:
