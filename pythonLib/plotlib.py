@@ -213,8 +213,8 @@ def doubleMutantMatrix(data, refVariant, libSeq, startPos):
 # with degenerate positions denoted with N
 def doubleMutant(data, refVariant, libSeq, 
                  startPos=1, refSignal=None, normToRefSignal=True, 
-                 vmin=None, vmax=None, cmap='RdBu_r', center=0, cbarLabel=None,
-                 triangle=None, invertY=True, **kwargs):
+                 vmin=None, vmax=None, cmap='RdYlBu_r', center=0, cbarLabel=None,
+                 triangle=None, invertY=True, linewidth=2, **kwargs):
     """Plot double mutant heatmap given a reference and library sequence"""
     # Define reference signal as the signal of the reference variant if 
     # refSignal not provided
@@ -251,8 +251,8 @@ def doubleMutant(data, refVariant, libSeq,
     # Draw white lines separating the triplets
     dim = len(mutantLabels)
     for x in range(3, dim, 3):
-        ax.plot([x, x], [0, dim], color='white', linewidth=2)
+        ax.plot([x, x], [0, dim], color='white', linewidth=linewidth)
     for y in range(3, dim, 3):
-        ax.plot([0, dim], [y, y], color='white', linewidth=2)
+        ax.plot([0, dim], [y, y], color='white', linewidth=linewidth)
 
     return ax, cax

@@ -348,7 +348,7 @@ def doubleMutant(allData_aggPF, mutantSM, dataSM, names):
     ax, cax = plotlib.doubleMutant(data, mutantRefVariant, libSeq, 
                                    startPos=startPos, refSignal=refSignal,
                                    vmin=vmin, vmax=vmax, cbarLabel=cbarLabel,
-                                   triangle='lower', invertY=False)
+                                   triangle='lower', invertY=False, linewidth=3)
     cax.tick_params(labelsize=20)
     cax.yaxis.label.set_fontsize(20)
     plotlib.setproperties(title=title, labelfontsize=20, titlefontsize=20)
