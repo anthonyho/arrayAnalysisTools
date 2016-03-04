@@ -1,5 +1,5 @@
 # Anthony Ho, ahho@stanford.edu, 1/26/2015
-# Last update 2/22/2016
+# Last update 3/4/2016
 """Python module containing plot functions for chemical nose project"""
 
 
@@ -13,9 +13,11 @@ figureDir = 'figures/'
 
 
 
-## -------------- ##
 
-# Plot 
+## ---------- Scatter plots of raw and normalized signals ---------- ##
+
+
+# Plot raw switching signals against raw all-cluster signals
 def plotScatter_r7_sm(data_aggPF, name, fullName):
     x = data_aggPF['r7_signals']['median']
     y = data_aggPF['sm_signals']['median']
@@ -30,7 +32,7 @@ def plotScatter_r7_sm(data_aggPF, name, fullName):
     plt.savefig(figureDir+'/'+name+'_scatter_r7_sm.png')
 
 
-# Plot 
+# Plot raw quenched signals against raw all-cluster signals 
 def plotScatter_r7_QO(data_aggPF, name, fullName):
     x = data_aggPF['r7_signals']['median']
     y = data_aggPF['QO_signals']['median']
@@ -45,7 +47,7 @@ def plotScatter_r7_QO(data_aggPF, name, fullName):
     plt.savefig(figureDir+'/'+name+'_scatter_r7_QO.png')
 
 
-# Plot 
+# Plot raw switching signals against raw quenched signals
 def plotScatter_QO_sm(data_aggPF, name, fullName):
     x = data_aggPF['QO_signals']['median']
     y = data_aggPF['sm_signals']['median']
@@ -60,7 +62,7 @@ def plotScatter_QO_sm(data_aggPF, name, fullName):
     plt.savefig(figureDir+'/'+name+'_scatter_QO_sm.png')
 
 
-# Plot 
+# Plot normalized switching signals against normalized quenched signals
 def plotScatterNorm_QO_sm(data_aggPF, name, fullName):
     x = data_aggPF['QO_norm_signals']['median']
     y = data_aggPF['sm_norm_signals']['median']
@@ -74,7 +76,7 @@ def plotScatterNorm_QO_sm(data_aggPF, name, fullName):
     plt.savefig(figureDir+'/'+name+'_scatterNorm_QO_sm.png')
 
 
-# Plot 
+# Plot normalized differential signals 1 against normalized quenched signals
 def plotScatterNorm_QO_ds1(data_aggPF, name, fullName):
     x = data_aggPF['QO_norm_signals']['median']
     y = data_aggPF['sm_norm_diff_signals_1']['median']
@@ -88,7 +90,7 @@ def plotScatterNorm_QO_ds1(data_aggPF, name, fullName):
     plt.savefig(figureDir+'/'+name+'_scatterNorm_QO_ds1.png')
 
 
-# Plot 
+# Plot normalized differential signals 2 against normalized quenched signals
 def plotScatterNorm_QO_ds2(data_aggPF, name, fullName):
     x = data_aggPF['QO_norm_signals']['median']
     y = data_aggPF['sm_norm_diff_signals_2']['median']
@@ -102,7 +104,7 @@ def plotScatterNorm_QO_ds2(data_aggPF, name, fullName):
     plt.savefig(figureDir+'/'+name+'_scatterNorm_QO_ds2.png')
 
 
-# Plot 
+# Plot normalized differential signals 1 against normalized switching signals
 def plotScatterNorm_sm_ds1(data_aggPF, name, fullName):
     x = data_aggPF['sm_norm_signals']['median']
     y = data_aggPF['sm_norm_diff_signals_1']['median']
@@ -116,7 +118,7 @@ def plotScatterNorm_sm_ds1(data_aggPF, name, fullName):
     plt.savefig(figureDir+'/'+name+'_scatterNorm_sm_ds1.png')
 
 
-# Plot 
+# Plot normalized differential signals 2 against normalized switching signals
 def plotScatterNorm_sm_ds2(data_aggPF, name, fullName):
     x = data_aggPF['sm_norm_signals']['median']
     y = data_aggPF['sm_norm_diff_signals_2']['median']
@@ -130,7 +132,7 @@ def plotScatterNorm_sm_ds2(data_aggPF, name, fullName):
     plt.savefig(figureDir+'/'+name+'_scatterNorm_sm_ds2.png')
 
 
-# Plot 
+# Plot normalized differential signals 2 against normalized differential signals 1
 def plotScatterNorm_ds1_ds2(data_aggPF, name, fullName):
     x = data_aggPF['sm_norm_diff_signals_1']['median']
     y = data_aggPF['sm_norm_diff_signals_2']['median']
@@ -144,7 +146,7 @@ def plotScatterNorm_ds1_ds2(data_aggPF, name, fullName):
     plt.savefig(figureDir+'/'+name+'_scatterNorm_ds1_ds2.png')
 
 
-# Plot 
+# Plot median vs bootstrapped error for normalized differential signals 2
 def plotScatterNorm_ds2_bserr(data_aggPF, name, fullName):
     x = data_aggPF['sm_norm_diff_signals_2']['median']
     y = data_aggPF['sm_norm_diff_signals_2']['bserr'].apply(lambda x: float(x.split(',')[1][:-1]) - float(x.split(',')[0][1:]))
@@ -159,7 +161,8 @@ def plotScatterNorm_ds2_bserr(data_aggPF, name, fullName):
 
 
 
-## -------------- ##
+## ---------- Histograms of raw and normalized signals ---------- ##
+
 
 # Plot raw signals histogram
 def plotRawSignalsHist(data_aggPF, name, fullName):
@@ -200,6 +203,11 @@ def plotNormSignalsHist(data_aggPF, name, fullName):
     handles, labels = ax2.get_legend_handles_labels()
     ax2.legend(handles[::-1], labels[::-1], loc=1, fontsize=16)  # Define legend and reverse order
     plt.savefig('figures/'+name+'_normSignalsHist.png')
+
+
+
+
+## ---------- Signal tracks  ---------- ##
 
 
 # Plot the normalized signals along the sequence coordinate
@@ -321,7 +329,7 @@ def plotNormSwitchingSignalsSortedTrackAll(allData_aggPF, names, fullNames):
 
 
 
-## -------------- ##
+## ---------- Double mutant heatmaps  ---------- ##
 
 
 # Plot double mutant heatmap for one small molecule
