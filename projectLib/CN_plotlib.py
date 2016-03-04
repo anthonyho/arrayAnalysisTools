@@ -5,6 +5,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
 import plotlib
 
@@ -14,7 +15,7 @@ figureDir = 'figures/'
 
 
 
-## ---------- Scatter plots of raw and normalized signals ---------- ##
+### ---------- Scatter plots of raw and normalized signals ---------- ###
 
 
 # Plot raw switching signals against raw all-cluster signals
@@ -146,22 +147,36 @@ def plotScatterNorm_ds1_ds2(data_aggPF, name, fullName):
     plt.savefig(figureDir+'/'+name+'_scatterNorm_ds1_ds2.png')
 
 
-# Plot median vs bootstrapped error for normalized differential signals 2
+# Plot bootstrapped error vs median for normalized differential signals 2
 def plotScatterNorm_ds2_bserr(data_aggPF, name, fullName):
     x = data_aggPF['sm_norm_diff_signals_2']['median']
     y = data_aggPF['sm_norm_diff_signals_2']['bserr'].apply(lambda x: float(x.split(',')[1][:-1]) - float(x.split(',')[0][1:]))
     plt.figure(figsize=(7, 7))
     plotlib.scatterDensity(x, y, alpha=0.7, log=True)
-    plotlib.setproperties(xlabel='Normalized differential signals 2', 
+    plotlib.setproperties(xlabel='Normalized differential signals', 
                           ylabel='Bootstrapped error', 
                           title=fullName,
                           labelfontsize=25, tickfontsize=25, equal=True)
     plt.savefig(figureDir+'/'+name+'_scatterNorm_ds2_bserr.png')
 
 
+# Plot fractional bootstrapped error vs median for normalized differential signals 2
+def plotScatterNorm_ds2_fbserr(data_aggPF, name, fullName):
+    x = data_aggPF['sm_norm_diff_signals_2']['median']
+    y = data_aggPF['sm_norm_diff_signals_2']['bserr'].apply(lambda x: float(x.split(',')[1][:-1]) - float(x.split(',')[0][1:])) 
+    df = pd.concat([x, y / x], axis=1).replace([np.inf, -np.inf], np.nan).dropna()
+    plt.figure(figsize=(7, 7))
+    plotlib.scatterDensity(df[0], df[1], alpha=0.7, log=True)
+    plotlib.setproperties(xlabel='Normalized differential signals',
+                          ylabel='Fractional bootstrapped error', 
+                          title=fullName,
+                          labelfontsize=25, tickfontsize=25, equal=True)
+    plt.savefig(figureDir+'/'+name+'_scatterNorm_ds2_fbserr.png')
 
 
-## ---------- Histograms of raw and normalized signals ---------- ##
+
+
+### ---------- Histograms of raw and normalized signals ---------- ###
 
 
 # Plot raw signals histogram
@@ -207,7 +222,7 @@ def plotNormSignalsHist(data_aggPF, name, fullName):
 
 
 
-## ---------- Signal tracks  ---------- ##
+### ---------- Signal tracks  ---------- ###
 
 
 # Plot the normalized signals along the sequence coordinate
@@ -329,7 +344,7 @@ def plotNormSwitchingSignalsSortedTrackAll(allData_aggPF, names, fullNames):
 
 
 
-## ---------- Double mutant heatmaps  ---------- ##
+### ---------- Double mutant heatmaps  ---------- ###
 
 
 # Plot double mutant heatmap for one small molecule
