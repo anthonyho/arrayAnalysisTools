@@ -446,8 +446,15 @@ def doubleMutant(allData_aggPF, mutantSM, targetSM, normSM, names, norm=False, c
         normRefSignal = 1
     libSeq = 'NNGGATTTTCCNNNNACGAAGTNNTCCCGAG'
     startPos = 14
-    cbarLabel = 'Switching signals normalized to '+names[targetSM].lower()+'0'
     title = 'Mutants of '+names[mutantSM].lower()+'0, in the presence of '+names[targetSM]
+    if norm and coop:
+        cbarLabel = 'Cooperativity normalized to '+names[targetSM].lower()+'0'
+    elif norm and not coop:
+        cbarLabel = 'Differential signals normalized to '+names[targetSM].lower()+'0'
+    elif not norm and coop:
+        cbarLabel = 'Cooperativity'
+    else:
+        cbarLabel = 'Differential signals'
     
     # Compute vmin and vmax manually (assuming robust=True) so that the color bar
     # scale is the same across the same dataRefVariant
