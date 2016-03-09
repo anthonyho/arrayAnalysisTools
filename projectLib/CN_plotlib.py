@@ -476,9 +476,9 @@ def doubleMutant(allData_aggPF, mutantSM, targetSM, normSM, names, norm=False, c
     else:
         figureOutput = 'doubleMutant'
     if norm:
-        figureNorm = 'norm'
+        figureNorm = 'norm_'
     else:
         figureNorm = ''
-    plt.savefig(figureDir+'/'+names[mutantSM].lower()+'0_'+names[targetSM]+'_'+names[normSM].lower()+figureNorm+'0_'+figureOutput+'.png')
+    plt.savefig(figureDir+'/'+names[targetSM]+'_'+names[mutantSM].lower()+'0_'+names[normSM].lower()+'0_'+figureNorm+figureOutput+'.png')
     
     return ax, cax
