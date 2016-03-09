@@ -4,11 +4,13 @@
 
 
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import seaborn as sns
 from scipy.stats import gaussian_kde
 import seqlib
+
 
 
 ### ---------- Handy plotting tools ---------- ###
@@ -139,6 +141,34 @@ def makepretty(ax):
 
 
 
+### ---------- Custom colormaps ---------- ###
+
+
+# Define the RdYlBu_r2 colormap
+# Essentially the same as RdYlBu_r but with the same darker shade
+# of red and blue on the extremes as RdBu
+def RdYlBu_r2():
+    res = 10
+    RdBu_r_cmap = cm.get_cmap("RdBu_r", res)
+    RdBu_r_vals = RdBu_r_cmap(np.arange(res))
+    
+    RdYl_r_cmap = cm.get_cmap("RdYlBu_r", res)
+    RdYl_r_vals = RdYl_r_cmap(np.arange(res))
+    
+    RdYl_r_vals[0] = RdBu_r_vals[0]
+    RdYl_r_vals[-1] = RdBu_r_vals[-1]
+    
+    return mpl.colors.LinearSegmentedColormap.from_list("RdYlBu_r2", RdYl_r_vals)
+
+# Handy function to show a colormap
+def showColormap(cmap, numPoint=256):
+    gradient = np.outer(np.ones(16), np.arange(numPoint))
+    fig = plt.figure(figsize=(12, 2))
+    ax = plt.imshow(gradient, cmap=cmap)
+    ax.axes.get_yaxis().set_ticks([])
+
+
+
 ### ---------- Common plot functions ---------- ###
 
 
@@ -174,13 +204,15 @@ def scatterDensity(data, data2=None,
     else:
         return ax1
 
-# Generate the double mutant matrix
-def doubleMutantMatrix(data, refVariant, libSeq, startPos):
+
+# Generate the double mutant/cooperativity matrix
+def doubleMutantMatrix(data, refVariant, libSeq, startPos, coop=False):
     """Auxiliary function to generate the doubel mutant matrix"""
     # Get library positions and create labels for mutants
     libPos = [i for (i, base) in enumerate(libSeq.upper()) if base == 'N']
     mutantLabels = [refVariant[i]+str(i+startPos)+otherBase 
                     for i in libPos for otherBase in seqlib.allOtherBases(refVariant[i])]
+    
     # Grep the mutants and fill in the signals
     dim = len(mutantLabels)
     doubleMutantSignals = np.zeros(shape=(dim, dim))
@@ -205,21 +237,31 @@ def doubleMutantMatrix(data, refVariant, libSeq, startPos):
                 doubleMutantSignals[i, j] = data[currSeq]
             else:
                 doubleMutantSignals[i, j] = np.nan
+    
+    # Compute cooperativity if requested
+    if coop:
+        coopSignals = np.zeros(shape=(dim, dim))
+        for i in xrange(dim):
+            for j in xrange(dim):
+                coopSignals[i, j] = doubleMutantSignals[i, i] + doubleMutantSignals[j, j] - doubleMutantSignals[i, j]
+        doubleMutantSignals = coopSignals
+
     return doubleMutantSignals, mutantLabels
 
 
-# Plot double mutant heatmap by grepping the activities of all the 
-# double mutants given a reference sequence and a library sequence 
+# Plot double mutant/cooperativity heatmap by grepping the activities of 
+# all the double mutants given a reference sequence and a library sequence 
 # with degenerate positions denoted with N
 def doubleMutant(data, refVariant, libSeq, 
-                 startPos=1, refSignal=None, normToRefSignal=True, 
-                 vmin=None, vmax=None, cmap='RdYlBu_r', center=0, cbarLabel=None,
-                 triangle=None, invertY=True, linewidth=2, **kwargs):
+                 startPos=1, refSignal=None, normToRefSignal=True, coop=False,
+                 vmin=None, vmax=None, cmap=None, center=0, cbarLabel=None,
+                 triangle=None, invertY=True, linewidth=3, **kwargs):
     """Plot double mutant heatmap given a reference and library sequence"""
     # Define reference signal as the signal of the reference variant if 
     # refSignal not provided
     if refSignal is None:
         refSignal = data[refVariant]
+    
     # Normalize data to reference signal if normToRefSignal=True
     if normToRefSignal:
         data_norm = data / refSignal
@@ -227,7 +269,8 @@ def doubleMutant(data, refVariant, libSeq,
         data_norm = data
 
     # Generate the double mutant matrix
-    doubleMutantSignals, mutantLabels = doubleMutantMatrix(data_norm, refVariant, libSeq, startPos)
+    doubleMutantSignals, mutantLabels = doubleMutantMatrix(data_norm, refVariant, 
+                                                           libSeq, startPos, coop)
 
     # Create mask for triangular matrix if requested
     mask = np.zeros_like(doubleMutantSignals, dtype=bool)
@@ -239,6 +282,8 @@ def doubleMutant(data, refVariant, libSeq,
         mask = np.invert(mask)
 
     # Plot the double mutant heatmap
+    if cmap is None:
+        cmap = RdYlBu_r2()
     ax = sns.heatmap(doubleMutantSignals, 
                      mask=mask, square=True, robust=True,
                      vmin=vmin, vmax=vmax, center=center, cmap=cmap, 

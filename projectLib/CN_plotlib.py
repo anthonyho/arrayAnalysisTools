@@ -344,11 +344,11 @@ def plotNormSwitchingSignalsSortedTrackAll(allData_aggPF, names, fullNames):
 
 
 
-### ---------- Double mutant heatmaps  ---------- ###
+### ---------- Double mutant/cooperativity heatmaps  ---------- ###
 
 
-# Plot double mutant heatmap for one small molecule
-def doubleMutant(allData_aggPF, mutantSM, dataSM, names):
+# Plot double mutant/cooperativity heatmap for one small molecule
+def doubleMutant0(allData_aggPF, mutantSM, dataSM, names, coop=False):
     # Define variables
     data = allData_aggPF[dataSM]['sm_norm_diff_signals_2']['median']
     mutantRefVariant = allData_aggPF[mutantSM]['sm_norm_diff_signals_2']['median'].idxmax()
@@ -358,24 +358,127 @@ def doubleMutant(allData_aggPF, mutantSM, dataSM, names):
     startPos = 14
     cbarLabel = 'Switching signals normalized to '+names[dataSM].lower()+'0'
     title = 'Mutants of '+names[mutantSM].lower()+'0, in the presence of '+names[dataSM]
-    # Compute vmin and vmax manually
+    
+    # Compute vmin and vmax manually (assuming robust=True) so that the color bar
+    # scale is the same across the same dataRefVariant
     normRefData = allData_aggPF[dataSM]['sm_norm_diff_signals_2']['median'] / refSignal
-    doubleMutantSignals, mutantLabels = plotlib.doubleMutantMatrix(normRefData, dataRefVariant, libSeq, startPos)
+    doubleMutantSignals, mutantLabels = plotlib.doubleMutantMatrix(normRefData, dataRefVariant, libSeq, startPos, coop)
     doubleMutantSignals = doubleMutantSignals[~np.isnan(doubleMutantSignals)]
     vmin = np.percentile(doubleMutantSignals, 1)
     vmax = np.percentile(doubleMutantSignals, 99)
     vlim = max(abs(vmin), abs(vmax))
     vmin, vmax = -vlim, vlim
+    
     # Make heatmap
     plt.figure(figsize=(12,10))
     ax, cax = plotlib.doubleMutant(data, mutantRefVariant, libSeq, 
-                                   startPos=startPos, refSignal=refSignal,
+                                   startPos=startPos, refSignal=refSignal, coop=coop,
                                    vmin=vmin, vmax=vmax, cbarLabel=cbarLabel,
                                    triangle='lower', invertY=False, linewidth=3)
     cax.tick_params(labelsize=20)
     cax.yaxis.label.set_fontsize(20)
     plotlib.setproperties(title=title, labelfontsize=20, titlefontsize=20)
     
-    plt.savefig(figureDir+'/'+names[dataSM]+'_'+names[mutantSM].lower()+'0_doubleMutant.png')
+    # Save to file
+    if coop:
+        plt.savefig(figureDir+'/'+names[dataSM]+'_'+names[mutantSM].lower()+'0_coop.png')
+    else:
+        plt.savefig(figureDir+'/'+names[dataSM]+'_'+names[mutantSM].lower()+'0_doubleMutant.png')
+        
     return ax, cax
 
+
+# Plot double mutant/cooperativity heatmap for one small molecule
+def doubleMutant1(allData_aggPF, mutantSM, targetSM, normSM, names, coop=False):
+    # Define variables
+    data = allData_aggPF[targetSM]['sm_norm_diff_signals_2']['median']
+    mutantRefVariant = allData_aggPF[mutantSM]['sm_norm_diff_signals_2']['median'].idxmax()
+    targetRefVariant = allData_aggPF[targetSM]['sm_norm_diff_signals_2']['median'].idxmax()
+    normRefVariant = allData_aggPF[normSM]['sm_norm_diff_signals_2']['median'].idxmax()
+    targetRefSignal = allData_aggPF[targetSM]['sm_norm_diff_signals_2']['median'][targetRefVariant]
+    normRefSignal = allData_aggPF[normSM]['sm_norm_diff_signals_2']['median'][normRefVariant]
+    libSeq = 'NNGGATTTTCCNNNNACGAAGTNNTCCCGAG'
+    startPos = 14
+    cbarLabel = 'Switching signals normalized to '+names[targetSM].lower()+'0'
+    title = 'Mutants of '+names[mutantSM].lower()+'0, in the presence of '+names[targetSM]
+    
+    # Compute vmin and vmax manually (assuming robust=True) so that the color bar
+    # scale is the same across the same dataRefVariant
+    normRefData = allData_aggPF[normSM]['sm_norm_diff_signals_2']['median'] / normRefSignal
+    doubleMutantSignals, mutantLabels = plotlib.doubleMutantMatrix(normRefData, normRefVariant, libSeq, startPos, coop)
+    doubleMutantSignals = doubleMutantSignals[~np.isnan(doubleMutantSignals)]
+    vmin = np.percentile(doubleMutantSignals, 1)
+    vmax = np.percentile(doubleMutantSignals, 99)
+    vlim = max(abs(vmin), abs(vmax))
+    vmin, vmax = -vlim, vlim
+    
+    # Make heatmap
+    plt.figure(figsize=(12,10))
+    ax, cax = plotlib.doubleMutant(data, mutantRefVariant, libSeq, 
+                                   startPos=startPos, refSignal=targetRefSignal, coop=coop,
+                                   vmin=vmin, vmax=vmax, cbarLabel=cbarLabel,
+                                   triangle='lower', invertY=False, linewidth=3)
+    cax.tick_params(labelsize=20)
+    cax.yaxis.label.set_fontsize(20)
+    plotlib.setproperties(title=title, labelfontsize=20, titlefontsize=20)
+    
+    # Save to file
+    if coop:
+        plt.savefig(figureDir+'/'+names[mutantSM].lower()+'0_'+names[targetSM]+'_'+names[normSM].lower()+'0_coop.png')
+    else:
+        plt.savefig(figureDir+'/'+names[mutantSM].lower()+'0_'+names[targetSM]+'_'+names[normSM].lower()+'0_doubleMutant.png')
+        
+    return ax, cax
+
+
+# Plot double mutant/cooperativity heatmap for one small molecule
+def doubleMutant(allData_aggPF, mutantSM, targetSM, normSM, names, norm=False, coop=False):
+    # Define variables
+    data = allData_aggPF[targetSM]['sm_norm_diff_signals_2']['median']
+    mutantRefVariant = allData_aggPF[mutantSM]['sm_norm_diff_signals_2']['median'].idxmax()
+    targetRefVariant = allData_aggPF[targetSM]['sm_norm_diff_signals_2']['median'].idxmax()
+    normRefVariant = allData_aggPF[normSM]['sm_norm_diff_signals_2']['median'].idxmax()
+    if norm:
+        targetRefSignal = allData_aggPF[targetSM]['sm_norm_diff_signals_2']['median'][targetRefVariant]
+        normRefSignal = allData_aggPF[normSM]['sm_norm_diff_signals_2']['median'][normRefVariant]
+    else:
+        targetRefSignal = 1
+        normRefSignal = 1
+    libSeq = 'NNGGATTTTCCNNNNACGAAGTNNTCCCGAG'
+    startPos = 14
+    cbarLabel = 'Switching signals normalized to '+names[targetSM].lower()+'0'
+    title = 'Mutants of '+names[mutantSM].lower()+'0, in the presence of '+names[targetSM]
+    
+    # Compute vmin and vmax manually (assuming robust=True) so that the color bar
+    # scale is the same across the same dataRefVariant
+    normRefData = allData_aggPF[normSM]['sm_norm_diff_signals_2']['median'] / normRefSignal
+    doubleMutantSignals, mutantLabels = plotlib.doubleMutantMatrix(normRefData, normRefVariant, libSeq, startPos, coop)
+    doubleMutantSignals = doubleMutantSignals[~np.isnan(doubleMutantSignals)]
+    vmin = np.percentile(doubleMutantSignals, 1)
+    vmax = np.percentile(doubleMutantSignals, 99)
+    vlim = max(abs(vmin), abs(vmax))
+    vmin, vmax = -vlim, vlim
+    
+    # Make heatmap
+    plt.figure(figsize=(12,10))
+    ax, cax = plotlib.doubleMutant(data, mutantRefVariant, libSeq, 
+                                   startPos=startPos, refSignal=targetRefSignal, 
+                                   normToRefSignal=norm, coop=coop,
+                                   vmin=vmin, vmax=vmax, cbarLabel=cbarLabel,
+                                   triangle='lower', invertY=False, linewidth=3)
+    cax.tick_params(labelsize=20)
+    cax.yaxis.label.set_fontsize(20)
+    plotlib.setproperties(title=title, labelfontsize=20, titlefontsize=20)
+    
+    # Save to file
+    if coop:
+        figureOutput = 'coop'
+    else:
+        figureOutput = 'doubleMutant'
+    if norm:
+        figureNorm = 'norm'
+    else:
+        figureNorm = ''
+    plt.savefig(figureDir+'/'+names[mutantSM].lower()+'0_'+names[targetSM]+'_'+names[normSM].lower()+figureNorm+'0_'+figureOutput+'.png')
+    
+    return ax, cax
