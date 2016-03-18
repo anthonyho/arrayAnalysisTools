@@ -206,7 +206,7 @@ def scatterDensity(data, data2=None,
 
 
 # Generate the double mutant/cooperativity matrix
-def doubleMutantMatrix(data, refVariant, libSeq, startPos, coop=False):
+def doubleMutantMatrix(data, refVariant, libSeq, startPos=1, coop=False):
     """Auxiliary function to generate the doubel mutant matrix"""
     # Get library positions and create labels for mutants
     libPos = [i for (i, base) in enumerate(libSeq.upper()) if base == 'N']
