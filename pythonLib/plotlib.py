@@ -332,7 +332,7 @@ def seqCompo(seqs, libSeq=None, startPos=1, norm=True, RNA=False, legendloc=2):
             compo[base][pos] = np.sum(seqs.str[pos] == base)
             
     if norm:
-        compo = compo / numSeqs
+        compo = compo / numSeqs * 100
         ylabel = 'Sequence content (%)'
     else:
         ylabel = 'Sequence content (count)'
