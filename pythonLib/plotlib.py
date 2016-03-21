@@ -8,6 +8,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import seaborn as sns
+import pandas as pd
 from scipy.stats import gaussian_kde
 import seqlib
 
@@ -301,3 +302,49 @@ def doubleMutant(data, refVariant, libSeq,
         ax.plot([0, dim], [y, y], color='white', linewidth=linewidth)
 
     return ax, cax
+
+
+# Plot sequence composition as a line graph given a list (or Pandas series) of sequences
+# and (optionally) a libSeq that with 'N' that indicates library positions
+def seqCompo(seqs, libSeq=None, startPos=1, norm=True, RNA=False, legendloc=2):
+    """Plot sequence composition as a line graph"""
+    # Generate default libSeq
+    if libSeq is None:
+        libSeq = 'N' * len(seqs[0])
+
+    # Get library positions 
+    libPos = [i for (i, base) in enumerate(libSeq.upper()) if base == 'N']
+    xTickLabels = [str(i+startPos) for i in libPos]
+    
+    # Convert to pd.series if not already
+    seqs = pd.Series(seqs)
+
+    # Constants
+    allBases = seqlib.allBases(RNA)
+    numSeqs = len(seqs)
+    numPos = len(libPos)
+    colors = sns.color_palette("Paired", 12)
+
+    # Compute sequence composition matrix
+    compo = pd.DataFrame(index=libPos, columns=allBases)
+    for pos in libPos:
+        for base in allBases:
+            compo[base][pos] = np.sum(seqs.str[pos] == base)
+            
+    if norm:
+        compo = compo / numSeqs
+        ylabel = 'Sequence content (%)'
+    else:
+        ylabel = 'Sequence content (count)'
+
+    # Plot
+    for i, base in enumerate(allBases):
+        plt.plot(range(0, numPos), compo[base], color=colors[2*i+1], linewidth=3, label=base)
+    
+    # Add legend and axis labels, and change x tick labels    
+    setproperties(legend=True, legendloc=legendloc, 
+                  xlabel='Position', ylabel=ylabel)
+    plt.xticks(range(0, numPos), xTickLabels)
+
+    return plt.gca()
+    
