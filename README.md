@@ -1,4 +1,5 @@
 arrayTools
 ==========
 
-AHH's tools for array analysis
+Python/Bash/MATLAB tools for analysis of high-throughput biochemical experiment
+
