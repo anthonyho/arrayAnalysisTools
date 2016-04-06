@@ -150,10 +150,10 @@ def makepretty(ax):
 # of red and blue on the extremes as RdBu
 def RdYlBu_r2():
     res = 10
-    RdBu_r_cmap = cm.get_cmap("RdBu_r", res)
+    RdBu_r_cmap = mpl.cm.get_cmap("RdBu_r", res)
     RdBu_r_vals = RdBu_r_cmap(np.arange(res))
     
-    RdYl_r_cmap = cm.get_cmap("RdYlBu_r", res)
+    RdYl_r_cmap = mpl.cm.get_cmap("RdYlBu_r", res)
     RdYl_r_vals = RdYl_r_cmap(np.arange(res))
     
     RdYl_r_vals[0] = RdBu_r_vals[0]
