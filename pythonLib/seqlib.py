@@ -116,6 +116,18 @@ def hamming(s1, s2):
     return sum(ch1 != ch2 for ch1, ch2 in zip(s1, s2))
 
 
+# Convert the cases of bases specified by the refSeq
+def convertCases(seq, refSeq, toLower=True):
+    seq_list = list(seq)
+    for i, base in enumerate(refSeq.upper()):
+        if base == 'N':
+            if toLower:
+                seq_list[i] = seq_list[i].lower()
+            else:
+                seq_list[i] = seq_list[i].upper()
+    return ''.join(seq_list)
+
+
 # Find mismatches between two sequences, assuming equal length
 def findMismatches(query, reference, startPos=1, refPos=[]):
 
