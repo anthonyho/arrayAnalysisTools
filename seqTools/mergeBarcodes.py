@@ -65,6 +65,7 @@ def main():
     args = parser.parse_args()
 
     # Load input file
+    print "Loading reads..."
     allReads = pd.read_csv(args.inputFilePath, sep='\t', dtype='object', 
                            usecols=['barcode', 'barcode_Q', 'seq', 'seq_Q'])
 
