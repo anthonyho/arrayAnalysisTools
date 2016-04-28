@@ -66,18 +66,26 @@ def main():
                            usecols=['barcode', 'barcode_Q', 'seq', 'seq_Q'])
 
     # Filter sequences by their average Q scores
-    bcPF = allReads['barcode_Q'].apply(seqlib.avgQScore) > args.avgQBCScoreCutoff
-    readsPF = allReads['seq_Q'].apply(seqlib.avgQScore) > args.avgQScoreCutoff
-    filteredReads = allReads[bcPF & readsPF]
+    # skip this step if avgQScoreCutoff and avgQBCScoreCutoff are set to 0
+    if args.avgQBCScoreCutoff != 0 or args.avgQScoreCutoff != 0:
+        print "Filtering reads by Q scores..."
+        bcPF = allReads['barcode_Q'].apply(seqlib.avgQScore) > args.avgQBCScoreCutoff
+        readsPF = allReads['seq_Q'].apply(seqlib.avgQScore) > args.avgQScoreCutoff
+        filteredReads = allReads[bcPF & readsPF]
+    else:
+        filteredReads = allReads
     
     # Group by barcodes and merge in parallel
+    print "Grouping by barcodes..."
     filteredReads_grouped = filteredReads.groupby('barcode')
     filteredReads_group_list = list(filteredReads_grouped)
-
+    
+    print "Merging sequences with the same barcodes..."
     mergedReads = pd.DataFrame(Parallel(n_jobs=args.numCore, verbose=args.verbose)(delayed(consensusVoting)(group, name) 
                                                                                    for name, group in filteredReads_group_list))
 
     # Write to file
+    print "Writing to file..."
     mergedReads = mergedReads[['barcode', 'seq', 'numSeqConsent', 'numSeq']]
     mergedReads.to_csv(args.outputFilePath, sep='\t', index=False)
 
