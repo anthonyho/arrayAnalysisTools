@@ -18,7 +18,7 @@ import seqlib
 
 # Find the consensus sequence of a barcode block
 # Assuming all sequences in a barcode block all have the same length
-def consensusVoting(group, name):
+def consensusVoting(group):
 
     numSeq = len(group['seq'])
     
@@ -29,7 +29,41 @@ def consensusVoting(group, name):
     else:
         consensus = ""
         bases = "ACGTN"
-        barcode = name
+        charArray = np.array(map(list, group['seq']))        
+        # Go through all positions
+        for i in range(0, len(charArray[0])):
+            # Define base array
+            baseArray = charArray[:, i].tolist()
+            # Count bases and vote
+            baseCount = (baseArray.count('A'), 
+                         baseArray.count('C'), 
+                         baseArray.count('G'), 
+                         baseArray.count('T'), 
+                         baseArray.count('N'))
+            vote = np.argmax(baseCount)
+            consensus += bases[vote]
+        # Compute barcode block stat
+        numSeqConsent = np.sum(group['seq'] == consensus)
+
+    return pd.Series({'seq': consensus,
+                      'numSeqConsent': numSeqConsent,
+                      'numSeq': numSeq})
+
+
+# Find the consensus sequence of a barcode block
+# Assuming all sequences in a barcode block all have the same length
+# Parallel version of consensusVoting
+def consensusVotingParallel(group, name):
+
+    numSeq = len(group['seq'])
+    
+    # No need to vote if every sequence agrees
+    if group['seq'].tolist() == [group['seq'].iloc[0]] * numSeq:
+        consensus = group['seq'].iloc[0]
+        numSeqConsent = numSeq
+    else:
+        consensus = ""
+        bases = "ACGTN"
         charArray = np.array(map(list, group['seq']))        
         # Go through all positions
         for i in range(0, len(charArray[0])):
@@ -88,14 +122,18 @@ def main():
     # Group by barcodes and merge in parallel
     print "Grouping by barcodes..."
     filteredReads_grouped = filteredReads.groupby('barcode')
-    filteredReads_group_list = list(filteredReads_grouped)
     
-    print "Merging sequences with the same barcodes..."
     if args.numCore == 1:
-        mergedReads = pd.DataFrame([consensusVoting(group, name) for name, group in filteredReads_group_list])
+        print "Merging sequences with the same barcodes..."
+#         mergedReads = pd.DataFrame([consensusVoting(group, name) for name, group in filteredReads_group_list])
+        mergedReads = filteredReads_grouped.apply(consensusVoting)
+        mergedReads.reset_index(inplace=True)
     else:
+        print "Creating list of groups..."
+        filteredReads_group_list = list(filteredReads_grouped)
+        print "Merging sequences with the same barcodes..."
         mergedReads = pd.DataFrame(Parallel(n_jobs=args.numCore, verbose=args.verbose)
-                                   (delayed(consensusVoting)(group, name) for name, group in filteredReads_group_list))
+                                   (delayed(consensusVotingParallel)(group, name) for name, group in filteredReads_group_list))
 
     # Write to file
     print "Writing to file..."
