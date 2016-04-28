@@ -72,8 +72,14 @@ def main():
     # skip this step if avgQScoreCutoff and avgQBCScoreCutoff are set to 0
     if args.avgQBCScoreCutoff != 0 or args.avgQScoreCutoff != 0:
         print "Filtering reads by Q scores..."
-        bcPF = allReads['barcode_Q'].apply(seqlib.avgQScore) > args.avgQBCScoreCutoff
-        readsPF = allReads['seq_Q'].apply(seqlib.avgQScore) > args.avgQScoreCutoff
+        if args.numCore == 1:
+            bcPF = allReads['barcode_Q'].apply(seqlib.avgQScore) > args.avgQBCScoreCutoff
+            readsPF = allReads['seq_Q'].apply(seqlib.avgQScore) > args.avgQScoreCutoff
+        else:
+            bcPF = pd.Series(Parallel(n_jobs=args.numCore, verbose=args.verbose)
+                             (delayed(seqlib.avgQScore)(seq) for seq in allReads['barcode_Q'])) > args.avgQBCScoreCutoff
+            readsPF = pd.Series(Parallel(n_jobs=args.numCore, verbose=args.verbose)
+                                (delayed(seqlib.avgQScore)(seq) for seq in allReads['seq_Q'])) > args.avgQScoreCutoff
         filteredReads = allReads[bcPF & readsPF]
     else:
         filteredReads = allReads
