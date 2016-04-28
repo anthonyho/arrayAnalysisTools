@@ -57,7 +57,7 @@ def main():
     # Get options and arguments from command line
     parser = argparse.ArgumentParser(description="Merge and analyze sequences by barcodes")
     parser.add_argument('-n', '--numCore', type=int, default=1, help="number of cores to use (default=1)")
-    parser.add_argument('-v', '--verbose', type=int, default=0, help="verbosity of progress. 0 = no verbosity. (default=0)")
+    parser.add_argument('-v', '--verbose', type=int, default=0, help="verbosity of progress in parallel mode. 0 = no verbosity. (default=0)")
     parser.add_argument("-q", "--avgQScoreCutoff", type=int, default=28, help="cutoff for average q score of a read")
     parser.add_argument("-b", "--avgQBCScoreCutoff", type=int, default=20, help="cutoff for average q score of a barcode")
     parser.add_argument("inputFilePath", help="path to the CPseq-like file (with header line indicating barcode and seq) to be analyzed")
@@ -90,8 +90,11 @@ def main():
     filteredReads_group_list = list(filteredReads_grouped)
     
     print "Merging sequences with the same barcodes..."
-    mergedReads = pd.DataFrame(Parallel(n_jobs=args.numCore, verbose=args.verbose)(delayed(consensusVoting)(group, name) 
-                                                                                   for name, group in filteredReads_group_list))
+    if args.numCore == 1:
+        mergedReads = pd.DataFrame([consensusVoting(group, name) for name, group in filteredReads_group_list])
+    else:
+        mergedReads = pd.DataFrame(Parallel(n_jobs=args.numCore, verbose=args.verbose)
+                                   (delayed(consensusVoting)(group, name) for name, group in filteredReads_group_list))
 
     # Write to file
     print "Writing to file..."
