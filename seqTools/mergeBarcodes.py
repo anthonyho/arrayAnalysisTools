@@ -20,28 +20,31 @@ import seqlib
 # Assuming all sequences in a barcode block all have the same length
 def consensusVoting(group, name):
 
-    # Initialization
-    consensus = ""
-    bases = "ACGTN"
-    barcode = name
-    charArray = np.array(map(list, group['seq']))
-
-    # Go through all positions
-    for i in range(0, len(charArray[0])):
-        # Define base array
-        baseArray = charArray[:, i].tolist()
-        # Count bases and vote
-        baseCount = (baseArray.count('A'), 
-                     baseArray.count('C'), 
-                     baseArray.count('G'), 
-                     baseArray.count('T'), 
-                     baseArray.count('N'))
-        vote = np.argmax(baseCount)
-        consensus += bases[vote]
-
-    # Compute barcode block stat
-    numSeqConsent = np.sum(group['seq'] == consensus)
     numSeq = len(group['seq'])
+    
+    # No need to vote if every sequence agrees
+    if group['seq'].tolist() == [group['seq'].iloc[0]] * numSeq:
+        consensus = group['seq'].iloc[0]
+        numSeqConsent = numSeq
+    else:
+        consensus = ""
+        bases = "ACGTN"
+        barcode = name
+        charArray = np.array(map(list, group['seq']))        
+        # Go through all positions
+        for i in range(0, len(charArray[0])):
+            # Define base array
+            baseArray = charArray[:, i].tolist()
+            # Count bases and vote
+            baseCount = (baseArray.count('A'), 
+                         baseArray.count('C'), 
+                         baseArray.count('G'), 
+                         baseArray.count('T'), 
+                         baseArray.count('N'))
+            vote = np.argmax(baseCount)
+            consensus += bases[vote]
+        # Compute barcode block stat
+        numSeqConsent = np.sum(group['seq'] == consensus)
 
     return pd.Series({'barcode': name,
                       'seq': consensus,
