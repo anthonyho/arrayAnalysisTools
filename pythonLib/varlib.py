@@ -1,15 +1,24 @@
 # Anthony Ho, ahho@stanford.edu, 10/1/2015
-# Last update 10/1/2015
+# Last update 4/28/2016
 """Library functions to generate various sequence variants in library design"""
 
-
-#import subprocess
-#import numpy as np
-#import pandas as pd
 import seqlib
-#import string
-#from itertools import product
+from itertools import product
 
+
+# Generate a list of variants from saturated mutations of a library 
+# given a reference sequence and N to indicate mutation position
+def generateSatLib(consensus, rna=False):
+    
+    seq = seqlib.standardize(consensus, rna)
+    listListMutations = [seqlib.allBases(rna=False) 
+                         if base == 'N' else [base] 
+                         for base in list(consensus)]
+    listVariants = [''.join(seq) for seq in list(product(*listListMutations))]
+
+    return listVariants
+
+###########################################################
 
 # Generate a list of variants with single bulges
 def generate_1x0(consensus, rna=False):
