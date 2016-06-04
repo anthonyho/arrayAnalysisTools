@@ -309,3 +309,12 @@ def FRETvsTempC(params, x, constants):
     C = float(constants[0])
     return 1-1/(np.exp(dH/R/T)*np.exp(-dS/R)+1) + C/(np.exp(dH/R/T)*np.exp(-dS/R)+1)
 
+
+# ------ Folding ------ #
+
+
+# Compute the 
+def bi_binding(params, x):
+    Kd = params[0]
+    f_max = params[1]
+    return f_max / (1 + Kd/x)
