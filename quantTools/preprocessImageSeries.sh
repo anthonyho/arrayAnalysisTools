@@ -60,6 +60,13 @@ do
 done
 
 
+# Declare function to get relative path 
+relpath(){ 
+    python -c "import os.path; print os.path.relpath('$1','${2:-$PWD}')"
+}
+export -f relpath
+
+
 # Declare a function to convert for each tile
 convert_each_tile() {
 
@@ -85,7 +92,9 @@ convert_each_tile() {
 	then
 	    Fbase=${output_file_prefix}${Fbase}
 	fi
-	ln -sr $F ${output_dir}/${output_subdir_prefix}${timepoint}/${Fbase}
+	# could have usd the -r option in ln but not compatible with coreutils 8.4 on Sherlock
+	relative_F=$(relpath $F ${output_dir}/${output_subdir_prefix}${timepoint})
+	ln -s $relative_F ${output_dir}/${output_subdir_prefix}${timepoint}/${Fbase}
     done
 }
 export -f convert_each_tile
