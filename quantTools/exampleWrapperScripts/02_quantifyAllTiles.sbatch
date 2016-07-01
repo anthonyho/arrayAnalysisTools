@@ -28,7 +28,7 @@
 
 
 ## Load matlab
-#module load matlab/R2012b
+module load matlab/R2012b
 
 ## Define paths, input files and options
 base_dir=$HOME/"analysis/imaging/20160609_CNv3_3_ANUUN_01"
@@ -41,11 +41,11 @@ timepoints=$2
 image_dir=$base_dir/$exp_dir/"images"
 image_subdir_prefix="t"
 
-filter=$base_dir/$exp_dir/"CNv3_L16v2a3t2c.CPfilter"
-tile_dir=$base_dir/$exp_dir/"tiles"
-filtered_tile_dir=$base_dir/$exp_dir/"filtered_tiles"
+filter=$base_dir/"CNv3_L16v2a3t2c.CPfilter"
+tile_dir=$base_dir/"tiles"
+filtered_tile_dir=$base_dir/"filtered_tiles"
 
-gv_dir=$base_dir/$exp_dir
+gv_dir=$base_dir
 
 # Enable if using the same registration offset map 
 #roff_dir=$base_dir/$exp_dir/$image_dir/"roff"
@@ -79,7 +79,7 @@ do
     start_time=$SECONDS
     echo "Starting quantification for $exp_dir at timepoint $i..."
 
-    srun python $HOME/scripts/array_tools/CPscripts/quantifyAllTiles.py \
+    srun python2.7 $HOME/scripts/array_tools/CPscripts/quantifyAllTiles.py \
 	-rd $read_dir -td $tile_dir -id $image_subdir -f $filter -ftd $filtered_tile_dir \
 	-rod $image_subdir/$roff_dir -fd $image_subdir/"CPfluor" \
 	-n $num_cores -rs $reg_subset1 -rs $reg_subset2 -sf $data_scaling -sd $flowcell_side -gv $gv_dir -s \
