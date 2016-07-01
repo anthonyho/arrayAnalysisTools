@@ -5,7 +5,7 @@
 # Usage:
 #   02_quantifyAllTiles.sh exp_dir "timepoints"
 # 
-# Anthony Ho, ahho@stanford.edu, 6/28/2016
+# Anthony Ho, ahho@stanford.edu, 6/30/2016
 
 
 ## Define SLURM options

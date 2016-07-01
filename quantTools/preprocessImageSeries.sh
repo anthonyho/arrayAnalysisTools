@@ -11,7 +11,7 @@
 # Based on preprocessImages.sh which also rotates the images for the old quantification pipeline
 #
 # Anthony Ho, ahho@stanford.edu, 6/28/2016
-# Last update 6/28/2016
+# Last update 6/30/2016
 
 
 # Define usage function

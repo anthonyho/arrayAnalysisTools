@@ -4,7 +4,7 @@
 #   1. Assign relative symbolic links to images into the appropriate time series image directories
 #   2. Rename image file prefix (e.g. "tile") if necessary
 #
-# Anthony Ho, ahho@stanford.edu, 6/28/2016
+# Anthony Ho, ahho@stanford.edu, 6/30/2016
 
 
 ## Define input and output parameters
