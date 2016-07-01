@@ -12,7 +12,7 @@
 #################
 #time you think you need; default is one hour
 #in minutes in this case
-#SBATCH --time=2880:00
+#SBATCH --time=40:00:00
 #################
 #quality of service; think of it as job priority
 #SBATCH --partition=owners
@@ -23,7 +23,7 @@
 ##################
 #task to run per node;
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=16
+#SBATCH --cpus-per-task=15
 #################
 
 
@@ -51,7 +51,7 @@ gv_dir=$base_dir
 #roff_dir=$base_dir/$exp_dir/$image_dir/"roff"
 roff_dir="roff"
 
-num_cores="16"
+num_cores="15"
 reg_subset1="FMv1"
 reg_subset2="CNv3"
 data_scaling="MiSeq_to_TIRFStation1"

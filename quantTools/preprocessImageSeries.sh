@@ -7,6 +7,7 @@
 # Usage: 
 #   imagePreprocessing.sh image_dir image_files_suffix output_dir output_subdir_prefix output_file_prefix "tiles"
 #
+# Assume that the number of images in the image_dir is the product of number of tiles and number of time points
 # Based on preprocessImages.sh which also rotates the images for the old quantification pipeline
 #
 # Anthony Ho, ahho@stanford.edu, 6/28/2016

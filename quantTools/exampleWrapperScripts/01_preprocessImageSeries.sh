@@ -17,9 +17,7 @@ output_dir=$HOME/"analysis/imaging/20160609_CNv3_3_ANUUN_01"/$exp_dir/"images"
 output_subdir_prefix="t"
 output_file_prefix="tile"
 
-num_timepoints=$3
 tiles=$(echo {1..15})
 
-
 ## Run
-$HOME/scripts/arrayAnalysisTools/quantTools/preprocessImageSeries.sh $image_dir $image_files_suffix $output_dir $output_subdir_prefix $output_file_prefix $num_timepoints "$tiles"
+$HOME/scripts/arrayAnalysisTools/quantTools/preprocessImageSeries.sh $image_dir $image_files_suffix $output_dir $output_subdir_prefix $output_file_prefix "$tiles"
