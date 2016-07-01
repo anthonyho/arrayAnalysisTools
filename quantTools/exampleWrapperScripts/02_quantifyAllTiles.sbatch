@@ -12,7 +12,7 @@
 #################
 #time you think you need; default is one hour
 #in minutes in this case
-#SBATCH --time=50:00:00
+#SBATCH --time=45:00:00
 #################
 #quality of service; think of it as job priority
 #SBATCH --partition=owners
