@@ -5,7 +5,7 @@
 #   2. Rename image file prefix (e.g. "tile") if necessary
 #
 # Usage: 
-#   imagePreprocessing.sh image_dir image_files_suffix output_dir output_subdir_prefix output_file_prefix num_timepoints "tiles"
+#   imagePreprocessing.sh image_dir image_files_suffix output_dir output_subdir_prefix output_file_prefix "tiles"
 #
 # Based on preprocessImages.sh which also rotates the images for the old quantification pipeline
 #
@@ -18,7 +18,7 @@ usage() {
     cat <<EOF
 
 Usage:
-$0 image_dir image_files_suffix output_dir output_subdir_prefix output_file_prefix num_timepoints "tiles" 
+$0 image_dir image_files_suffix output_dir output_subdir_prefix output_file_prefix "tiles" 
 
 This script preprocesses an image series before quantification by: 
   1. Assign relative symbolic links to images into the appropriate time series image directories
@@ -28,7 +28,7 @@ EOF
 
 
 # Check number of arguments
-num_arguments=7
+num_arguments=6
 
 if [ $# -gt $num_arguments ]
 then
@@ -49,8 +49,12 @@ image_files_suffix=$2
 output_dir=$3
 output_subdir_prefix=$4
 output_file_prefix=$5
-num_timepoints=$6
-tiles=$7
+tiles=$6
+
+
+# Compute number of tiles and number of time points
+num_tiles=$(n=0; for i in $tiles; do ((n++)); done; echo $n)
+num_timepoints=$(find $image_dir -name *$image_files_suffix | awk "END {print NR/$num_tiles}")
 
 
 # Make empty directories for each time point if not exist already
@@ -93,8 +97,9 @@ convert_each_tile() {
 	    Fbase=${output_file_prefix}${Fbase}
 	fi
 	# could have usd the -r option in ln but not compatible with coreutils 8.4 on Sherlock
-	relative_F=$(relpath $F ${output_dir}/${output_subdir_prefix}${timepoint})
-	ln -s $relative_F ${output_dir}/${output_subdir_prefix}${timepoint}/${Fbase}
+	#relative_F=$(relpath $F ${output_dir}/${output_subdir_prefix}${timepoint})
+	#ln -s $relative_F ${output_dir}/${output_subdir_prefix}${timepoint}/${Fbase}
+	ln -sr $F ${output_dir}/${output_subdir_prefix}${timepoint}/${Fbase}
     done
 }
 export -f convert_each_tile
