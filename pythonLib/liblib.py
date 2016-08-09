@@ -1,5 +1,5 @@
 # Anthony Ho, ahho@stanford.edu, 2/15/2016
-# Last update 2/15/2016
+# Last update 8/4/2016
 """Miscellaneous library functions"""
 
 
@@ -23,6 +23,7 @@ def bootstrap(data, numSamples, statistic, alpha):
 
 # Compute a summary statistic to a grouped Pandas dataframe in parallel
 # and return a Pandas series
+# Deprecated - use functions in parlib instead
 def aggParallel(dfGrouped, func, name, numCores, *args, **kwargs):
     '''Computes a summary statistics to a grouped Pandas dataframe in parallel'''
     return pd.Series(Parallel(n_jobs=numCores)(delayed(func)(group, *args, **kwargs) for name, group in dfGrouped),
