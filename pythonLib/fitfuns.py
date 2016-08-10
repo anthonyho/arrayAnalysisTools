@@ -314,7 +314,13 @@ def FRETvsTempC(params, x, constants):
 
 
 # Compute the 
-def bi_binding(params, x):
+def eqBinding(params, x):
     Kd = params[0]
     f_max = params[1]
     return f_max / (1 + Kd/x)
+
+
+def eqBindingPrime(params, x):
+    partial_p0s = -(params[1]/x)/((1+params[0]/x)^2)
+    partial_p1s = 1/(1+params[0]/x)
+    return np.column_stack((partial_p0s, partial_p1s))
