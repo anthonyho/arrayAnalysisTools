@@ -35,17 +35,8 @@ def _funcChunkDf(dataChunk, func, *args, **kwargs):
 #
 def _funcChunkGroupApply(dataChunk, func, indexKeys, *args, **kwargs):
 
-#    listNames = [name for name, group in dataChunk]
     listResults = [func(group, *args, **kwargs) for name, group in dataChunk]
-    results = pd.concat(listResults)
-
-#    if isinstance(listNames[0], tuple):
-#        results = pd.concat(listResults)#, index=pd.MultiIndex.from_tuples(listNames, names=indexKeys))
-#    else:
-#        results = pd.concat(listResults)#, index=listNames)
-#        results.index.name = indexKeys
-
-    return results
+    return pd.concat(listResults)
 
 
 #
@@ -120,18 +111,20 @@ def parallelApply(data, func, numCores, verbose=0, *args, **kwargs):
         # Break into chunks, apply func, concat results
         listDataChunks = _splitIntoChunks(listNamesGroups, numCores)
         if isinstance(returnType, pd.DataFrame):
+            # Case 2 in Pandas docs
             listResultsChunks = Parallel(n_jobs=numCores, verbose=verbose)(delayed(_funcChunkGroupApply)(dataChunk, func, indexKeys, *args, **kwargs) 
                                                                            for dataChunk in listDataChunks)
+            results = pd.concat(listResultsChunks)
+            results = results.reindex(data.obj.index)
         elif isinstance(returnType, pd.Series):
+            # Case 1 in Pandas docs, with pd.Series as output for each group
             listResultsChunks = Parallel(n_jobs=numCores, verbose=verbose)(delayed(_funcChunkGroupAgg)(dataChunk, func, indexKeys, *args, **kwargs) 
                                                                            for dataChunk in listDataChunks)
+            results = pd.concat(listResultsChunks)
         else:
+            # Case 1 in Pandas docs, with non-iterable as output for each group
             listResultsChunks = Parallel(n_jobs=numCores, verbose=verbose)(delayed(_funcChunkGroupAggCompact)(dataChunk, func, indexKeys, *args, **kwargs) 
                                                                            for dataChunk in listDataChunks)
-        results = pd.concat(listResultsChunks)
+            results = pd.concat(listResultsChunks)
 
     return results
-
-
-# ??
-# determine series vs df output
