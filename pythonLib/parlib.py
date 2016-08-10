@@ -12,7 +12,10 @@ import multiprocessing
 # Split a list into even size chunks
 def _splitIntoChunks(listToSplit, numChunks):
     lenList = len(listToSplit)
-    chunkSize = max(1, lenList // numChunks)
+    if lenList % numChunks == 0:
+        chunkSize = max(1, lenList // numChunks)
+    else:
+        chunkSize = max(1, lenList // numChunks + 1)
     return [listToSplit[i:i + chunkSize] for i in range(0, lenList, chunkSize)]
 
 
