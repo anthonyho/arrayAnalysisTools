@@ -321,6 +321,6 @@ def eqBinding(params, x):
 
 
 def eqBindingPrime(params, x):
-    partial_p0s = -(params[1]/x)/((1+params[0]/x)^2)
+    partial_p0s = -(params[1]/x)/((1+params[0]/x)**2)
     partial_p1s = 1/(1+params[0]/x)
     return np.column_stack((partial_p0s, partial_p1s))
