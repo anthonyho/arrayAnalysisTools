@@ -9,37 +9,38 @@ from joblib import Parallel, delayed
 import multiprocessing
 
 
-
-#
+# Split a list into even size chunks
 def _splitIntoChunks(listToSplit, numChunks):
     lenList = len(listToSplit)
     chunkSize = max(1, lenList // numChunks)
     return [listToSplit[i:i + chunkSize] for i in range(0, lenList, chunkSize)]
 
 
-#
+# Apply func to a chunk of a list
 def _funcChunkList(dataChunk, func, *args, **kwargs):
     return [func(item, *args, **kwargs) for item in dataChunk]
 
 
-#
+# Apply func to a chunk of a Pandas series
 def _funcChunkSeries(dataChunk, func, *args, **kwargs):
     return dataChunk.apply(func, args=args, **kwargs)
 
 
-#
+# Apply func to a chunk of a Pandas dataframe
 def _funcChunkDf(dataChunk, func, *args, **kwargs):
     return dataChunk.apply(func, axis=1, args=args, **kwargs)
 
 
-#
+# Apply func to a chunk of a list of groups
+# under the case of func(group) -> pd.DataFrame
 def _funcChunkGroupApply(dataChunk, func, indexKeys, *args, **kwargs):
 
     listResults = [func(group, *args, **kwargs) for name, group in dataChunk]
     return pd.concat(listResults)
 
 
-#
+# Apply func to a chunk of a list of groups
+# under the case of func(group) -> pd.Series
 def _funcChunkGroupAgg(dataChunk, func, indexKeys, *args, **kwargs):
 
     listNames = [name for name, group in dataChunk]
@@ -54,7 +55,8 @@ def _funcChunkGroupAgg(dataChunk, func, indexKeys, *args, **kwargs):
     return results
 
 
-#
+# Apply func to a chunk of a list of groups
+# under the case of func(group) -> non Pandas object
 def _funcChunkGroupAggCompact(dataChunk, func, indexKeys, *args, **kwargs):
 
     listNames = [name for name, group in dataChunk]
@@ -69,7 +71,7 @@ def _funcChunkGroupAggCompact(dataChunk, func, indexKeys, *args, **kwargs):
     return results
 
 
-# 
+# Apply func in parallel 
 def parallelApply(data, func, numCores, verbose=0, *args, **kwargs):
     '''Apply a function in parallel to a large list, Pandas series, df (by row), or grouped df'''
 
@@ -122,7 +124,7 @@ def parallelApply(data, func, numCores, verbose=0, *args, **kwargs):
                                                                            for dataChunk in listDataChunks)
             results = pd.concat(listResultsChunks)
         else:
-            # Case 1 in Pandas docs, with non-iterable as output for each group
+            # Case 1 in Pandas docs, with non Pandas oject as output for each group
             listResultsChunks = Parallel(n_jobs=numCores, verbose=verbose)(delayed(_funcChunkGroupAggCompact)(dataChunk, func, indexKeys, *args, **kwargs) 
                                                                            for dataChunk in listDataChunks)
             results = pd.concat(listResultsChunks)
