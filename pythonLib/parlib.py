@@ -18,20 +18,27 @@ def _splitIntoChunks(listToSplit, numChunks):
 
 
 #
+def _funcChunkList(dataChunk, func, *args, **kwargs):
+    return [func(item, *args, **kwargs) for item in dataChunk]
+
+
+#
 def _funcChunkSeries(dataChunk, func, *args, **kwargs):
-    return dataChunk.apply(func)
+    return dataChunk.apply(func, args=args, **kwargs)
 
 
 #
 def _funcChunkDf(dataChunk, func, *args, **kwargs):
-    return dataChunk.apply(func, axis=1)
+    return dataChunk.apply(func, axis=1, args=args, **kwargs)
 
 
 # 
 def parallelApply(data, func, numCores, verbose=0, *args, **kwargs):
-    '''Parallelizes apply to a large list, Pandas series, or dataframe (row)'''
+    '''Apply a function in parallel to a large list, Pandas series, df (by row), or grouped df'''
     if isinstance(data, list):
-        results = None
+        listDataChunks = _splitIntoChunks(data, numCores)
+        listResultsChunks = Parallel(n_jobs=numCores, verbose=verbose)(delayed(_funcChunkList)(dataChunk, func, *args, **kwargs) for dataChunk in listDataChunks)
+        results = [item for sublist in listResultsChunks for item in sublist]
     elif isinstance(data, pd.Series):
         listIndicesChunks = _splitIntoChunks(data.index, numCores)
         listDataChunks = [data.loc[indicesChunk] for indicesChunk in listIndicesChunks]
