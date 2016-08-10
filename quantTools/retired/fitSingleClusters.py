@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 #
-# Fit single clusters, given fit func and fit params as specified in fitParamFile
+# Fit single clusters
 #
 # Anthony Ho, ahho@stanford.edu, 2/3/2015
-# Last update 8/10/2016
+# Last update 2/24/2015
 
 
 # Import libraries
@@ -11,19 +11,18 @@ import os, sys
 import argparse
 import pandas as pd
 import numpy as np
+from joblib import Parallel, delayed
+import multiprocessing
 from itertools import izip
 import fitlib
 import parselib
-import parlib
-from joblib import Parallel, delayed
-import multiprocessing
 
 
 def main():
 
     # Get options and arguments from command line
     parser = argparse.ArgumentParser(description="fit single clusters")
-    parser.add_argument('-n', '--numCores', type=int, default=1, help="number of cores to use (default=1)")
+    parser.add_argument('-n', '--numCore', type=int, default=1, help="number of cores to use (default=1)")
     parser.add_argument('-v', '--verbose', type=int, default=0, help="verbosity of progress. 0 = no verbosity. (default=0)")
     parser.add_argument('fitParamFilePath', help="path to the file that specifies fitting parameters")
     parser.add_argument('inputFilePath', help="path to the file containing the raw signals of the clusters to be fitted")
@@ -31,32 +30,27 @@ def main():
     args = parser.parse_args()
 
     # Define default attributes from the fit result to write to the output file
-#    outputAttrs = ['params',
-#                   'paramSEs',
-#                   'paramTvals',
-#                   'paramPvals',
-#                   'RSS',
-#                   'reChi2',
-#                   'SER',
-#                   'nit',
-#                   'status']
+    outputAttrs = ['params',
+                   'paramSEs',
+                   'paramTvals',
+                   'paramPvals',
+                   'RSS',
+                   'reChi2',
+                   'SER',
+                   'nit',
+                   'status']
 
     # Import fit parameters from fitParamFile
-    fitParamDict, x, outputAttrs = fitlib.lsqcurvefit.parseFitParamFromFile(args.fitParamFilePath)
+    fitParamDict = fitlib.lsqcurvefit.parseFitParamFromFile(args.fitParamFilePath)
 
     # Read inputFile as Pandas dataframe
     allClusters = pd.read_csv(args.inputFilePath, sep='\t')
     allSignals = parselib.splitConcatedDFColumnIntoNDarray(allClusters['signals'], ':')
-    if isinstance(x, str):
-        allIndepVar = parselib.splitConcatedDFColumnIntoNDarray(allClusters[x], ':')
+    allTimes = parselib.splitConcatedDFColumnIntoNDarray(allClusters['times'], ':')
 
     # Fit single clusters
-    if isinstance(x, str):
-        fitResults = Parallel(n_jobs=args.numCores, verbose=args.verbose)(delayed(fitlib.lsqcurvefit)(x=indepVar, y=signal, **fitParamDict)
-                                                                          for indepVar, signal in izip(allIndepVar, allSignals))
-    else:
-        fitResults = Parallel(n_jobs=args.numCores, verbose=args.verbose)(delayed(fitlib.lsqcurvefit)(x=x, y=signal, **fitParamDict)
-                                                                          for signal in allSignals)
+    fitResults = Parallel(n_jobs=args.numCore, verbose=args.verbose)(delayed(fitlib.lsqcurvefit)(x=time, y=signal, **fitParamDict)
+                                                                     for time, signal in izip(allTimes, allSignals))
 
     # Add attributes as defined in outputAttrs as columns in the allClusters dataframe
     for attr in outputAttrs:

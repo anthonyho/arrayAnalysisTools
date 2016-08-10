@@ -661,7 +661,9 @@ class lsqcurvefit:
                         'maxiter': 200,
                         'tol': None,
                         'epsilon': None,
-                        'disp': False}
+                        'disp': False,
+                        'x': None,
+                        'outputAttrs': ['params']}
 
         # Import fit parameters from fitParamFile
         (fitParamDir, fitParamFilename) = os.path.split(fitParamFilePath)
@@ -671,12 +673,15 @@ class lsqcurvefit:
         fitParam = __import__(fitParamFileBasename)
 
         # Assign fit parameters read from fitParamFile into fitParamDict
+        # and detach x and outputAttrs from fitParamDict
         userDefinedFitParamDict = {property_: value
                                    for property_, value in vars(fitParam).iteritems()
                                    if property_[:2] != '__' and not isinstance(value, ModuleType)}
         fitParamDict.update(userDefinedFitParamDict)
+        x = fitParamDict.pop('x')
+        outputAttrs = fitParamDict.pop('outputAttrs')
 
-        return fitParamDict
+        return fitParamDict, x, outputAttrs
 
 
 # This function does NOT belong to the lsqcurvefit class
