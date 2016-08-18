@@ -310,16 +310,19 @@ def FRETvsTempC(params, x, constants):
     return 1-1/(np.exp(dH/R/T)*np.exp(-dS/R)+1) + C/(np.exp(dH/R/T)*np.exp(-dS/R)+1)
 
 
-# ------ Folding ------ #
+# ------ Binding ------ #
 
 
-# Compute the 
+# Compute the fraction bound described a two-state binding equation
+# i.e. fmax / (1 + Kd/x)
+# where params[0] = Kd
+#       params[1] = fmax
 def eqBinding(params, x):
-    Kd = params[0]
-    f_max = params[1]
-    return f_max / (1 + Kd/x)
+    return params[1] / (1 + params[0]/x)
 
 
+# Compute the Jacobian of eqBinding
+# Returns a 2D-ndarray of shape (len(x), len(params))
 def eqBindingPrime(params, x):
     partial_p0s = -(params[1]/x)/((1+params[0]/x)**2)
     partial_p1s = 1/(1+params[0]/x)
