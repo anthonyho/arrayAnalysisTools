@@ -29,3 +29,25 @@ def aggParallel(dfGrouped, func, name, numCores, *args, **kwargs):
     return pd.Series(Parallel(n_jobs=numCores)(delayed(func)(group, *args, **kwargs) for name, group in dfGrouped),
                      name=name,
                      index=sorted(dfGrouped.indices.keys()))
+
+
+# Convert delta G in kcal/mol at 20C to Kd
+# default in uM
+def dGtoKd(data, unit='uM'):
+    if unit == 'pM':
+        multiplier = 1e12
+    elif unit == 'nM':
+        multiplier = 1e9
+    elif unit == 'uM':
+        multiplier = 1e6
+    elif unit == 'mM':
+        multiplier = 1e3
+    elif unit == 'M':
+        multiplier = 1
+    else:
+        raise ValueError('Unit \"'+unit+'\" not supported!')
+    
+    try: 
+        return np.exp(data.astype(float) / 0.582) * multiplier
+    except AttributeError:
+        return np.exp(data / 0.582) * multiplier
