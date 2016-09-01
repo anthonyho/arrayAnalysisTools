@@ -196,6 +196,7 @@ def scatterColor(data, data2=None, data3=None,
             idx = idx[::-1]
         x, y, z = x[idx], y[idx], z[idx]
 
+    # Set vmin and vmax if robust mode
     if robust:
         kwargs['vmax'] = np.percentile(z, 99)
         kwargs['vmin'] = np.percentile(z, 1)
@@ -216,6 +217,7 @@ def scatterColor(data, data2=None, data3=None,
 # Plot scatter plot colored by local density
 def scatterDensity(data, data2=None, 
                    cmap=plt.cm.jet, colorbar=False, 
+                   logscalex=False, logscaley=False,
                    log=False, norm=None, sort=True, **kwargs):
     """Plot scatter plot colored by local density"""
     # Convert data to numpy array
@@ -228,7 +230,17 @@ def scatterDensity(data, data2=None,
         y = np.array(data2)
 
     # Compute kernel density and sort data by z score if true
-    xy = np.vstack([x,y])
+    # Convert to log10(x) and log10(y) if logscale requested
+    if logscalex:
+        x_p = np.log10(x)
+    else:
+        x_p = x
+    if logscaley:
+        y_p = np.log10(y)
+    else:
+        y_p = y
+
+    xy = np.vstack([x_p, y_p])
     z = gaussian_kde(xy)(xy)
     if sort:
         idx = z.argsort()
@@ -239,7 +251,13 @@ def scatterDensity(data, data2=None,
         norm = LogNorm()
     plt.scatter(x, y, c=z, cmap=cmap, norm=norm,
                 edgecolor='face', marker='o', **kwargs)
+
     ax = plt.gca()
+    if logscaley:
+        ax.set_xscale('log')
+    if logscaley:
+        ax.set_yscale('log')
+    
     if colorbar:
         cbar = plt.colorbar()
         return ax, cbar
