@@ -174,6 +174,41 @@ def showColormap(cmap, numPoint=256):
 
 
 # Plot scatter plot colored by local density
+def scatterColor(data, data2=None, data3=None, 
+                 cmap=plt.cm.jet, colorbar=True, 
+                 log=False, norm=None, sort=True, reverse=False, **kwargs):
+    """Plot scatter plot colored by local density"""
+    # Convert data to numpy array
+    if (data2 is None) and (data3 is None):
+        data_np = np.array(data)
+        x = data_np[:,0]
+        y = data_np[:,1]
+        z = data_np[:,2]
+    else:
+        x = np.array(data)
+        y = np.array(data2)
+        z = np.array(data3)
+
+    # Sort data by z score if true
+    if sort:
+        idx = z.argsort()
+        if reverse:
+            idx = idx[::-1]
+        x, y, z = x[idx], y[idx], z[idx]
+
+    # Plot and return
+    if log and (norm is None):
+        norm = LogNorm()
+    ax1 = plt.scatter(x, y, c=z, cmap=cmap, norm=norm,
+                      edgecolor='face', marker='o', **kwargs)
+    if colorbar:
+        ax2 = plt.colorbar()
+        return ax1, ax2
+    else:
+        return ax1
+
+
+# Plot scatter plot colored by local density
 def scatterDensity(data, data2=None, 
                    cmap=plt.cm.jet, colorbar=False, 
                    log=False, norm=None, sort=True, **kwargs):
