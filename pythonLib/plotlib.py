@@ -203,13 +203,14 @@ def scatterColor(data, data2=None, data3=None,
     # Plot and return
     if log and (norm is None):
         norm = LogNorm()
-    ax1 = plt.scatter(x, y, c=z, cmap=cmap, norm=norm,
-                      edgecolor='face', marker='o', **kwargs)
+    plt.scatter(x, y, c=z, cmap=cmap, norm=norm,
+                edgecolor='face', marker='o', **kwargs)
+    ax = plt.gca()
     if colorbar:
-        ax2 = plt.colorbar()
-        return ax1, ax2
+        cbar = plt.colorbar()
+        return ax, cbar
     else:
-        return ax1
+        return ax
 
 
 # Plot scatter plot colored by local density
@@ -236,13 +237,14 @@ def scatterDensity(data, data2=None,
     # Plot and return
     if log and (norm is None):
         norm = LogNorm()
-    ax1 = plt.scatter(x, y, c=z, cmap=cmap, norm=norm,
-                      edgecolor='face', marker='o', **kwargs)
+    plt.scatter(x, y, c=z, cmap=cmap, norm=norm,
+                edgecolor='face', marker='o', **kwargs)
+    ax = plt.gca()
     if colorbar:
-        ax2 = plt.colorbar()
-        return ax1, ax2
+        cbar = plt.colorbar()
+        return ax, cbar
     else:
-        return ax1
+        return ax
 
 
 # Generate the double mutant/cooperativity matrix
