@@ -64,7 +64,7 @@ def plotBindingCurve(affinityData, variant, annotate=True, ax=None):
 # Borrowed from Sarah's pipeline with modifications to show Kd instead of dG, 
 # and allow for using current axis
 def plotBindingCurvesAcrossTargets(affinityDataList, variant, 
-                                  colors=None, names=None, ax=None):
+                                  colors=None, names=None, norm=False, ax=None):
     '''Plot a binding curve of a particular variant'''
 
     if colors is None:
@@ -83,16 +83,81 @@ def plotBindingCurvesAcrossTargets(affinityDataList, variant,
             return
         concentrations = affinityData.x
         variant_table = affinityData.variant_table
+        variant_data = variant_table.loc[variant]
+
+        if norm:
+            fmax = variant_data['fmax']
+            subSeries = subSeries.copy() / fmax
+            variant_data = variant_data.copy()
+            for field in ['fmax_init', 'fmin_init', 
+                          'fmax_lb', 'fmax', 'fmax_ub', 
+                          'fmin_lb', 'fmin', 'fmin_ub']:
+                variant_data[field] = variant_data[field] / fmax
         
         # Plot
-        plotting.plotFitCurve(concentrations, subSeries, variant_table.loc[variant], ax=ax)
+        plotting.plotFitCurve(concentrations, subSeries, variant_data, ax=ax)
         
         ax.lines[i*4+3].set_color(colors[i])
+        ax.lines[i*4+3].set_linewidth(2)
         if names is not None:
             ax.lines[i*4+3].set_label(names[i])
     
-    plotlib.setproperties(xlabel='Concentration (nM)', ylabel='Fluorescence', 
+    if norm:
+        ylabel = 'Normalized fluorescence'
+    else:
+        ylabel = 'Fluorescence'
+    plotlib.setproperties(xlabel='Concentration (nM)', ylabel=ylabel, 
                           labelfontsize=16, tickfontsize=16, 
                           legend=names, legendloc=2, legendfontsize=12)
+
+    return ax
+
+
+# Plot fitted binding curves of different variant on the same target
+# Borrowed from Sarah's pipeline with modifications to show Kd instead of dG, 
+# and allow for using current axis
+def plotBindingCurvesAcrossVariants(affinityData, variantList, 
+                                    colors=None, norm=False, ax=None):
+    '''Plot a binding curve of a particular variant'''
+
+    if colors is None:
+        colors = sns.color_palette("Paired", 12)
+
+    if ax is None:
+        fig = plt.figure(figsize=(4, 4))
+        ax = fig.add_subplot(111)
+
+    for i, variant in enumerate(variantList):
+        
+        # Load data
+        subSeries = affinityData.getVariantBindingSeries(variant)
+        if len(subSeries)==0:
+            print 'No fluorescence data associated with variant %s'%str(variant)
+            return
+        concentrations = affinityData.x
+        variant_table = affinityData.variant_table
+        variant_data = variant_table.loc[variant]
+        
+        if norm:
+            fmax = variant_data['fmax']
+            subSeries = subSeries.copy() / fmax
+            variant_data = variant_data.copy()
+            for field in ['fmax_init', 'fmin_init', 
+                          'fmax_lb', 'fmax', 'fmax_ub', 
+                          'fmin_lb', 'fmin', 'fmin_ub']:
+                variant_data[field] = variant_data[field] / fmax
+        
+        # Plot
+        plotting.plotFitCurve(concentrations, subSeries, variant_data, ax=ax)
+        
+        ax.lines[i*4+3].set_color(colors[i])
+        ax.lines[i*4+3].set_linewidth(2)
+
+    if norm:
+        ylabel = 'Normalized fluorescence'
+    else:
+        ylabel = 'Fluorescence'    
+    plotlib.setproperties(xlabel='Concentration (nM)', ylabel=ylabel, 
+                          labelfontsize=16, tickfontsize=16)
 
     return ax
