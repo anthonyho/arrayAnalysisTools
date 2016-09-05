@@ -12,19 +12,18 @@ import varlib
 def generateLibSeq(sublib='all', form='dict'):
     
     # Define names and sequences
-    LP5a_refSeq = "NNGGATTTTCCNNNACGAAGTGTCCCGAGA"
-    LP5b_refSeq = "NNGGATTTTCCNNACGAAGTNGTCCCGAGA"
-    LP6_refSeq =  "NNGGATTTTCCNNNACGAAGTNGTCCCGAG"
-    LP7a_refSeq = "NNGGATTTTCCNNNNACGAAGTNGTCCCGA"
-    LP7b_refSeq = "NNGGATTTTCCNNNACGAAGTNNGTCCCGA"
-    LP8_refSeq =  "NNGGATTTTCCNNNNACGAAGTNNGTCCCG"
-    allRefSeqs = [LP5a_refSeq, LP5b_refSeq, LP6_refSeq, LP7a_refSeq, LP7b_refSeq, LP8_refSeq]
     libNames = ['LP5a', 'LP5b', 'LP6', 'LP7a', 'LP7b', 'LP8']
+    refSeqs = {'LP5a': "NNGGATTTTCCNNNACGAAGTGTCCCGAGA", 
+               'LP5b': "NNGGATTTTCCNNACGAAGTNGTCCCGAGA", 
+               'LP6':  "NNGGATTTTCCNNNACGAAGTNGTCCCGAG", 
+               'LP7a': "NNGGATTTTCCNNNNACGAAGTNGTCCCGA", 
+               'LP7b': "NNGGATTTTCCNNNACGAAGTNNGTCCCGA", 
+               'LP8':  "NNGGATTTTCCNNNNACGAAGTNNGTCCCG"}
 
     # Generate library sequences
     libSeqs_dict = {}
-    for name, refSeq in zip(libNames, allRefSeqs):
-        libSeqs_dict[name] = varlib.generateSatLib(refSeq)
+    for name in libNames:
+        libSeqs_dict[name] = varlib.generateSatLib(refSeqs[name])
 
     # Return the appropiate sub library or form
     if sublib != 'all':
