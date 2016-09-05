@@ -42,6 +42,16 @@ def generateLibSeq(sublib='all', form='dict'):
 
 
 # Return the sublibrary of which a library sequence belongs to
+def returnSubLib(seq):
+
+    # Get full list of library sequences with their sub-library
+    libSeqs = generateLibSeq(sublib='all', form='df')
+    name = libSeqs.set_index('seq').loc[seq]['lib']
+    
+    return name
+
+
+# Return the reference sequence given a library sequence
 def returnRefSeq(seq):
 
     # Define reference sequences
