@@ -13,9 +13,6 @@ import liblib
 from fittinglibs import plotting, processresults
 
 
-figureDir = 'figures/'
-
-
 # Plot fitted binding curve of a single variant
 # Borrowed from Sarah's pipeline with modifications to show Kd instead of dG, 
 # and allow for using current axis
