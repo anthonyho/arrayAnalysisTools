@@ -11,7 +11,7 @@ import varlib
 # Generate library sequences
 def generateLibSeq(sublib='all', form='dict'):
     
-    # Define names and sequences
+    # Define names and reference sequences
     libNames = ['LP5a', 'LP5b', 'LP6', 'LP7a', 'LP7b', 'LP8']
     refSeqs = {'LP5a': "NNGGATTTTCCNNNACGAAGTGTCCCGAGA", 
                'LP5b': "NNGGATTTTCCNNACGAAGTNGTCCCGAGA", 
@@ -39,6 +39,24 @@ def generateLibSeq(sublib='all', form='dict'):
             for name in libNames:
                 listAllLibNames = listAllLibNames + [name] * len(libSeqs_dict[name])
             return pd.DataFrame({'lib': listAllLibNames, 'seq': listAllLibSeqs})
+
+
+# Return the sublibrary of which a library sequence belongs to
+def returnRefSeq(seq):
+
+    # Define reference sequences
+    refSeqs = {'LP5a': "NNGGATTTTCCNNNACGAAGTGTCCCGAGA", 
+               'LP5b': "NNGGATTTTCCNNACGAAGTNGTCCCGAGA", 
+               'LP6':  "NNGGATTTTCCNNNACGAAGTNGTCCCGAG", 
+               'LP7a': "NNGGATTTTCCNNNNACGAAGTNGTCCCGA", 
+               'LP7b': "NNGGATTTTCCNNNACGAAGTNNGTCCCGA", 
+               'LP8':  "NNGGATTTTCCNNNNACGAAGTNNGTCCCG"}
+
+    # Get full list of library sequences with their sub-library
+    libSeqs = generateLibSeq(sublib='all', form='df')
+    name = libSeqs.set_index('seq').loc[seq]['lib']
+    
+    return refSeqs[name]
 
 
 # Filter variants
