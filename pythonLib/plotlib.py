@@ -324,7 +324,8 @@ def doubleMutant(data, refVariant, libSeq,
     
     # Normalize data to reference signal if normToRefSignal=True
     if normToRefSignal:
-        data_norm = data / refSignal
+        #data_norm = data / refSignal
+        data_norm = data - refSignal
     else:
         data_norm = data
 
