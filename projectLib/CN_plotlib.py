@@ -166,7 +166,7 @@ def plotBindingCurvesAcrossVariants(affinityData, variantList,
 def plotProjection(results, axis1=0, axis2=1, 
                    names_list=CN_globalVars.sm_names, scolor_dict=CN_globalVars.scolors, markers_dict=CN_globalVars.markers, 
                    leaveSM=None, leaveSM_results=None, leaveSM_edgeColor='orange',
-                   figsize=(7, 6.5), axisLabelPrefix='', title=None, bbox_to_anchor=(1.3, 0.95)):
+                   figsize=(6.8, 6.5), axisLabelPrefix='', title=None, bbox_to_anchor=(1.31, 0.95)):
     fig = plt.figure(figsize=figsize)
     ax = plt.subplot(111)
     i = 0
