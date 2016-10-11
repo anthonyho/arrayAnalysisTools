@@ -3,6 +3,9 @@
 """Python module containing global variables for chemical nose project"""
 
 
+import seaborn as sns
+
+
 # List of abbreviations of small molecules
 sm_names = ['CA', 'GCA', 'TCA', 
             'DCA', 'GDCA', 'TDCA', 
