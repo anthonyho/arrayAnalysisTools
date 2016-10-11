@@ -1,12 +1,13 @@
 # Anthony Ho, ahho@stanford.edu, 8/31/2016
-# Last update 8/31/2016
+# Last update 10/11/2016
 """Python module containing analysis functions for chemical nose project"""
 
 
 import numpy as np
 import pandas as pd
 import varlib
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis 
+from sklearn.decomposition import PCA
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 
 # Generate library sequences
@@ -86,11 +87,32 @@ def filterVariants(data, dG_err_max=None, rsq_min=None, nCluster_min=None, pvalu
     return data[filters]
 
 
+# Perform PCA with sklearn's PCA to reduce dimensionality of aptamers
+def performPCA(data_to_fit, numComponent=None):
+    data_to_fit_np_t = np.array(data_to_fit).T
+    if numComponent is None:
+        numComponent = len(data_to_fit_np_t)    
+    pca_model = PCA(n_components=numComponent, whiten=False)
+    pca_results = pca_model.fit_transform(data_to_fit_np_t)
+    return pca_model, pca_results
+
+
 # Perform LDA with sklearn's LDA to reduce dimensionality of aptamers
 def performLDA(data_to_fit, y, numComponent=None):
-    if numComponent is None:
-        numComponent = len(y)
     data_to_fit_np_t = np.array(data_to_fit).T
+    if numComponent is None:
+        numComponent = len(data_to_fit_np_t)
     lda_model = LinearDiscriminantAnalysis(n_components=numComponent)
     lda_results = lda_model.fit_transform(data_to_fit_np_t, y)
     return lda_model, lda_results
+
+
+# Perform LDA with sklearn's LDA to reduce dimensionality of aptamers
+def performPCA_LDA(data_to_fit, y, numPCAComponent=None, numLDAComponent=None):
+
+    pca_model, pca_results = performPCA(data_to_fit, numComponent=numPCAComponent)
+    lda_model, lda_results = performLDA(pca_results.T, y, numComponent=numLDAComponent)
+
+    return pca_model, pca_results, lda_model, lda_results
+
+
