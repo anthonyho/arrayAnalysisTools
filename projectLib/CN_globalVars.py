@@ -88,7 +88,7 @@ catcolors = {'CA': sns.light_palette("purple", 5)[2],
          }
 
 # List of colors to be used for plotting for each small molecule
-catcolors_list = [catcolors[currSM] for currSM in names]
+catcolors_list = [catcolors[currSM] for currSM in sm_names]
 
 # Define class labels and categories
 y1 = [0, 0, 0, 1, 1, 1, 2, 2, 3, 3, 3, 4, 4, 4, 3]
