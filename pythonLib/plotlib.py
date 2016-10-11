@@ -28,7 +28,7 @@ def setproperties(fig=None, ax=None, figsize=None,
                   fontsize=None, legendfontsize=20, tickfontsize=20,
                   labelfontsize=20, titlefontsize=18, suptitlefontsize=20,
                   xticklabelrot=None, yticklabelrot=None, 
-                  equal=False):
+                  equal=False, symmetric=False):
     """ Convenient tool to set properties of a plot in a single command"""
     # Get figure and axis handles
     if not fig:
@@ -117,6 +117,13 @@ def setproperties(fig=None, ax=None, figsize=None,
     # Set equal aspect
     if equal:
         ax.set_aspect('equal', adjustable='box')
+
+    # Set symmetric axis limits
+    if symmetric:
+        xlim_abs = max(abs(i) for i in ax.get_xlim())
+        ylim_abs = max(abs(i) for i in ax.get_ylim())
+        ax.set_xlim((-xlim_abs, xlim_abs))
+        ax.set_ylim((-ylim_abs, ylim_abs))
 
 
 # Handy function to make a plot look better
