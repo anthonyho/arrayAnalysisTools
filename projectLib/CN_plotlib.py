@@ -1,5 +1,5 @@
 # Anthony Ho, ahho@stanford.edu, 9/1/2015
-# Last update 9/1/2016
+# Last update 10/11/2016
 """Python module containing plot functions for chemical nose project"""
 
 
@@ -10,6 +10,7 @@ import pandas as pd
 import seaborn as sns
 import plotlib
 import liblib
+import CN_globalVars
 from fittinglibs import plotting, processresults
 
 
@@ -158,3 +159,29 @@ def plotBindingCurvesAcrossVariants(affinityData, variantList,
                           labelfontsize=16, tickfontsize=16)
 
     return ax
+
+
+# Plot projection of dimensionality reduction algorithm
+# with funcionality to plot a sample from the non training set
+def plotProjection(results, axis1=0, axis2=1, 
+                   names_list=CN_globalVars.sm_names, scolor_dict=CN_globalVars.scolors, markers_dict=CN_globalVars.markers, 
+                   leaveSM=None, leaveSM_results=None, leaveSM_edgeColor='orange',
+                   figsize=(7, 6.5), axisLabelPrefix='', title=None, bbox_to_anchor=(1.3, 0.95)):
+    fig = plt.figure(figsize=figsize)
+    ax = plt.subplot(111)
+    i = 0
+    for currSM in names_list:
+        if currSM != leaveSM:
+            ax.scatter(results[i, axis1], results[i, axis2], 
+                       color=scolor_dict[currSM], marker=markers_dict[currSM], label=currSM,
+                       edgecolor='black', linewidth=2, s=120)
+            i += 1
+    if leaveSM:
+        ax.scatter(leaveSM_results[0, axis1], leaveSM_results[0, axis2], 
+                   color=scolor_dict[leaveSM], marker=markers_dict[leaveSM], label=leaveSM,
+                   edgecolor=leaveSM_edgeColor, linewidth=2, s=120)
+    plotlib.setproperties(xlabel=axisLabelPrefix+'component {}'.format(axis1+1), 
+                          ylabel=axisLabelPrefix+'component {}'.format(axis2+1),
+                          title=title,
+                          labelfontsize=22, tickfontsize=22, symmetric=True)
+    ax.legend(bbox_to_anchor=bbox_to_anchor, fontsize=14)
