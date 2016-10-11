@@ -15,6 +15,9 @@ sm_names = ['CA', 'GCA', 'TCA',
             'DHEAG', 'E2G'
             ]
 
+# Number of small molecule
+numSM = len(sm_names)
+
 # Dictionary of directory number corresponding to each small molecule
 sm_num = {'CA': 6, 
           'GCA': 7, 
