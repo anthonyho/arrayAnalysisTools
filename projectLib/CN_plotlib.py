@@ -11,6 +11,7 @@ import seaborn as sns
 import plotlib
 import liblib
 from fittinglibs import plotting, processresults
+import CN_analysislib
 
 
 # Plot fitted binding curve of a single variant
@@ -158,3 +159,72 @@ def plotBindingCurvesAcrossVariants(affinityData, variantList,
                           labelfontsize=16, tickfontsize=16)
 
     return ax
+
+
+# Plot double mutant/cooperativity heatmap for one small molecule
+def _doubleMutant(variant_table_list, mutantRefVariant, mutantSM, targetSM, normSM, names, norm=False, coop=False):
+    # Define variables
+    data = variant_table_list[targetSM]['dG']
+    
+    #####
+    targetRefVariant = 'gtGGATTTTCCgcatACGAAGTtgTCCCGA'.upper()
+    normRefVariant = 'gtGGATTTTCCgcatACGAAGTtgTCCCGA'.upper()
+    #####
+
+#    mutantRefVariant = variant_table_list[mutantSM]['dG'].idxmin()
+#    targetRefVariant = variant_table_list[targetSM]['dG'].idxmin()
+#    normRefVariant = variant_table_list[normSM]['dG'].idxmin()
+    if norm:
+        targetRefSignal = variant_table_list[targetSM]['dG'][targetRefVariant]
+        normRefSignal = variant_table_list[normSM]['dG'][normRefVariant]
+    else:
+        targetRefSignal = 0 ####
+        normRefSignal = 0   ####
+    refLibSeq = CN_analysislib.returnRefSeq(mutantRefVariant)
+    startPos = 14 #####
+    title = 'Mutants of '+names[mutantSM].lower()+'0, in the presence of '+names[targetSM]
+    if norm and coop:
+        cbarLabel = 'Cooperativity normalized to '+names[targetSM].lower()+'0'
+    elif norm and not coop:
+        cbarLabel = 'dG normalized to '+names[targetSM].lower()+'0'
+    elif not norm and coop:
+        cbarLabel = 'Cooperativity'
+    else:
+        cbarLabel = 'dG'
+    
+    # Compute vmin and vmax manually (assuming robust=True) so that the color bar
+    # scale is the same across the same dataRefVariant
+    #normRefData = variant_table_list[normSM]['dG'] / normRefSignal
+    normRefData = variant_table_list[normSM]['dG'] - normRefSignal
+    doubleMutantSignals, mutantLabels = plotlib.doubleMutantMatrix(normRefData, normRefVariant, refLibSeq, startPos, coop)
+    doubleMutantSignals = doubleMutantSignals[~np.isnan(doubleMutantSignals)]
+    vmin = np.percentile(doubleMutantSignals, 1) ####
+    vmax = np.percentile(doubleMutantSignals, 99) ####
+    vlim = max(abs(vmin), abs(vmax))
+    vmin, vmax = -vlim, vlim
+    
+    # Make heatmap
+    plt.figure(figsize=(12,10))
+    ax, cax = plotlib.doubleMutant(data, mutantRefVariant, refLibSeq, 
+                                   startPos=startPos, refSignal=targetRefSignal, 
+                                   normToRefSignal=norm, coop=coop,
+###                                   vmin=vmin, vmax=vmax, cbarLabel=cbarLabel,
+                                   cbarLabel=cbarLabel, center=1,
+                                   triangle='lower', invertY=False, linewidth=3, cmap="RdYlBu") ###
+    cax.tick_params(labelsize=20)
+    cax.yaxis.label.set_fontsize(20)
+    plotlib.setproperties(title=title, labelfontsize=20, titlefontsize=20, 
+                          xticklabelrot=90, yticklabelrot=0)
+    
+    # Save to file
+#    if coop:
+#        figureOutput = 'coop'
+#    else:
+#        figureOutput = 'doubleMutant'
+#    if norm:
+#        figureNorm = 'norm_'
+#    else:
+#        figureNorm = ''
+#    plt.savefig(figureDir+'/'+names[targetSM]+'_'+names[mutantSM].lower()+'0_'+names[normSM].lower()+'0_'+figureNorm+figureOutput+'.png')
+    
+    return ax, cax
