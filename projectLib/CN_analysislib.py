@@ -6,6 +6,7 @@
 import numpy as np
 import pandas as pd
 import varlib
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis 
 
 
 # Generate library sequences
@@ -90,6 +91,6 @@ def performLDA(data_to_fit, y, numComponent=None):
     if numComponent is None:
         numComponent = len(y)
     data_to_fit_np_t = np.array(data_to_fit).T
-    lda_model = LDA(n_components=numComponent)
+    lda_model = LinearDiscriminantAnalysis(n_components=numComponent)
     lda_results = lda_model.fit_transform(data_to_fit_np_t, y)
     return lda_model, lda_results
