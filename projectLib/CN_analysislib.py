@@ -83,3 +83,13 @@ def filterVariants(data, dG_err_max=None, rsq_min=None, nCluster_min=None, pvalu
         filters = filters & (data['pvalue'] < pvalue_max)
 
     return data[filters]
+
+
+# Perform LDA with sklearn's LDA to reduce dimensionality of aptamers
+def performLDA(data_to_fit, y, numComponent=None):
+    if numComponent is None:
+        numComponent = len(y)
+    data_to_fit_np_t = np.array(data_to_fit).T
+    lda_model = LDA(n_components=numComponent)
+    lda_results = lda_model.fit_transform(data_to_fit_np_t, y)
+    return lda_model, lda_results
