@@ -12,6 +12,7 @@ import plotlib
 import liblib
 import CN_globalVars
 from fittinglibs import plotting, processresults
+from sklearn.metrics import confusion_matrix
 
 
 # Plot fitted binding curve of a single variant
@@ -186,3 +187,19 @@ def plotProjection(results, axis1=0, axis2=1,
                           labelfontsize=22, tickfontsize=22, 
                           symmetric=True, tight=False)
     ax.legend(bbox_to_anchor=bbox_to_anchor, bbox_transform=fig.transFigure, fontsize=14)
+
+    return ax
+
+
+# Plot confusion matrix
+def plotConfusionMatrix(trueY, predictedY, catLabels=None, figsize=(8, 7)):
+    fig = plt.figure(figsize=figsize)
+    ax = sns.heatmap(confusion_matrix(trueY, predictedY), 
+                     annot=True, square=True,
+                     xticklabels=catLabels, yticklabels=catLabels)
+    cax = fig.axes[-1]
+    plotlib.setproperties(ax=ax, fontsize=15, yticklabelrot=0, 
+                          xlabel='Predicted label', ylabel='True label')
+    plotlib.setproperties(ax=cax, fontsize=15, yticklabelrot=0)
+
+    return ax
