@@ -166,7 +166,7 @@ def plotBindingCurvesAcrossVariants(affinityData, variantList,
 def plotProjection(results, axis1=0, axis2=1, 
                    names_list=CN_globalVars.sm_names, scolor_dict=CN_globalVars.scolors, markers_dict=CN_globalVars.markers, 
                    leaveSM=None, leaveSM_results=None, leaveSM_edgeColor='orange',
-                   figsize=(6.8, 6.5), axisLabelPrefix='', title=None, bbox_to_anchor=(1.31, 0.95)):
+                   figsize=(6.8, 6.5), axisLabelPrefix='', title=None, bbox_to_anchor=(1.13, 0.875)):
     fig = plt.figure(figsize=figsize)
     ax = plt.subplot(111)
     i = 0
@@ -183,5 +183,6 @@ def plotProjection(results, axis1=0, axis2=1,
     plotlib.setproperties(xlabel=axisLabelPrefix+'component {}'.format(axis1+1), 
                           ylabel=axisLabelPrefix+'component {}'.format(axis2+1),
                           title=title,
-                          labelfontsize=22, tickfontsize=22, symmetric=True)
-    ax.legend(bbox_to_anchor=bbox_to_anchor, fontsize=14)
+                          labelfontsize=22, tickfontsize=22, 
+                          symmetric=True, tight=False)
+    ax.legend(bbox_to_anchor=bbox_to_anchor, bbox_transform=fig.transFigure, fontsize=14)
