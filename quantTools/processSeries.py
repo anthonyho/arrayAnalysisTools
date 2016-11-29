@@ -29,6 +29,7 @@ def main():
 
     # Get options and arguments from command line
     parser = argparse.ArgumentParser(description="combine, filter, and transform signals from different CPseries into one file")
+    parser.add_argument('--outSuffix', help="suffix of the output file; _processed.CPseries.pkl by defualt")
     parser.add_argument('annotFilePath', help="path to the CPannot.pkl file")
     parser.add_argument('funcFilePath', help="path to the file specifying the transform function")
     parser.add_argument('signalsFilePaths', nargs='*', help="paths to the CPseries to be combined")
@@ -49,7 +50,10 @@ def main():
         (signalDir, signalFilename) = os.path.split(args.signalsFilePaths[0])
     else:
         (signalDir, signalFilename) = os.path.split(args.signalsFilePaths)
-    outputFilePath = os.path.join(signalDir, signalFilename[0:9]+'_processed.CPseries.pkl')
+    if args.outSuffix is None:
+        outputFilePath = os.path.join(signalDir, signalFilename[0:9]+'_processed.CPseries.pkl')
+    else:
+        outputFilePath = os.path.join(signalDir, signalFilename[0:9]+args.outSuffix)
 
     # Filter clusters by CPannot
     signals_filtered = signals[signals['clusterID'].isin(annot.index)].set_index('clusterID')
