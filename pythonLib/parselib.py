@@ -48,3 +48,13 @@ def parseTimeFromFilename(fileFullPath):
     timestampStr = fileBasename.split('_')[-1]
     timestamp = pd.to_datetime(timestampStr, format='%Y.%m.%d-%H.%M.%S.%f')
     return timestamp
+
+
+# Get a specific column from each of the df in a list 
+# and concat them into a new df
+def extractConcatCol(listDf, col, join='outer', names=None):
+    listSeries = [df[col] for i, df in enumerate(listDf)]
+    concatedCols = pd.concat(listSeries, axis=1, join=join)
+    if names is not None:
+        concatedCols.columns = names
+    return concatedCols
