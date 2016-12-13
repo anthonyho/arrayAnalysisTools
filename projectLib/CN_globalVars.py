@@ -3,6 +3,7 @@
 """Python module containing global variables for chemical nose project"""
 
 
+import pandas as pd
 import seaborn as sns
 
 
@@ -102,3 +103,13 @@ y3 = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 1]
 catLabels3 = ['Cholic acids', 'Estrogens', 'Androgens']
 y4 = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2]
 catLabels4 = ['Cholic acids', '3-sulfates', '3-glucuronides']
+
+# Define true concentrations (uM) in complex mixtures
+true_conc = pd.DataFrame({1: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 44, 0, 235], 
+                          2: [0, 0, 0, 0, 0, 0, 0, 0, 0, 228, 175, 105, 0, 0, 0], 
+                          3: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 201, 301], 
+                          4: [0, 0, 0, 0, 0, 0, 0, 0, 35, 0, 0, 0, 141, 0, 43], 
+                          17: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 100, 0, 0], 
+                          18: [0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 100]
+                         }, 
+                         index=sm_names)
