@@ -72,19 +72,29 @@ def returnRefSeq(seq):
 
 
 # Filter variants
-def filterVariants(data, dG_err_max=None, rsq_min=None, nCluster_min=None, pvalue_max=None):
-    
-    filters = pd.Series([True] * len(data), index=data.index)
-    if dG_err_max is not None:
-        filters = filters & ((data['dG_ub'] - data['dG_lb']) < dG_err_max)
-    if rsq_min is not None:
-        filters = filters & (data['rsq'] > rsq_min)
-    if nCluster_min is not None:
-        filters = filters & (data['numClusters'] >= nCluster_min)
-    if pvalue_max is not None:
-        filters = filters & (data['pvalue'] < pvalue_max)
+def filterVariants(df, dG_max=None, dG_err_max=None, rsq_min=None, nCluster_min=None, pvalue_max=None, minColsAgreed=1):
 
-    return data[filters]
+    if minColsAgreed == 'all':
+        minColsAgreed = len(df.columns.get_level_values(0).unique())
+    
+    if isinstance(df.columns, pd.core.index.MultiIndex):
+        df_swapped = df.swaplevel(0, 1, axis=1).sort_index(axis=1)
+    else:
+        df_swapped = df
+
+    filters = pd.Series([True] * len(df_swapped), index=df_swapped.index)
+    if dG_max is not None:
+        filters = filters & ((df_swapped['dG'] < dG_max).sum(axis=1) >= minColsAgreed)
+    if dG_err_max is not None:
+        filters = filters & (((df_swapped['dG_ub'] - df_swapped['dG_lb']) < dG_err_max).sum(axis=1) >= minColsAgreed)
+    if rsq_min is not None:
+        filters = filters & ((df_swapped['rsq'] > rsq_min).sum(axis=1) >= minColsAgreed)
+    if nCluster_min is not None:
+        filters = filters & ((df_swapped['numClusters'] >= nCluster_min).sum(axis=1) >= minColsAgreed)
+    if pvalue_max is not None:
+        filters = filters & ((df_swapped['pvalue'] < pvalue_max).sum(axis=1) >= minColsAgreed)
+
+    return df_swapped[filters].swaplevel(0, 1, axis=1).sort_index(axis=1)
 
 
 # Perform PCA with sklearn's PCA to reduce dimensionality of aptamers
