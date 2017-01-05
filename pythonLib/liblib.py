@@ -32,10 +32,10 @@ def aggParallel(dfGrouped, func, name, numCores, *args, **kwargs):
 
 
 # Convert delta G in kcal/mol to Kd
-# default Kd in uM
-# default temperature at 20C
+# default Kd unit is uM
+# default temperature is 20C
 def dGtoKd(data, unit='uM', T=20):
-    '''Computes delta G in kcal/mol to Kd '''
+    '''Converts delta G in kcal/mol to Kd '''
     # Compute RT
     RT = 0.0019872036 * (T + 273.15)
 
@@ -57,4 +57,32 @@ def dGtoKd(data, unit='uM', T=20):
         return np.exp(data.astype(float) / RT) * multiplier
     except AttributeError:
         return np.exp(data / RT) * multiplier
+
+
+# Convert Kd to delta G in kcal/mol
+# default Kd unit is uM
+# default temperature is 20C
+def KdtodG(data, unit='uM', T=20):
+    '''Converts Kd to delta G in kcal/mol'''
+    # Compute RT
+    RT = 0.0019872036 * (T + 273.15)
+
+    # Set unit multiplier
+    if unit == 'pM':
+        multiplier = 1e12
+    elif unit == 'nM':
+        multiplier = 1e9
+    elif unit == 'uM':
+        multiplier = 1e6
+    elif unit == 'mM':
+        multiplier = 1e3
+    elif unit == 'M':
+        multiplier = 1
+    else:
+        raise ValueError('Unit \"'+unit+'\" not supported!')
+    
+    try: 
+        return np.log(data.astype(float) / multiplier) * RT
+    except AttributeError:
+        return np.log(data / multiplier) * RT
 
