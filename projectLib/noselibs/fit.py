@@ -54,8 +54,17 @@ def switchingEq_errors(conc, Kd, fmax, fmin, Kd_err, fmax_err, fmin_err):
     return np.sqrt(var_Kd_sum + var_fmax_sum + var_fmin)
 
 
+def switchingEq_errors_data_err(conc, Kd, fmax, fmin, data_err, Kd_err, fmax_err, fmin_err):
+    '''Compute the total uncertainty of each aptamer'''
+    var_Kd_sum = ((switchingEq_jacobian_Kd(conc, Kd, fmax, fmin) * Kd_err)**2).sum(axis=1)
+    var_fmax_sum = ((switchingEq_jacobian_fmax(conc, Kd) * fmax_err)**2).sum(axis=1)
+    var_fmin = ((switchingEq_jacobian_fmin(conc, Kd) * fmin_err)**2).reshape(-1)
+    var_data = (data_err**2).reshape(-1)
+    return np.sqrt(var_Kd_sum + var_fmax_sum + var_fmin + var_data)
+
+
 def switchingEq_residuals(params, data, Kd, fmax, fmin, 
-                          Kd_err=None, fmax_err=None, fmin_err=None):
+                          data_err=None, Kd_err=None, fmax_err=None, fmin_err=None):
     '''Compute the residuals of each aptamer'''
     # Extract concentrations of ligands from params dict
     if isinstance(params, lmfit.Parameters):
@@ -71,6 +80,7 @@ def switchingEq_residuals(params, data, Kd, fmax, fmin,
     _Kd = np.array(Kd)
     _fmax = np.array(fmax)
     _fmin = np.array(fmin).reshape(-1, 1)
+    _data_err = np.array(data_err)
     _Kd_err = np.array(Kd_err)
     _fmax_err = np.array(fmax_err)
     _fmin_err = np.array(fmin_err).reshape(-1, 1)
@@ -78,12 +88,14 @@ def switchingEq_residuals(params, data, Kd, fmax, fmin,
     # Reture residuals of each aptamers 
     if Kd_err is None:
         return _data - paramvals['A'] * switchingEq(conc, _Kd, _fmax, _fmin)
-    else:
+    elif data_err is None:
         return (_data - paramvals['A'] * switchingEq(conc, _Kd, _fmax, _fmin)) / switchingEq_errors(conc, _Kd, _fmax, _fmin, _Kd_err, _fmax_err, _fmin_err)
+    else:
+        return (_data - paramvals['A'] * switchingEq(conc, _Kd, _fmax, _fmin)) / switchingEq_errors_data_err(conc, _Kd, _fmax, _fmin, _data_err, _Kd_err, _fmax_err, _fmin_err)
 
 
 def deconvoluteMixtures(I, Kd, fmax=None, fmin=None, 
-                        Kd_err=None, fmax_err=None, fmin_err=None, 
+                        I_err=None, Kd_err=None, fmax_err=None, fmin_err=None,
                         varyA=False, conc_init=None, **kwargs):
     '''Fit the concentrations of ligands using lmfit'''
     # Define fmax and fmin and their respective errors if not provided
@@ -108,14 +120,14 @@ def deconvoluteMixtures(I, Kd, fmax=None, fmin=None,
     
     # Fit and extract params
     fitResults = lmfit.minimize(switchingEq_residuals, params,
-                                args=(I, Kd, fmax, fmin, Kd_err, fmax_err, fmin_err), 
+                                args=(I, Kd, fmax, fmin, I_err, Kd_err, fmax_err, fmin_err), 
                                 **kwargs)
     predictedConc = pd.Series(fitResults.params.valuesdict()).drop('A')
     
     return fitResults, predictedConc
 
 
-def fitAllPureSamples(variants_subset, currConc, listSM, fmax=True, fmin=True, norm=True, 
+def fitAllPureSamples(variants_subset, currConc, listSM, fmax=True, fmin=True, I_err=True, norm=True, 
                       varyA=False, conc_init=None, **kwargs):
     '''Fit all the pure sample measurements at a given concentration'''
     # Define column names for fmax, fmin, and bs in the normalized and unnormalzied cases
@@ -125,12 +137,14 @@ def fitAllPureSamples(variants_subset, currConc, listSM, fmax=True, fmin=True, n
         fmin_key = 'fmin_norm'
         fmin_err_key = 'fmin_err_norm'
         bs_key = 'bs_'+str(currConc)+'.0_norm'
+        ci_bs_key = 'ci_bs_'+str(currConc)+'.0_norm'
     else:
         fmax_key = 'fmax'
         fmax_err_key = 'fmax_err'
         fmin_key = 'fmin'
         fmin_err_key = 'fmin_err'
         bs_key = 'bs_'+str(currConc)+'.0'
+        ci_bs_key = 'ci_bs_'+str(currConc)+'.0'
     
     # Get fmax and fmin if requested
     if fmax:
@@ -146,14 +160,19 @@ def fitAllPureSamples(variants_subset, currConc, listSM, fmax=True, fmin=True, n
     else:
         fmin = None
         fmin_err = None
-        
+    
     # Fit all pure samples
     list_predictedConc = []
     dict_fitResults = {}
     for currSM in listSM:
-        fitResults, predictedConc = deconvoluteMixtures(variants_subset[bs_key][currSM], variants_subset['Kd'], fmax, fmin,
-                                                        variants_subset['Kd_err'], fmax_err, fmin_err,  
-                                                        varyA=varyA, conc_init=None, **kwargs)
+        if I_err:
+            fitResults, predictedConc = deconvoluteMixtures(variants_subset[bs_key][currSM], variants_subset['Kd'], fmax, fmin,
+                                                            variants_subset[ci_bs_key][currSM], variants_subset['Kd_err'], fmax_err, fmin_err,
+                                                            varyA=varyA, conc_init=None, **kwargs)
+        else:
+            fitResults, predictedConc = deconvoluteMixtures(variants_subset[bs_key][currSM], variants_subset['Kd'], fmax, fmin,
+                                                            None, variants_subset['Kd_err'], fmax_err, fmin_err,
+                                                            varyA=varyA, conc_init=None, **kwargs)
         list_predictedConc.append(predictedConc)
         dict_fitResults[currSM] = fitResults
     
