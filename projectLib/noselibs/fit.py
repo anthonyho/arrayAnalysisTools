@@ -4,6 +4,8 @@
 
 
 import numpy as np
+import pandas as pd
+import lmfit
 
 
 def switchingEq(conc, Kd, fmax, fmin):
@@ -136,12 +138,14 @@ def fitAllPureSamples(variants_subset, currConc, listSM, fmax=True, fmin=True, n
         fmax_err = variants_subset[fmax_err_key]
     else:
         fmax = None
+        fmax_err = None
     
     if fmin:
         fmin = variants_subset[fmin_key]
         fmin_err = variants_subset[fmin_err_key]
     else:
         fmin = None
+        fmin_err = None
         
     # Fit all pure samples
     list_predictedConc = []
