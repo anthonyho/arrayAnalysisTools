@@ -21,8 +21,11 @@ def mergeAllVariants(variants_dict, variants_max_dict, bindingSeries_dict, conce
     ciBindingSeriesByVariants_dict = {}
     ciNormBindingSeriesByVariants_dict = {}
     for currSM in listSM:
-        medianBindingSeriesByVariants = pd.merge(bindingSeries_dict[currSM], annotatedClusters,
-                                                 how='inner', left_index=True, right_index=True).groupby('variant_number').median()
+        
+        groupedBindingSeries = pd.merge(bindingSeries_dict[currSM], annotatedClusters,
+                                        how='inner', left_index=True, right_index=True).groupby('variant_number')
+        
+        medianBindingSeriesByVariants = groupedBindingSeries.median()
         medianBindingSeriesByVariants.columns = ['bs_'+str(c) for c in concentrations_dict[currSM]/1000]
         medianBindingSeriesByVariants_dict[currSM] = medianBindingSeriesByVariants
 
@@ -30,8 +33,7 @@ def mergeAllVariants(variants_dict, variants_max_dict, bindingSeries_dict, conce
         medianNormBindingSeriesByVariants.columns = [col+'_norm' for col in medianNormBindingSeriesByVariants.columns]
         medianNormBindingSeriesByVariants_dict[currSM] = medianNormBindingSeriesByVariants
 
-        ciBindingSeriesByVariants = pd.merge(bindingSeries_dict[currSM], annotatedClusters,
-                                             how='inner', left_index=True, right_index=True).groupby('variant_number').aggregate(lambda x: np.std(x) / x.count() * 1.96)
+        ciBindingSeriesByVariants = groupedBindingSeries.std() / groupedBindingSeries.count() * 1.96
         ciBindingSeriesByVariants.columns = ['ci_bs_'+str(c) for c in concentrations_dict[currSM]/1000]
         ciBindingSeriesByVariants_dict[currSM] = ciBindingSeriesByVariants
 
