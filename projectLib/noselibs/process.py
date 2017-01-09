@@ -49,7 +49,7 @@ def mergeAllVariants(variants_dict, variants_max_dict, bindingSeries_dict, conce
     # Merge variants_dict, variants_max_dict, and bindingSeries into a single multilabel dataframe
     variants_all = pd.concat([variants, variants_max, 
                               variants_bindingSeries, variants_normBindingSeries, 
-                              variants_ciBindingSeries, ciNormBindingSeries], axis=1).sort_index(axis=1)
+                              variants_ciBindingSeries, variants_ciNormBindingSeries], axis=1).sort_index(axis=1)
 
     # Compute new columns
     variants_all_swapped = variants_all.swaplevel(0, 1, axis=1).sort_index(axis=1)
