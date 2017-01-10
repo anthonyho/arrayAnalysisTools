@@ -168,11 +168,11 @@ def fitAllPureSamples(variants_subset, currConc, listSM, fmax=True, fmin=True, I
         if I_err:
             fitResults, predictedConc = deconvoluteMixtures(variants_subset[bs_key][currSM], variants_subset['Kd'], fmax, fmin,
                                                             variants_subset[ci_bs_key][currSM], variants_subset['Kd_err'], fmax_err, fmin_err,
-                                                            varyA=varyA, conc_init=None, **kwargs)
+                                                            varyA=varyA, conc_init=conc_init, **kwargs)
         else:
             fitResults, predictedConc = deconvoluteMixtures(variants_subset[bs_key][currSM], variants_subset['Kd'], fmax, fmin,
                                                             None, variants_subset['Kd_err'], fmax_err, fmin_err,
-                                                            varyA=varyA, conc_init=None, **kwargs)
+                                                            varyA=varyA, conc_init=conc_init, **kwargs)
         list_predictedConc.append(predictedConc)
         dict_fitResults[currSM] = fitResults
     
