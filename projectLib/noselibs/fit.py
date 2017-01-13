@@ -1,128 +1,133 @@
-# Anthony Ho, ahho@stanford.edu, 1/5/2016
-# Last update 1/5/2015
+# Anthony Ho, ahho@stanford.edu, 1/5/2017
+# Last update 1/13/2017
 """Library containing the switching equations, their derivatives, residuals, and fitting functions"""
 
 
 import numpy as np
 import pandas as pd
 import lmfit
+import liblib
 
 
-def switchingEq(conc, Kd, fmax, fmin):
+RT = 0.582
+
+
+def switchingEq(mu, dG, fmax, fmin):
     '''Compute the intensity of a switching aptamer'''
-    R = conc / Kd
-    R_sum = R.sum(axis=1).reshape(-1, 1)
-    R_weighted_sum = (R * (fmax - fmin)).sum(axis=1).reshape(-1, 1)
-    return (R_weighted_sum / (1 + R_sum) + fmin).reshape(-1)
+    B = np.exp(-(dG - mu)/RT)
+    Q = B.sum(axis=1).reshape(-1, 1)
+    Q_weighted = (B * (fmax - fmin)).sum(axis=1).reshape(-1, 1)
+    return (Q_weighted / (1 + Q) + fmin).reshape(-1)
 
 
-def switchingEq_jaconbian_conc(conc, Kd, fmax, fmin):
+def switchingEq_jaconbian_mu(mu, dG, fmax, fmin):
     '''Compute the Jacobian of the switching equation with respect to conc'''
-    R = conc / Kd
-    R_sum = R.sum(axis=1).reshape(-1, 1)
-    R_weighted_sum = (R * (fmax - fmin)).sum(axis=1).reshape(-1, 1)
-    return ((fmax - fmin) / Kd * (1 + R_sum) - 1 / Kd * R_weighted_sum) / (1 + R_sum)**2
+    B = np.exp(-(dG - mu)/RT)
+    Q = B.sum(axis=1).reshape(-1, 1)
+    Q_weighted = (B * (fmax - fmin)).sum(axis=1).reshape(-1, 1)
+    return B / RT * ((fmax - fmin) * (1 + Q) - Q_weighted) / (1 + Q)**2
 
 
-def switchingEq_jacobian_Kd(conc, Kd, fmax, fmin):
+def switchingEq_jacobian_dG(mu, dG, fmax, fmin):
     '''Compute the Jacobian of the switching equation with respect to Kd'''
-    R = conc / Kd
-    R_sum = R.sum(axis=1).reshape(-1, 1)
-    R_weighted_sum = (R * (fmax - fmin)).sum(axis=1).reshape(-1, 1)
-    return (-(fmax - fmin) * conc / (Kd**2) * (1 + R_sum) + conc / (Kd**2) * R_weighted_sum) / (1 + R_sum)**2
+    B = np.exp(-(dG - mu)/RT)
+    Q = B.sum(axis=1).reshape(-1, 1)
+    Q_weighted = (B * (fmax - fmin)).sum(axis=1).reshape(-1, 1)
+    return - B / RT * ((fmax - fmin) * (1 + Q) - Q_weighted) / (1 + Q)**2
 
 
-def switchingEq_jacobian_fmax(conc, Kd):
+def switchingEq_jacobian_fmax(mu, dG):
     '''Compute the Jacobian of the switching equation with respect to fmax'''
-    R = conc / Kd
-    R_sum = R.sum(axis=1).reshape(-1, 1)
-    return R / (1 + R_sum)
+    B = np.exp(-(dG - mu)/RT)
+    Q = B.sum(axis=1).reshape(-1, 1)
+    return B / (1 + Q)
 
 
-def switchingEq_jacobian_fmin(conc, Kd):
+def switchingEq_jacobian_fmin(mu, dG):
     '''Compute the Jacobian of the switching equation with respect to fmin'''
-    R = conc / Kd
-    R_sum = R.sum(axis=1).reshape(-1, 1)
-    return 1 / (1 + R_sum)
+    B = np.exp(-(dG - mu)/RT)
+    Q = B.sum(axis=1).reshape(-1, 1)
+    return 1 / (1 + Q)
 
 
-def switchingEq_errors(conc, Kd, fmax, fmin, Kd_err, fmax_err, fmin_err):
+def switchingEq_errors(mu, dG, fmax, fmin, dG_err, fmax_err, fmin_err):
     '''Compute the total uncertainty of each aptamer'''
-    var_Kd_sum = ((switchingEq_jacobian_Kd(conc, Kd, fmax, fmin) * Kd_err)**2).sum(axis=1)
-    var_fmax_sum = ((switchingEq_jacobian_fmax(conc, Kd) * fmax_err)**2).sum(axis=1)
-    var_fmin = ((switchingEq_jacobian_fmin(conc, Kd) * fmin_err)**2).reshape(-1)
-    return np.sqrt(var_Kd_sum + var_fmax_sum + var_fmin)
+    var_dG_sum = ((switchingEq_jacobian_dG(mu, dG, fmax, fmin) * dG_err)**2).sum(axis=1)
+    var_fmax_sum = ((switchingEq_jacobian_fmax(mu, dG) * fmax_err)**2).sum(axis=1)
+    var_fmin = ((switchingEq_jacobian_fmin(mu, dG) * fmin_err)**2).reshape(-1)
+    return np.sqrt(var_dG_sum + var_fmax_sum + var_fmin)
 
 
-def switchingEq_errors_data_err(conc, Kd, fmax, fmin, data_err, Kd_err, fmax_err, fmin_err):
+def switchingEq_errors_data_err(mu, dG, fmax, fmin, data_err, dG_err, fmax_err, fmin_err):
     '''Compute the total uncertainty of each aptamer'''
-    var_Kd_sum = ((switchingEq_jacobian_Kd(conc, Kd, fmax, fmin) * Kd_err)**2).sum(axis=1)
-    var_fmax_sum = ((switchingEq_jacobian_fmax(conc, Kd) * fmax_err)**2).sum(axis=1)
-    var_fmin = ((switchingEq_jacobian_fmin(conc, Kd) * fmin_err)**2).reshape(-1)
+    var_dG_sum = ((switchingEq_jacobian_dG(mu, dG, fmax, fmin) * dG_err)**2).sum(axis=1)
+    var_fmax_sum = ((switchingEq_jacobian_fmax(mu, dG) * fmax_err)**2).sum(axis=1)
+    var_fmin = ((switchingEq_jacobian_fmin(mu, dG) * fmin_err)**2).reshape(-1)
     var_data = (data_err**2).reshape(-1)
-    return np.sqrt(var_Kd_sum + var_fmax_sum + var_fmin + var_data)
+    return np.sqrt(var_dG_sum + var_fmax_sum + var_fmin + var_data)
 
 
-def switchingEq_residuals(params, data, Kd, fmax, fmin, 
-                          data_err=None, Kd_err=None, fmax_err=None, fmin_err=None):
+def switchingEq_residuals(params, data, dG, fmax, fmin, 
+                          data_err=None, dG_err=None, fmax_err=None, fmin_err=None):
     '''Compute the residuals of each aptamer'''
     # Extract concentrations of ligands from params dict
     if isinstance(params, lmfit.Parameters):
-        conc = np.zeros((1, len(Kd.columns)))
+        mu = np.zeros((1, len(dG.columns)))
         paramvals = params.valuesdict()
-        for i, currSM in enumerate(Kd.columns):
-            conc[0, i] = paramvals[currSM]
+        for i, currSM in enumerate(dG.columns):
+            mu[0, i] = paramvals[currSM]
     else:
-        conc = np.array(params).reshape(1, -1)
+        mu = np.array(params).reshape(1, -1)
     
     # Typecast and reshape input variables
     _data = np.array(data)
-    _Kd = np.array(Kd)
+    _dG = np.array(dG)
     _fmax = np.array(fmax)
     _fmin = np.array(fmin).reshape(-1, 1)
     _data_err = np.array(data_err)
-    _Kd_err = np.array(Kd_err)
+    _dG_err = np.array(dG_err)
     _fmax_err = np.array(fmax_err)
     _fmin_err = np.array(fmin_err).reshape(-1, 1)
     
     # Reture residuals of each aptamers 
-    if Kd_err is None:
-        return _data - paramvals['A'] * switchingEq(conc, _Kd, _fmax, _fmin)
+    if dG_err is None:
+        return _data - paramvals['A'] * switchingEq(mu, _dG, _fmax, _fmin)
     elif data_err is None:
-        return (_data - paramvals['A'] * switchingEq(conc, _Kd, _fmax, _fmin)) / switchingEq_errors(conc, _Kd, _fmax, _fmin, _Kd_err, _fmax_err, _fmin_err)
+        return (_data - paramvals['A'] * switchingEq(mu, _dG, _fmax, _fmin)) / switchingEq_errors(mu, _dG, _fmax, _fmin, _dG_err, _fmax_err, _fmin_err)
     else:
-        return (_data - paramvals['A'] * switchingEq(conc, _Kd, _fmax, _fmin)) / switchingEq_errors_data_err(conc, _Kd, _fmax, _fmin, _data_err, _Kd_err, _fmax_err, _fmin_err)
+        return (_data - paramvals['A'] * switchingEq(mu, _dG, _fmax, _fmin)) / switchingEq_errors_data_err(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err)
 
 
-def deconvoluteMixtures(I, Kd, fmax=None, fmin=None, 
-                        I_err=None, Kd_err=None, fmax_err=None, fmin_err=None,
+def deconvoluteMixtures(I, dG, fmax=None, fmin=None, 
+                        I_err=None, dG_err=None, fmax_err=None, fmin_err=None,
                         varyA=False, conc_init=None, **kwargs):
     '''Fit the concentrations of ligands using lmfit'''
     # Define fmax and fmin and their respective errors if not provided
     if fmax is None:
         fmax = np.ones(Kd.shape)
     if fmin is None:
-        fmin = np.zeros(len(Kd))
+        fmin = np.zeros(len(dG))
     if fmax_err is None:
-        fmax_err = np.zeros(Kd.shape)
+        fmax_err = np.zeros(dG.shape)
     if fmin_err is None:
-        fmin_err = np.zeros(len(Kd))
+        fmin_err = np.zeros(len(dG))
        
     # Define concenrations
     if conc_init is None:
-        conc_init = np.ones(len(Kd.columns)) * 0.1
+        conc_init = np.ones(len(dG.columns)) * 0.1
     elif isinstance(conc_init, int) or isinstance(conc_init, float):
-        conc_init = np.ones(len(Kd.columns)) * conc_init
+        conc_init = np.ones(len(dG.columns)) * conc_init
+    mu_init = liblib.KdtodG(conc_init, unit='uM')
     params = lmfit.Parameters()
     params.add('A', value=1.0, min=0.0, vary=varyA)
-    for i, currSM in enumerate(Kd.columns):
-        params.add(currSM, value=conc_init[i], min=0.0)
+    for i, currSM in enumerate(dG.columns):
+        params.add(currSM, value=mu_init[i])
     
     # Fit and extract params
     fitResults = lmfit.minimize(switchingEq_residuals, params,
-                                args=(I, Kd, fmax, fmin, I_err, Kd_err, fmax_err, fmin_err), 
-                                **kwargs)
-    predictedConc = pd.Series(fitResults.params.valuesdict()).drop('A')
+                                args=(I, dG, fmax, fmin, I_err, dG_err, fmax_err, fmin_err), 
+                                maxfev=500000, **kwargs)
+    predictedConc = liblib.dGtoKd(pd.Series(fitResults.params.valuesdict()).drop('A'), unit='uM')
     
     return fitResults, predictedConc
 
@@ -166,12 +171,12 @@ def fitAllPureSamples(variants_subset, currConc, listSM, fmax=True, fmin=True, I
     dict_fitResults = {}
     for currSM in listSM:
         if I_err:
-            fitResults, predictedConc = deconvoluteMixtures(variants_subset[bs_key][currSM], variants_subset['Kd'], fmax, fmin,
-                                                            variants_subset[ci_bs_key][currSM], variants_subset['Kd_err'], fmax_err, fmin_err,
+            fitResults, predictedConc = deconvoluteMixtures(variants_subset[bs_key][currSM], variants_subset['dG'], fmax, fmin,
+                                                            variants_subset[ci_bs_key][currSM], variants_subset['dG_err'], fmax_err, fmin_err,
                                                             varyA=varyA, conc_init=conc_init, **kwargs)
         else:
-            fitResults, predictedConc = deconvoluteMixtures(variants_subset[bs_key][currSM], variants_subset['Kd'], fmax, fmin,
-                                                            None, variants_subset['Kd_err'], fmax_err, fmin_err,
+            fitResults, predictedConc = deconvoluteMixtures(variants_subset[bs_key][currSM], variants_subset['dG'], fmax, fmin,
+                                                            None, variants_subset['dG_err'], fmax_err, fmin_err,
                                                             varyA=varyA, conc_init=conc_init, **kwargs)
         list_predictedConc.append(predictedConc)
         dict_fitResults[currSM] = fitResults
