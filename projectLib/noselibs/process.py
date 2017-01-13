@@ -54,7 +54,8 @@ def mergeAllVariants(variants_dict, variants_max_dict, bindingSeries_dict, conce
     # Compute new columns
     variants_all_swapped = variants_all.swaplevel(0, 1, axis=1).sort_index(axis=1)
 
-    computedColumns = {'Kd': liblib.dGtoKd(variants_all_swapped['dG'], unit='uM'), 
+    computedColumns = {'dG_err': (variants_all_swapped['dG_ub'] - variants_all_swapped['dG']) * 2, 
+                       'Kd': liblib.dGtoKd(variants_all_swapped['dG'], unit='uM'), 
                        'Kd_err': (liblib.dGtoKd(variants_all_swapped['dG_ub'], unit='uM') - liblib.dGtoKd(variants_all_swapped['dG'], unit='uM')) * 2, 
                        #'Kd_err': liblib.dGtoKd(variants_all_swapped['dG'] - variants_all_swapped['dG_lb'], unit='uM'),
                        'fmax_err': variants_all_swapped['fmax_ub'] - variants_all_swapped['fmax_lb'], 
