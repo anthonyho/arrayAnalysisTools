@@ -25,7 +25,7 @@ def plotPredictedConcMatrix(predictedConcMatrix, setup, fig_dir, nAptamers=None,
         cg.ax_heatmap.set_title(setup+', n='+str(nAptamers), y=title_y)
     plotlib.setproperties(ax=cg.ax_heatmap, tight=False, 
                           xlabel='Predicted as ...', ylabel='Pure sample of ...',
-                          fontsize=18, yticklabelrot=0)
+                          fontsize=18, xticklabelrot=90, yticklabelrot=0)
     plotlib.setproperties(ax=cax, tight=False, fontsize=18, yticklabelrot=0)
     cg.savefig(fig_dir+'/conMat_allXall_'+setup+'.png')
     cg.savefig(fig_dir+'/conMat_allXall_'+setup+'.eps')
