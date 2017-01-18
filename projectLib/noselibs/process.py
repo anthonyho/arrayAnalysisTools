@@ -33,7 +33,7 @@ def mergeAllVariants(variants_dict, variants_max_dict, bindingSeries_dict, conce
         medianNormBindingSeriesByVariants.columns = [col+'_norm' for col in medianNormBindingSeriesByVariants.columns]
         medianNormBindingSeriesByVariants_dict[currSM] = medianNormBindingSeriesByVariants
 
-        ciBindingSeriesByVariants = groupedBindingSeries.std() / groupedBindingSeries.count() * 1.96
+        ciBindingSeriesByVariants = groupedBindingSeries.std() / np.sqrt(groupedBindingSeries.count())
         ciBindingSeriesByVariants.columns = ['ci_bs_'+str(c) for c in concentrations_dict[currSM]/1000]
         ciBindingSeriesByVariants_dict[currSM] = ciBindingSeriesByVariants
 
@@ -54,14 +54,11 @@ def mergeAllVariants(variants_dict, variants_max_dict, bindingSeries_dict, conce
     # Compute new columns
     variants_all_swapped = variants_all.swaplevel(0, 1, axis=1).sort_index(axis=1)
 
-    computedColumns = {'dG_err': variants_all_swapped['dG_ub'] - variants_all_swapped['dG_lb'], 
-                       #'dG_err': (variants_all_swapped['dG_ub'] - variants_all_swapped['dG']) * 2, 
-                       'Kd': liblib.dGtoKd(variants_all_swapped['dG'], unit='uM'),
-                       #'Kd_err': (liblib.dGtoKd(variants_all_swapped['dG_ub'], unit='uM') - liblib.dGtoKd(variants_all_swapped['dG'], unit='uM')) * 2,
-                       #'Kd_err': liblib.dGtoKd(variants_all_swapped['dG'] - variants_all_swapped['dG_lb'], unit='uM'),
-                       'fmax_err': variants_all_swapped['fmax_ub'] - variants_all_swapped['fmax_lb'], 
-                       'fmax_norm': variants_all_swapped['fmax'] / variants_all_swapped['max'], 
-                       'fmax_err_norm': (variants_all_swapped['fmax_ub'] - variants_all_swapped['fmax_lb']) / variants_all_swapped['max']
+    computedColumns = {'Kd': liblib.dGtoKd(variants_all_swapped['dG'], unit='uM'),
+                       'dG_err': (variants_all_swapped['dG_ub'] - variants_all_swapped['dG_lb']) / 3.92,
+                       'fmax_err': (variants_all_swapped['fmax_ub'] - variants_all_swapped['fmax_lb']) / 3.92,
+                       'fmax_norm': variants_all_swapped['fmax'] / variants_all_swapped['max'],
+                       'fmax_err_norm': (variants_all_swapped['fmax_ub'] - variants_all_swapped['fmax_lb']) / 3.92 / variants_all_swapped['max']
                        }
     
     df_computedColumns = pd.concat(computedColumns, axis=1).swaplevel(0, 1, axis=1).sort_index(axis=1)
