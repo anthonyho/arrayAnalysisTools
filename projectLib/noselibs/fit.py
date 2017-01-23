@@ -80,6 +80,71 @@ def _switchingEq_residuals(params, dG, fmax, fmin, data,
         return (data - A * _switchingEq(mu, dG, fmax, fmin)) / _switchingEq_errors(mu, dG, fmax, fmin, dG_err, fmax_err, fmin_err, data_err)
 
 
+def report_fit(output, weighted, 
+               params, data, dG, fmax=None, fmin=None, 
+               data_err=None, dG_err=None, fmax_err=None, fmin_err=None):
+    '''Return various functional terms using the fitted parameters'''
+    # Define fmax, fmin, their respective errors, and data_err if not provided
+    if fmax is None:
+        fmax = np.ones(dG.shape)
+    if fmin is None:
+        fmin = np.zeros(len(dG))
+    if fmax_err is None:
+        fmax_err = np.zeros(dG.shape)
+    if fmin_err is None:
+        fmin_err = np.zeros(len(dG))
+    if data_err is None:
+        data_err = np.zeros(data.shape)
+
+    # Typecast and reshape input variables
+    _dG = np.array(dG)
+    _fmax = np.array(fmax)
+    _fmin = np.array(fmin).reshape(-1, 1)
+    _data = np.array(data)
+    _dG_err = np.array(dG_err)
+    _fmax_err = np.array(fmax_err)
+    _fmin_err = np.array(fmin_err).reshape(-1, 1)
+    _data_err = np.array(data_err)
+
+    # Extract concentrations of ligands from params dict
+    if isinstance(params, lmfit.Parameters):
+        paramvals = params.valuesdict()
+        A = paramvals.pop('A')
+        mu = np.zeros((1, len(paramvals)))
+        for i, currSM in enumerate(paramvals):
+            mu[0, i] = paramvals[currSM]
+    else:
+        A = params[0]
+        mu = np.array(params[1:]).reshape(1, -1)
+    
+    # Output
+    if output=='data':
+        if weighted:
+            return _data / _switchingEq_errors(mu, _dG, _fmax, _fmin, _dG_err, _fmax_err, _fmin_err, _data_err)
+        else:
+            return _data
+    elif output=='eq':
+        if weighted:
+            return A * _switchingEq(mu, _dG, _fmax, _fmin) / _switchingEq_errors(mu, _dG, _fmax, _fmin, _dG_err, _fmax_err, _fmin_err, _data_err)
+        else:
+            return A * _switchingEq(mu, _dG, _fmax, _fmin)
+    elif output=='residual':
+        if weighted:
+            return (_data - A * _switchingEq(mu, _dG, _fmax, _fmin)) / _switchingEq_errors(mu, _dG, _fmax, _fmin, _dG_err, _fmax_err, _fmin_err, _data_err)
+        else:
+            return _data - A * _switchingEq(mu, _dG, _fmax, _fmin)
+    elif output=='err':
+        return _switchingEq_errors(mu, _dG, _fmax, _fmin, _dG_err, _fmax_err, _fmin_err, _data_err)
+    elif output=='err_mu':
+        return _switchingEq_jacobian_mu(mu, _dG, _fmax, _fmin)
+    elif output=='err_dG':
+        return _switchingEq_jacobian_dG(mu, _dG, _fmax, _fmin)
+    elif output=='err_fmax':
+        return _switchingEq_jacobian_fmax(mu, _dG)
+    elif output=='err_fmin':
+        return _switchingEq_jacobian_fmin(mu, _dG)
+
+
 def deconvoluteMixtures(data, dG, fmax=None, fmin=None, 
                         data_err=None, dG_err=None, fmax_err=None, fmin_err=None,
                         varyA=False, conc_init=0.1, unit='uM', 
