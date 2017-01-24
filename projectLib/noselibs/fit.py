@@ -50,19 +50,30 @@ def _switchingEq_jacobian_fmin(mu, dG):
     return 1 / (1 + Q)
 
 
-def _switchingEq_errors(mu, dG, fmax, fmin, dG_err, fmax_err, fmin_err, data_err):
+def _switchingEq_errors(mu, dG, fmax, fmin, data_err, dG_err, fmax_err, fmin_err):
     '''Compute the total uncertainty of each aptamer'''
+    var_data = (data_err**2).reshape(-1)
     var_dG_sum = ((_switchingEq_jacobian_dG(mu, dG, fmax, fmin) * dG_err)**2).sum(axis=1)
     var_fmax_sum = ((_switchingEq_jacobian_fmax(mu, dG) * fmax_err)**2).sum(axis=1)
     var_fmin = ((_switchingEq_jacobian_fmin(mu, dG) * fmin_err)**2).reshape(-1)
-    var_data = (data_err**2).reshape(-1)
-    return np.sqrt(var_dG_sum + var_fmax_sum + var_fmin + var_data)
+    return np.sqrt(var_data + var_dG_sum + var_fmax_sum + var_fmin)
 
 
-def _switchingEq_residuals(params, dG, fmax, fmin, data, 
-                           dG_err=None, fmax_err=None, fmin_err=None, data_err=None):
+def _switchingEq_residuals(params, data, dG, fmax, fmin,
+                           data_err, dG_err=None, fmax_err=None, fmin_err=None):
     '''Compute the residuals of each aptamer'''
     # Extract concentrations of ligands from params dict
+    A, mu = _extractParams(params)
+
+    # Reture residuals of each aptamers 
+    if dG_err is None:
+        return data - A * _switchingEq(mu, dG, fmax, fmin)
+    else:
+        return (data - A * _switchingEq(mu, dG, fmax, fmin)) / _switchingEq_errors(mu, dG, fmax, fmin, data_err, dG_err, fmax_err, fmin_err)
+
+
+def _extractParams(params):
+    '''Extract concentrations of ligands from params dict'''
     if isinstance(params, lmfit.Parameters):
         paramvals = params.valuesdict()
         A = paramvals.pop('A')
@@ -72,69 +83,66 @@ def _switchingEq_residuals(params, dG, fmax, fmin, data,
     else:
         A = params[0]
         mu = np.array(params[1:]).reshape(1, -1)
-    
-    # Reture residuals of each aptamers 
-    if dG_err is None:
-        return data - A * _switchingEq(mu, dG, fmax, fmin)
-    else:
-        return (data - A * _switchingEq(mu, dG, fmax, fmin)) / _switchingEq_errors(mu, dG, fmax, fmin, dG_err, fmax_err, fmin_err, data_err)
+    return A, mu
+
+
+def _prepareVariables(data, dG, fmax=None, fmin=None,
+                      data_err=None, dG_err=None, fmax_err=None, fmin_err=None):
+    '''Initialize and typecast variables'''
+    # Define fmax, fmin, their respective errors, and data_err if not provided
+    if fmax is None:
+        fmax = np.ones(dG.shape)
+    if fmin is None:
+        fmin = np.zeros(len(dG))
+    if data_err is None:
+        data_err = np.zeros(data.shape)
+    if fmax_err is None:
+        fmax_err = np.zeros(dG.shape)
+    if fmin_err is None:
+        fmin_err = np.zeros(len(dG))
+
+    # Typecast and reshape input variables
+    _data = np.array(data)
+    _dG = np.array(dG)
+    _fmax = np.array(fmax)
+    _fmin = np.array(fmin).reshape(-1, 1)
+    _data_err = np.array(data_err)
+    _dG_err = np.array(dG_err)
+    _fmax_err = np.array(fmax_err)
+    _fmin_err = np.array(fmin_err).reshape(-1, 1)
+
+    return _data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err
 
 
 def report_fit(output, weighted, 
                params, data, dG, fmax=None, fmin=None, 
                data_err=None, dG_err=None, fmax_err=None, fmin_err=None):
     '''Return various functional terms using the fitted parameters'''
-    # Define fmax, fmin, their respective errors, and data_err if not provided
-    if fmax is None:
-        fmax = np.ones(dG.shape)
-    if fmin is None:
-        fmin = np.zeros(len(dG))
-    if fmax_err is None:
-        fmax_err = np.zeros(dG.shape)
-    if fmin_err is None:
-        fmin_err = np.zeros(len(dG))
-    if data_err is None:
-        data_err = np.zeros(data.shape)
-
-    # Typecast and reshape input variables
-    _dG = np.array(dG)
-    _fmax = np.array(fmax)
-    _fmin = np.array(fmin).reshape(-1, 1)
-    _data = np.array(data)
-    _dG_err = np.array(dG_err)
-    _fmax_err = np.array(fmax_err)
-    _fmin_err = np.array(fmin_err).reshape(-1, 1)
-    _data_err = np.array(data_err)
+    # Initialize and typecast variables
+    _data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err = _prepareVariables(data, dG, fmax, fmin,
+                                                                                           data_err, dG_err, fmax_err, fmin_err)
 
     # Extract concentrations of ligands from params dict
-    if isinstance(params, lmfit.Parameters):
-        paramvals = params.valuesdict()
-        A = paramvals.pop('A')
-        mu = np.zeros((1, len(paramvals)))
-        for i, currSM in enumerate(paramvals):
-            mu[0, i] = paramvals[currSM]
-    else:
-        A = params[0]
-        mu = np.array(params[1:]).reshape(1, -1)
+    A, mu = _extractParams(params)
     
     # Output
     if output=='data':
         if weighted:
-            return _data / _switchingEq_errors(mu, _dG, _fmax, _fmin, _dG_err, _fmax_err, _fmin_err, _data_err)
+            return _data / _switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err)
         else:
             return _data
     elif output=='eq':
         if weighted:
-            return A * _switchingEq(mu, _dG, _fmax, _fmin) / _switchingEq_errors(mu, _dG, _fmax, _fmin, _dG_err, _fmax_err, _fmin_err, _data_err)
+            return A * _switchingEq(mu, _dG, _fmax, _fmin) / _switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err)
         else:
             return A * _switchingEq(mu, _dG, _fmax, _fmin)
     elif output=='residual':
         if weighted:
-            return (_data - A * _switchingEq(mu, _dG, _fmax, _fmin)) / _switchingEq_errors(mu, _dG, _fmax, _fmin, _dG_err, _fmax_err, _fmin_err, _data_err)
+            return (_data - A * _switchingEq(mu, _dG, _fmax, _fmin)) / _switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err)
         else:
             return _data - A * _switchingEq(mu, _dG, _fmax, _fmin)
     elif output=='err':
-        return _switchingEq_errors(mu, _dG, _fmax, _fmin, _dG_err, _fmax_err, _fmin_err, _data_err)
+        return _switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err)
     elif output=='err_mu':
         return _switchingEq_jacobian_mu(mu, _dG, _fmax, _fmin)
     elif output=='err_dG':
@@ -150,27 +158,9 @@ def deconvoluteMixtures(data, dG, fmax=None, fmin=None,
                         varyA=False, conc_init=0.1, unit='uM', 
                         maxfev=500000, **kwargs):
     '''Fit the concentrations of ligands using lmfit'''
-    # Define fmax, fmin, their respective errors, and data_err if not provided
-    if fmax is None:
-        fmax = np.ones(dG.shape)
-    if fmin is None:
-        fmin = np.zeros(len(dG))
-    if fmax_err is None:
-        fmax_err = np.zeros(dG.shape)
-    if fmin_err is None:
-        fmin_err = np.zeros(len(dG))
-    if data_err is None:
-        data_err = np.zeros(data.shape)
-
-    # Typecast and reshape input variables
-    _dG = np.array(dG)
-    _fmax = np.array(fmax)
-    _fmin = np.array(fmin).reshape(-1, 1)
-    _data = np.array(data)
-    _dG_err = np.array(dG_err)
-    _fmax_err = np.array(fmax_err)
-    _fmin_err = np.array(fmin_err).reshape(-1, 1)
-    _data_err = np.array(data_err)
+    # Initialize and typecast variables
+    _data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err = _prepareVariables(data, dG, fmax, fmin,
+                                                                                           data_err, dG_err, fmax_err, fmin_err)
 
     # Define concenrations
     if isinstance(conc_init, int) or isinstance(conc_init, float):
@@ -183,7 +173,7 @@ def deconvoluteMixtures(data, dG, fmax=None, fmin=None,
     
     # Fit and extract params
     fitResult = lmfit.minimize(_switchingEq_residuals, params,
-                               args=(_dG, _fmax, _fmin, _data, _dG_err, _fmax_err, _fmin_err, _data_err), 
+                               args=(_data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err), 
                                maxfev=maxfev, **kwargs)
     predictedConc = liblib.dGtoKd(pd.Series(fitResult.params.valuesdict()).drop('A'), unit=unit)
     
