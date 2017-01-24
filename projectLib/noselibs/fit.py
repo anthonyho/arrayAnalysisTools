@@ -1,5 +1,5 @@
 # Anthony Ho, ahho@stanford.edu, 1/5/2017
-# Last update 1/20/2017
+# Last update 1/24/2017
 """Library containing the switching equations, their derivatives, residuals, and fitting functions"""
 
 
@@ -8,6 +8,8 @@ import pandas as pd
 import lmfit
 import liblib
 
+
+# --- Private library functions --- #
 
 RT = 0.582
 
@@ -114,6 +116,36 @@ def _prepareVariables(data, dG, fmax=None, fmin=None,
     return _data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err
 
 
+# --- Functions meant for one sample --- #
+
+
+def deconvoluteMixtures(data, dG, fmax=None, fmin=None, 
+                        data_err=None, dG_err=None, fmax_err=None, fmin_err=None,
+                        varyA=False, conc_init=0.1, unit='uM', 
+                        maxfev=500000, **kwargs):
+    '''Fit the concentrations of ligands using lmfit'''
+    # Initialize and typecast variables
+    _data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err = _prepareVariables(data, dG, fmax, fmin,
+                                                                                           data_err, dG_err, fmax_err, fmin_err)
+
+    # Define concenrations
+    if isinstance(conc_init, int) or isinstance(conc_init, float):
+        conc_init = np.ones(len(dG.columns)) * conc_init
+    mu_init = liblib.KdtodG(conc_init, unit='uM')
+    params = lmfit.Parameters()
+    params.add('A', value=1.0, min=0.0, vary=varyA)
+    for i, currSM in enumerate(dG.columns):
+        params.add(currSM, value=mu_init[i])
+    
+    # Fit and extract params
+    fitResult = lmfit.minimize(_switchingEq_residuals, params,
+                               args=(_data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err), 
+                               maxfev=maxfev, **kwargs)
+    predictedConc = liblib.dGtoKd(pd.Series(fitResult.params.valuesdict()).drop('A'), unit=unit)
+    
+    return fitResult, predictedConc
+
+
 def report_fit(output, weighted, 
                params, data, dG, fmax=None, fmin=None, 
                data_err=None, dG_err=None, fmax_err=None, fmin_err=None):
@@ -153,31 +185,7 @@ def report_fit(output, weighted,
         return _switchingEq_jacobian_fmin(mu, _dG)
 
 
-def deconvoluteMixtures(data, dG, fmax=None, fmin=None, 
-                        data_err=None, dG_err=None, fmax_err=None, fmin_err=None,
-                        varyA=False, conc_init=0.1, unit='uM', 
-                        maxfev=500000, **kwargs):
-    '''Fit the concentrations of ligands using lmfit'''
-    # Initialize and typecast variables
-    _data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err = _prepareVariables(data, dG, fmax, fmin,
-                                                                                           data_err, dG_err, fmax_err, fmin_err)
-
-    # Define concenrations
-    if isinstance(conc_init, int) or isinstance(conc_init, float):
-        conc_init = np.ones(len(dG.columns)) * conc_init
-    mu_init = liblib.KdtodG(conc_init, unit='uM')
-    params = lmfit.Parameters()
-    params.add('A', value=1.0, min=0.0, vary=varyA)
-    for i, currSM in enumerate(dG.columns):
-        params.add(currSM, value=mu_init[i])
-    
-    # Fit and extract params
-    fitResult = lmfit.minimize(_switchingEq_residuals, params,
-                               args=(_data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err), 
-                               maxfev=maxfev, **kwargs)
-    predictedConc = liblib.dGtoKd(pd.Series(fitResult.params.valuesdict()).drop('A'), unit=unit)
-    
-    return fitResult, predictedConc
+# --- Higher level wrapper functions for multiple samples --- # 
 
 
 def fitAllPureSamples(variants_subset, currConc, listSM, fmax=True, fmin=True, data_err=True, norm=True, 
