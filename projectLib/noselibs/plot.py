@@ -7,7 +7,8 @@ import seaborn as sns
 import plotlib
 
 
-def plotPredictedConcMatrix(predictedConcMatrix, setup, fig_dir, nAptamers=None, cat_colors=None, vmax=350, figsize=(8, 7)):
+def plotPredictedConcMatrix(predictedConcMatrix, setup, nAptamers=None, cat_colors=None, 
+                            vmax=350, figsize=(8, 7), fig_dir=None):
     plt.figure(figsize=(8, 7))
     cg = sns.clustermap(predictedConcMatrix.transpose(),
                         row_colors=cat_colors, col_colors=cat_colors,
@@ -27,7 +28,6 @@ def plotPredictedConcMatrix(predictedConcMatrix, setup, fig_dir, nAptamers=None,
                           xlabel='Predicted as ...', ylabel='Pure sample of ...',
                           fontsize=18, xticklabelrot=90, yticklabelrot=0)
     plotlib.setproperties(ax=cax, tight=False, fontsize=18, yticklabelrot=0)
-    cg.savefig(fig_dir+'/conMat_allXall_'+setup+'.png')
-    cg.savefig(fig_dir+'/conMat_allXall_'+setup+'.eps')
-
-
+    if fig_dir is not None:
+        cg.savefig(fig_dir+'/conMat_allXall_'+setup+'.png')
+        cg.savefig(fig_dir+'/conMat_allXall_'+setup+'.eps')
