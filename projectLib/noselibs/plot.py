@@ -10,7 +10,7 @@ import plotlib
 def plotPredictedConcMatrix(predictedConcMatrix, setup, nAptamers=None, cat_colors=None, 
                             vmax=350, figsize=(8, 7), fig_dir=None):
     plt.figure(figsize=(8, 7))
-    cg = sns.clustermap(predictedConcMatrix.transpose(),
+    cg = sns.clustermap(predictedConcMatrix,
                         row_colors=cat_colors, col_colors=cat_colors,
                         row_cluster=False, col_cluster=False, vmax=vmax, vmin=0,
                         cbar_kws={'label': 'Predicted concentration (uM)'})
@@ -25,9 +25,9 @@ def plotPredictedConcMatrix(predictedConcMatrix, setup, nAptamers=None, cat_colo
     else:
         cg.ax_heatmap.set_title(setup+', n='+str(nAptamers), y=title_y)
     plotlib.setproperties(ax=cg.ax_heatmap, tight=False, 
-                          xlabel='Predicted as ...', ylabel='Pure sample of ...',
+                          xlabel='Pure sample of ...', ylabel='Predicted as ...',
                           fontsize=18, xticklabelrot=90, yticklabelrot=0)
     plotlib.setproperties(ax=cax, tight=False, fontsize=18, yticklabelrot=0)
     if fig_dir is not None:
-        cg.savefig(fig_dir+'/conMat_allXall_'+setup+'.png')
-        cg.savefig(fig_dir+'/conMat_allXall_'+setup+'.eps')
+        cg.savefig(fig_dir+'/pureSample_conMat_'+setup+'.png')
+        cg.savefig(fig_dir+'/pureSample_conMat_'+setup+'.eps')
