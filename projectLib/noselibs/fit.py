@@ -239,3 +239,12 @@ def fitAllPureSamples(variants_subset, currConc, listSM, fmax=True, fmin=True, d
     
     predictedConcMatrix = pd.concat(list_predictedConc, axis=1, keys=listSM).reindex(listSM)
     return predictedConcMatrix, dict_fitResults
+
+
+def reportFitStatusAllPureSamples(dict_fitResults):
+    for currSM in dict_fitResults:
+        print currSM+':'
+        print '  ier:'+str(dict_fitResults[currSM].ier)
+        print '  nfev:'+str(dict_fitResults[currSM].nfev)
+        print '  lmdif_message: '+dict_fitResults[currSM].lmdif_message
+        print '  message: '+dict_fitResults[currSM].message
