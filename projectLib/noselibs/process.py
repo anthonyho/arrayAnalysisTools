@@ -9,7 +9,7 @@ import liblib
 
 
 # Merge and process all variants related information into a single multilabel dataframe
-def mergeAllVariants(variants_dict, variants_max_dict, bindingSeries_dict, concentrations_dict, annotatedClusters, listSM):
+def mergeAllVariants(variants_dict, variants_max_dict, bindingSeries_dict, concentrations_dict, annotatedClusters):
 
     # Merge variants_dict and variants_max_dict into multilabel dataframes
     variants = pd.concat(variants_dict, axis=1)
@@ -20,7 +20,7 @@ def mergeAllVariants(variants_dict, variants_max_dict, bindingSeries_dict, conce
     medianNormBindingSeriesByVariants_dict = {}
     ciBindingSeriesByVariants_dict = {}
     ciNormBindingSeriesByVariants_dict = {}
-    for currSM in listSM:
+    for currSM in bindingSeries_dict:
         
         groupedBindingSeries = pd.merge(bindingSeries_dict[currSM], annotatedClusters,
                                         how='inner', left_index=True, right_index=True).groupby('variant_number')
