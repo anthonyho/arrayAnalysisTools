@@ -241,7 +241,57 @@ def fitAllPureSamples(variants_subset, currConc, listSM, fmax=True, fmin=True, d
     return predictedConcMatrix, dict_fitResults
 
 
-def reportFitStatusAllPureSamples(dict_fitResults):
+def fitAllComplexMixtures(variants_subset, listCM, fmax=True, fmin=True, data_err=True, norm=True, 
+                          varyA=False, conc_init=None, **kwargs):
+    '''Fit all complex mixtures measurements'''
+    # Define column names for fmax, fmin, and bs in the normalized and unnormalzied cases
+    if norm:
+        fmax_key = 'fmax_norm'
+        fmax_err_key = 'fmax_err_norm'
+        fmin_key = 'fmin_norm'
+        fmin_err_key = 'fmin_err_norm'
+        cm_key = 'N'
+
+    else:
+        fmax_key = 'fmax'
+        fmax_err_key = 'fmax_err'
+        fmin_key = 'fmin'
+        fmin_err_key = 'fmin_err'
+        cm_key = 'S'
+    
+    # Get fmax and fmin if requested
+    if fmax:
+        fmax = variants_subset[fmax_key]
+        fmax_err = variants_subset[fmax_err_key]
+    else:
+        fmax = None
+        fmax_err = None
+    
+    if fmin:
+        fmin = variants_subset[fmin_key]
+        fmin_err = variants_subset[fmin_err_key]
+    else:
+        fmin = None
+        fmin_err = None
+    
+    # Fit all pure samples
+    list_predictedConc = []
+    dict_fitResults = {}
+    for currCM in listCM:
+        if data_err:
+            return 0
+        else:
+            fitResult, predictedConc = deconvoluteMixtures(variants_subset[cm_key][currCM], variants_subset['dG'], fmax, fmin,
+                                                           None, variants_subset['dG_err'], fmax_err, fmin_err,
+                                                           varyA=varyA, conc_init=conc_init, **kwargs)
+        list_predictedConc.append(predictedConc)
+        dict_fitResults[currCM] = fitResult
+    
+    predictedConcMatrix = pd.concat(list_predictedConc, axis=1, keys=listCM).reindex(listCM)
+    return predictedConcMatrix, dict_fitResults
+
+
+def reportFitStatusAllSamples(dict_fitResults):
     for currSM in dict_fitResults:
         print currSM+':'
         print '  ier:'+str(dict_fitResults[currSM].ier)
