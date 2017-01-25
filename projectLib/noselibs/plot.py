@@ -5,18 +5,31 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotlib
+import CN_globalVars
 
 
-def plotPredictedConcMatrix(predictedConcMatrix, setup, nAptamers=None, cat_colors=None, 
-                            vmax=350, figsize=(8, 7), fig_dir=None):
+def plotPredictedConcMatrixPureSamples(predictedConcMatrix, setup, nAptamers=None, 
+                                       cat_colors=None, vmax=350, figsize=(8, 7), fig_dir=None):
+
+    # Define cat_colors
+    if cat_colors is None:
+        listCatColors = [CN_globalVars.catcolors[sm] for sm in predictedConcMatrix.columns]
+    elif cat_colors is False:
+        listCatColors = None
+    else:
+        listCatColors = cat_colors
+
+    # Make plot
     plt.figure(figsize=(8, 7))
     cg = sns.clustermap(predictedConcMatrix,
-                        row_colors=cat_colors, col_colors=cat_colors,
+                        row_colors=listCatColors, col_colors=listCatColors,
                         row_cluster=False, col_cluster=False, vmax=vmax, vmin=0,
                         cbar_kws={'label': 'Predicted concentration (uM)'})
     cax = plt.gcf().axes[-1]
     cax.set_position([0.13, .2, .03, .45])
-    if cat_colors is None:
+
+    # Set miscel properties
+    if cat_colors is False:
         title_y = 1.05
     else: 
         title_y = 1.1
@@ -28,6 +41,8 @@ def plotPredictedConcMatrix(predictedConcMatrix, setup, nAptamers=None, cat_colo
                           xlabel='Pure sample of ...', ylabel='Predicted as ...',
                           fontsize=18, xticklabelrot=90, yticklabelrot=0)
     plotlib.setproperties(ax=cax, tight=False, fontsize=18, yticklabelrot=0)
+
+    # Save figure
     if fig_dir is not None:
         cg.savefig(fig_dir+'/pureSample_conMat_'+setup+'.png')
         cg.savefig(fig_dir+'/pureSample_conMat_'+setup+'.eps')
