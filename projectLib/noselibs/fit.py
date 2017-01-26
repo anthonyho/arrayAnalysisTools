@@ -1,5 +1,5 @@
 # Anthony Ho, ahho@stanford.edu, 1/5/2017
-# Last update 1/24/2017
+# Last update 1/25/2017
 """Library containing the switching equations, their derivatives, residuals, and fitting functions"""
 
 
@@ -146,7 +146,7 @@ def deconvoluteMixtures(data, dG, fmax=None, fmin=None,
     return fitResult, predictedConc
 
 
-def report_fit(output, weighted, 
+def reportFit(output, weighted, 
                params, data, dG, fmax=None, fmin=None, 
                data_err=None, dG_err=None, fmax_err=None, fmin_err=None):
     '''Return various functional terms using the fitted parameters'''
@@ -298,3 +298,22 @@ def reportFitStatusAllSamples(dict_fitResults):
         print '  nfev:'+str(dict_fitResults[currSM].nfev)
         print '  lmdif_message: '+dict_fitResults[currSM].lmdif_message
         print '  message: '+dict_fitResults[currSM].message
+
+
+# --- Performance metrics --- # 
+
+
+def evaluatePerformance(y1, y2, metric='RMSLE', axis=0):
+    if metric == 'RMSE':
+        return np.sqrt(((y1 - y2)**2).mean(axis=axis))
+    elif metric == 'RMSLE':
+        LE = np.log(y1+1) - np.log(y2+1)
+        return np.sqrt((LE**2).mean(axis=axis))
+    elif metric == 'IRMSLE':
+        LE = np.log(y1+1) - np.log(y2+1)
+        return 1 / (1 + np.sqrt((LE**2).mean(axis=axis)))
+    elif metric == 'IERMSLE':
+        LE = np.log(y1+1) - np.log(y2+1)
+        return np.exp(-np.sqrt((LE**2).mean(axis=axis)))
+    elif metric == 'pearson':
+        return y1.corrwith(y2, axis=axis)
