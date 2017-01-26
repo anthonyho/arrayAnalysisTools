@@ -121,7 +121,7 @@ def _prepareVariables(data, dG, fmax=None, fmin=None,
 
 def deconvoluteMixtures(data, dG, fmax=None, fmin=None, 
                         data_err=None, dG_err=None, fmax_err=None, fmin_err=None,
-                        varyA=False, conc_init=None, conc_init_quantile=0.1, unit='uM', 
+                        varyA=False, conc_init=None, conc_init_percentile=10, unit='uM', 
                         maxfev=500000, **kwargs):
     '''Fit the concentrations of ligands using lmfit'''
     # Initialize and typecast variables
@@ -129,11 +129,14 @@ def deconvoluteMixtures(data, dG, fmax=None, fmin=None,
                                                                                            data_err, dG_err, fmax_err, fmin_err)
 
     # Define concenrations
-    if conc_init is None or conc_init == 'auto':
-        conc_init = np.array(liblib.dGtoKd(dG, unit=unit).quantile(conc_init_quantile))
-    elif isinstance(conc_init, int) or isinstance(conc_init, float):
-        conc_init = np.ones(len(dG.columns)) * conc_init
-    mu_init = liblib.KdtodG(conc_init, unit=unit)
+    try:
+        mu_init = liblib.KdtodG(conc_init, unit=unit)
+    except TypeError:
+        if isinstance(conc_init, int) or isinstance(conc_init, float):
+            conc_init = np.ones(len(dG.columns)) * conc_init
+            mu_init = liblib.KdtodG(conc_init, unit=unit)
+        else:
+            mu_init = np.percentile(_dG, conc_init_percentile, axis=0)
     params = lmfit.Parameters()
     params.add('A', value=1.0, min=0.0, vary=varyA)
     for i, currSM in enumerate(dG.columns):
@@ -191,7 +194,7 @@ def reportFit(output, weighted,
 
 
 def fitAllPureSamples(variants_subset, currConc, listSM, fmax=True, fmin=True, data_err=True, norm=True, 
-                      varyA=False, conc_init=None, conc_init_quantile=0.1, **kwargs):
+                      varyA=False, conc_init=None, conc_init_percentile=10, **kwargs):
     '''Fit all the pure sample measurements at a given concentration'''
     # Define column names for fmax, fmin, and bs in the normalized and unnormalzied cases
     if norm:
@@ -231,11 +234,11 @@ def fitAllPureSamples(variants_subset, currConc, listSM, fmax=True, fmin=True, d
         if data_err:
             fitResult, predictedConc = deconvoluteMixtures(variants_subset[bs_key][currSM], variants_subset['dG'], fmax, fmin,
                                                            variants_subset[ci_bs_key][currSM], variants_subset['dG_err'], fmax_err, fmin_err,
-                                                           varyA=varyA, conc_init=conc_init, conc_init_quantile=conc_init_quantile, **kwargs)
+                                                           varyA=varyA, conc_init=conc_init, conc_init_percentile=conc_init_percentile, **kwargs)
         else:
             fitResult, predictedConc = deconvoluteMixtures(variants_subset[bs_key][currSM], variants_subset['dG'], fmax, fmin,
                                                            None, variants_subset['dG_err'], fmax_err, fmin_err,
-                                                           varyA=varyA, conc_init=conc_init, conc_init_quantile=conc_init_quantile, **kwargs)
+                                                           varyA=varyA, conc_init=conc_init, conc_init_percentile=conc_init_percentile, **kwargs)
         list_predictedConc.append(predictedConc)
         dict_fitResults[currSM] = fitResult
     
@@ -244,7 +247,7 @@ def fitAllPureSamples(variants_subset, currConc, listSM, fmax=True, fmin=True, d
 
 
 def fitAllComplexMixtures(variants_subset, listCM, fmax=True, fmin=True, data_err=True, norm=True, 
-                          varyA=False, conc_init=None, conc_init_quantile=0.1, **kwargs):
+                          varyA=False, conc_init=None, conc_init_percentile=0.1, **kwargs):
     '''Fit all complex mixtures measurements'''
     # Define column names for fmax, fmin, and bs in the normalized and unnormalzied cases
     if norm:
@@ -285,7 +288,7 @@ def fitAllComplexMixtures(variants_subset, listCM, fmax=True, fmin=True, data_er
         else:
             fitResult, predictedConc = deconvoluteMixtures(variants_subset[cm_key][currCM], variants_subset['dG'], fmax, fmin,
                                                            None, variants_subset['dG_err'], fmax_err, fmin_err,
-                                                           varyA=varyA, conc_init=conc_init, conc_init_quantile=conc_init_quantile, **kwargs)
+                                                           varyA=varyA, conc_init=conc_init, conc_init_percentile=conc_init_percentile, **kwargs)
         list_predictedConc.append(predictedConc)
         dict_fitResults[currCM] = fitResult
     
