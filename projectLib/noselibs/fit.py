@@ -175,6 +175,13 @@ def reportFit(output, weighted,
             return (_data - A * _switchingEq(mu, _dG, _fmax, _fmin)) / _switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err)
         else:
             return _data - A * _switchingEq(mu, _dG, _fmax, _fmin)
+    elif output=='chisqr':
+        if weighted:
+            r = (_data - A * _switchingEq(mu, _dG, _fmax, _fmin)) / _switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err)
+            return np.linalg.norm(r)**2
+        else:
+            r = _data - A * _switchingEq(mu, _dG, _fmax, _fmin)
+            return np.linalg.norm(r)**2
     elif output=='err':
         return _switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err)
     elif output=='err_mu':
