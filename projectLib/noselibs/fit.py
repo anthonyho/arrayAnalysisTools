@@ -130,13 +130,10 @@ def deconvoluteMixtures(data, dG, fmax=None, fmin=None,
 
     # Define concenrations
     try:
+        conc_init = np.ones(len(dG.columns)) * conc_init
         mu_init = liblib.KdtodG(conc_init, unit=unit)
     except TypeError:
-        if isinstance(conc_init, int) or isinstance(conc_init, float):
-            conc_init = np.ones(len(dG.columns)) * conc_init
-            mu_init = liblib.KdtodG(conc_init, unit=unit)
-        else:
-            mu_init = np.percentile(_dG, conc_init_percentile, axis=0)
+        mu_init = np.percentile(_dG, conc_init_percentile, axis=0)
     params = lmfit.Parameters()
     params.add('A', value=1.0, min=0.0, vary=varyA)
     for i, currSM in enumerate(dG.columns):
