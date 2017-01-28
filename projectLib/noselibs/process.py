@@ -71,7 +71,7 @@ def mergeAllVariants(variants_dict, variants_max_dict, bindingSeries_dict, conce
 # Merge mixtures_dict into a single multilabel dataframe
 def mergeAllMixtures(mixtures_dict):
 
-    mixtures_all = pd.concat({currCM: mixtures_dict[currCM].rename(columns={'0': 'N', '1': 'S'}) for currCM in mixtures_dict}, axis=1)
+    mixtures_all = pd.concat({currCM: mixtures_dict[currCM][[0, 2]].rename(columns={'0': 'N', '2': 'S'}) for currCM in mixtures_dict}, axis=1)
 
     return mixtures_all
 
