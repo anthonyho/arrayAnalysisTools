@@ -53,7 +53,7 @@ markers = {'CA': "^",
            'DHEAS': "s", 
            'DHEAG': "s", 
            'E2G': "o"
-         }
+           }
 
 # Dictionary of colors to be used for plotting for each small molecule
 scolors = {'CA': sns.light_palette("purple", 5)[0], 
@@ -71,7 +71,7 @@ scolors = {'CA': sns.light_palette("purple", 5)[0],
            'DHEAS': sns.light_palette("darkgreen", 6)[4],
            'DHEAG': sns.light_palette("red", 4)[1], 
            'E2G': sns.light_palette("red", 4)[3]
-         }
+           }
 
 # Dictionary of category colors to be used for plotting for each small moleculew
 catcolors = {'CA': sns.light_palette("purple", 5)[2], 
@@ -89,7 +89,7 @@ catcolors = {'CA': sns.light_palette("purple", 5)[2],
              'DHEAS': sns.light_palette("darkgreen", 6)[3], 
              'DHEAG': sns.light_palette("red", 4)[3], 
              'E2G': sns.light_palette("red", 4)[3]
-         }
+             }
 
 # List of colors to be used for plotting for each small molecule
 catcolors_list = [catcolors[currSM] for currSM in sm_names]
@@ -103,6 +103,24 @@ y3 = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 1]
 catLabels3 = ['Cholic acids', 'Estrogens', 'Androgens']
 y4 = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2]
 catLabels4 = ['Cholic acids', '3-sulfates', '3-glucuronides']
+
+# Define the highest concentration used (uM) in the titration series of sm
+highest_conc = {'CA': 4096, 
+                'GCA': 4096, 
+                'TCA': 4096, 
+                'DCA': 4096, 
+                'GDCA': 4096, 
+                'TDCA': 4096, 
+                'CDCA': 2048, 
+                'GCDCA': 4096, 
+                'E1S': 1024, 
+                'E2S': 1024, 
+                'E3S': 1024,
+                'P5S': 256, 
+                'DHEAS': 1024, 
+                'DHEAG': 512, 
+                'E2G': 1024
+                }
 
 # Define true concentrations (uM) in complex mixtures
 true_conc = pd.DataFrame({'cm_1': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 44, 0, 235], 
