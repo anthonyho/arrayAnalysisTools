@@ -3,6 +3,7 @@
 """Python module containing global variables for chemical nose project"""
 
 
+import numpy as np
 import pandas as pd
 import seaborn as sns
 
@@ -122,19 +123,24 @@ highest_conc = {'CA': 4096,
                 'E2G': 1024
                 }
 
-# Define true concentrations (uM) in complex mixtures
-true_conc = pd.DataFrame({'cm_1': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 44, 0, 235], 
-                          'cm_2': [0, 0, 0, 0, 0, 0, 0, 0, 0, 228, 175, 105, 0, 0, 0], 
-                          'cm_3': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 201, 301], 
-                          'cm_4': [0, 0, 0, 0, 0, 0, 0, 0, 35, 0, 0, 0, 141, 0, 43], 
-                          'cm_9':  [0, 0, 50, 0, 500, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                          'cm_10': [15, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0],
-                          'cm_11': [0, 50, 0, 150, 0, 0, 25, 0, 0, 0, 0, 0, 0, 0, 0],
-                          'cm_12': [1500, 0, 0, 0, 1200, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0],
-                          'cm_17': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 100, 0, 0], 
-                          'cm_18': [0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 100]
-                          }, 
-                         index=sm_names)
-
+# Function to return a confusion matrix of true concentration of sm
+def generate_true_conc_sm(conc, listSM=sm_names):
+    return pd.DataFrame(np.identity(len(listSM)) * float(conc), index=listSM, columns=listSM)
+    
 # Define complex mixture id's
 cm_id = ['cm_'+str(cm) for cm in range(1, 19)]
+
+# Define true concentrations (uM) in complex mixtures
+true_conc_cm = pd.DataFrame({'cm_1': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 44, 0, 235], 
+                             'cm_2': [0, 0, 0, 0, 0, 0, 0, 0, 0, 228, 175, 105, 0, 0, 0], 
+                             'cm_3': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 201, 301], 
+                             'cm_4': [0, 0, 0, 0, 0, 0, 0, 0, 35, 0, 0, 0, 141, 0, 43], 
+                             'cm_9':  [0, 0, 50, 0, 500, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                             'cm_10': [15, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0],
+                             'cm_11': [0, 50, 0, 150, 0, 0, 25, 0, 0, 0, 0, 0, 0, 0, 0],
+                             'cm_12': [1500, 0, 0, 0, 1200, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0],
+                             'cm_17': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 100, 0, 0], 
+                             'cm_18': [0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 100]
+                             }, 
+                            index=sm_names)
+
