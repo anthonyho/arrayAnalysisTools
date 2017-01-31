@@ -124,7 +124,7 @@ highest_conc = {'CA': 4096,
                 }
 
 # Function to return a confusion matrix of true concentration of sm
-def generate_true_conc_sm(conc, listSM=sm_names):
+def generate_true_conc_conMat_sm(conc, listSM=sm_names):
     return pd.DataFrame(np.identity(len(listSM)) * float(conc), index=listSM, columns=listSM)
     
 # Define complex mixture id's
