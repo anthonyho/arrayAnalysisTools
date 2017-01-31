@@ -91,7 +91,7 @@ def filterVariants(df, dG_max=None, dG_err_max=None, rsq_min=None, nCluster_min=
     if dG_max is not None:
         filters = filters & ((df_swapped['dG'] < dG_max).sum(axis=1) >= minColsAgreed)
     if dG_err_max is not None:
-        filters = filters & (((df_swapped['dG_ub'] - df_swapped['dG_lb']) < dG_err_max).sum(axis=1) >= minColsAgreed)
+        filters = filters & ((df_swapped['dG_err'] < dG_err_max).sum(axis=1) >= minColsAgreed)
     if rsq_min is not None:
         filters = filters & ((df_swapped['rsq'] > rsq_min).sum(axis=1) >= minColsAgreed)
     if nCluster_min is not None:
