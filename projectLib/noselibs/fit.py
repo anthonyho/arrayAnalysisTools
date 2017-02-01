@@ -208,24 +208,24 @@ def reportFitStatusAllSamples(dict_fitResults):
 
 def evaluatePerformance(y1, y2, metric='RMSLE', axis=0):
     # Typecast into Pandas dataframes
-    _y1 = pd.DataFrame(y1)
-    _y2 = pd.DataFrame(y2)
+    if not(isinstance(y1, pd.DataFrame) and isinstance(y2, pd.DataFrame)):
+        raise TypeError('y1 and y2 must be Pandas dataframes')
 
     if metric == 'RMSE':
-        RMSE = np.sqrt(((_y1 - _y2)**2).mean(axis=axis))
+        RMSE = np.sqrt(((y1 - y2)**2).mean(axis=axis))
         return RMSE.dropna()
     elif metric == 'RMSLE':
-        LE = np.log(_y1+1) - np.log(_y2+1)
+        LE = np.log(y1+1) - np.log(y2+1)
         RMSLE = np.sqrt((LE**2).mean(axis=axis))
         return RMSLE.dropna()
     elif metric == 'IRMSLE':
-        LE = np.log(_y1+1) - np.log(_y2+1)
+        LE = np.log(y1+1) - np.log(y2+1)
         IRMSLE = 1 / (1 + np.sqrt((LE**2).mean(axis=axis)))
         return IRMSLE.dropna()
     elif metric == 'IERMSLE':
-        LE = np.log(_y1+1) - np.log(_y2+1)
+        LE = np.log(y1+1) - np.log(y2+1)
         IERMSLE = np.exp(-np.sqrt((LE**2).mean(axis=axis)))
         return IERMSLE.dropna()
     elif metric == 'pearson':
-        pearson = _y1.corrwith(_y2, axis=axis)
+        pearson = y1.corrwith(y2, axis=axis)
         return pearson.dropna()
