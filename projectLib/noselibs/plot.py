@@ -38,7 +38,7 @@ def plotPredictedConcMatrixPureSamples(predictedConcMatrix, setup, nAptamers=Non
     else:
         cg.ax_heatmap.set_title(setup+', n='+str(nAptamers), y=title_y)
     plotlib.setproperties(ax=cg.ax_heatmap, tight=False, 
-                          xlabel='Pure sample of ...', ylabel='Predicted as ...',
+                          xlabel='Ligand standards', ylabel='Ligand predictions',
                           fontsize=18, xticklabelrot=90, yticklabelrot=0)
     plotlib.setproperties(ax=cax, tight=False, fontsize=18, yticklabelrot=0)
 
