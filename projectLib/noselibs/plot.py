@@ -9,7 +9,7 @@ import CN_globalVars
 
 
 def plotPredictedConcMatrixPureSamples(predictedConcMatrix, setup, nAptamers=None, 
-                                       cat_colors=None, vmax=350, figsize=(8, 7), fig_dir=None):
+                                       cat_colors=None, vmax=350, figsize=(9.15, 9), fig_dir=None):
 
     # Define cat_colors
     if cat_colors is None:
@@ -20,17 +20,16 @@ def plotPredictedConcMatrixPureSamples(predictedConcMatrix, setup, nAptamers=Non
         listCatColors = cat_colors
 
     # Make plot
-    plt.figure(figsize=(8, 7))
     cg = sns.clustermap(predictedConcMatrix,
                         row_colors=listCatColors, col_colors=listCatColors,
-                        row_cluster=False, col_cluster=False, vmax=vmax, vmin=0,
+                        figsize=figsize, row_cluster=False, col_cluster=False, vmax=vmax, vmin=0,
                         cbar_kws={'label': 'Predicted concentration (uM)'})
     cax = plt.gcf().axes[-1]
     cax.set_position([0.13, .2, .03, .45])
 
     # Set miscel properties
     if cat_colors is False:
-        title_y = 1.05
+        title_y = 1.03
     else: 
         title_y = 1.1
     if nAptamers is None:
@@ -46,3 +45,4 @@ def plotPredictedConcMatrixPureSamples(predictedConcMatrix, setup, nAptamers=Non
     if fig_dir is not None:
         cg.savefig(fig_dir+'/pureSample_conMat_'+setup+'.png')
         cg.savefig(fig_dir+'/pureSample_conMat_'+setup+'.eps')
+
