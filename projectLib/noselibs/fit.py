@@ -76,6 +76,15 @@ def reportFit(output, weighted,
         else:
             r = _data - A * fit_funs._switchingEq(mu, _dG, _fmax, _fmin)
             return np.linalg.norm(r)**2
+    elif output=='redchi':
+        if weighted:
+            r = (_data - A * fit_funs._switchingEq(mu, _dG, _fmax, _fmin)) / fit_funs._switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err)
+            v = _dG.shape[0] - _dG.shape[1]
+            return np.linalg.norm(r)**2 / v
+        else:
+            r = _data - A * fit_funs._switchingEq(mu, _dG, _fmax, _fmin)
+            v = _dG.shape[0] - _dG.shape[1]
+            return np.linalg.norm(r)**2 / v
     elif output=='err':
         return fit_funs._switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err)
     elif output=='err_mu':
