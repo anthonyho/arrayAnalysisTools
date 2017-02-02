@@ -87,20 +87,21 @@ def filterVariants(df, dG_max=None, dG_err_max=None, rsq_min=None, nCluster_min=
     else:
         df_swapped = df
 
-    filters = pd.Series([True] * len(df_swapped), index=df_swapped.index)
+    filters = df_swapped['dG'] > -np.Inf
     if dG_max is not None:
-        filters = filters & ((df_swapped['dG'] < dG_max).sum(axis=1) >= minColsAgreed)
+        filters = filters & (df_swapped['dG'] < dG_max)
     if dG_err_max is not None:
-        filters = filters & ((df_swapped['dG_err'] < dG_err_max).sum(axis=1) >= minColsAgreed)
+        filters = filters & (df_swapped['dG_err'] < dG_err_max)
     if rsq_min is not None:
-        filters = filters & ((df_swapped['rsq'] > rsq_min).sum(axis=1) >= minColsAgreed)
+        filters = filters & (df_swapped['rsq'] > rsq_min)
     if nCluster_min is not None:
-        filters = filters & ((df_swapped['numClusters'] >= nCluster_min).sum(axis=1) >= minColsAgreed)
+        filters = filters & (df_swapped['numClusters'] >= nCluster_min)
     if pvalue_max is not None:
-        filters = filters & ((df_swapped['pvalue'] < pvalue_max).sum(axis=1) >= minColsAgreed)
+        filters = filters & (df_swapped['pvalue'] < pvalue_max)
+        
+    filtered_index = filters.sum(axis=1) >= minColsAgreed
 
     if swapped:
-        return df_swapped[filters]
+        return df_swapped[filtered_index]
     else:
-        return df_swapped[filters].swaplevel(0, 1, axis=1).sort_index(axis=1)
-
+        return df_swapped[filtered_index].swaplevel(0, 1, axis=1).sort_index(axis=1)
