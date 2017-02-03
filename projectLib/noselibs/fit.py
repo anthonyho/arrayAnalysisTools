@@ -34,12 +34,13 @@ def deconvoluteMixtures(data, dG, fmax=None, fmin=None,
         params.add(currSM, value=mu_init[i])
     
     # Fit and extract params
-    fitResult = lmfit.minimize(fit_funs._switchingEq_residuals, params,
-                               args=(_data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err), 
-                               maxfev=maxfev, **kwargs)
+    result = lmfit.minimize(fit_funs._switchingEq_residuals, params,
+                            args=(_data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err), 
+                            maxfev=maxfev, **kwargs)
+    result.nAptamers = len(dG)
     predictedConc = liblib.dGtoKd(pd.Series(fitResult.params.valuesdict()).drop('A'), unit=unit)
     
-    return fitResult, predictedConc
+    return result, predictedConc
 
 
 def reportFit(output, weighted, 
@@ -136,21 +137,23 @@ def fitAllPureSamples(variants_subset, currConc, listSM, fmax=True, fmin=True, d
     
     # Fit all pure samples
     list_predictedConc = []
-    dict_fitResults = {}
+    dict_results = {}
     for currSM in listSM:
         if data_err:
-            fitResult, predictedConc = deconvoluteMixtures(variants_subset[bs_key][currSM], variants_subset['dG'], fmax, fmin,
-                                                           variants_subset[ci_bs_key][currSM], variants_subset['dG_err'], fmax_err, fmin_err,
-                                                           varyA=varyA, conc_init=conc_init, conc_init_percentile=conc_init_percentile, **kwargs)
+            result, predictedConc = deconvoluteMixtures(variants_subset[bs_key][currSM], variants_subset['dG'], fmax, fmin,
+                                                        variants_subset[ci_bs_key][currSM], variants_subset['dG_err'], fmax_err, fmin_err,
+                                                        varyA=varyA, conc_init=conc_init, conc_init_percentile=conc_init_percentile, **kwargs)
         else:
-            fitResult, predictedConc = deconvoluteMixtures(variants_subset[bs_key][currSM], variants_subset['dG'], fmax, fmin,
-                                                           None, variants_subset['dG_err'], fmax_err, fmin_err,
-                                                           varyA=varyA, conc_init=conc_init, conc_init_percentile=conc_init_percentile, **kwargs)
+            result, predictedConc = deconvoluteMixtures(variants_subset[bs_key][currSM], variants_subset['dG'], fmax, fmin,
+                                                        None, variants_subset['dG_err'], fmax_err, fmin_err,
+                                                        varyA=varyA, conc_init=conc_init, conc_init_percentile=conc_init_percentile, **kwargs)
         list_predictedConc.append(predictedConc)
-        dict_fitResults[currSM] = fitResult
+        dict_results[currSM] = result
     
-    predictedConcMatrix = pd.concat(list_predictedConc, axis=1, keys=listSM).reindex(listSM)
-    return predictedConcMatrix, dict_fitResults
+    fitResults = {'results': dict_results, 
+                  'predictedConcMatrix': pd.concat(list_predictedConc, axis=1, keys=listSM).reindex(listSM)}
+
+    return fitResults
 
 
 def fitAllComplexMixtures(variants_subset, listCM, fmax=True, fmin=True, data_err=True, norm=True, 
@@ -188,28 +191,32 @@ def fitAllComplexMixtures(variants_subset, listCM, fmax=True, fmin=True, data_er
     
     # Fit all pure samples
     list_predictedConc = []
-    dict_fitResults = {}
+    dict_results = {}
     for currCM in listCM:
         if data_err:
             return 0
         else:
-            fitResult, predictedConc = deconvoluteMixtures(variants_subset[cm_key][currCM], variants_subset['dG'], fmax, fmin,
-                                                           None, variants_subset['dG_err'], fmax_err, fmin_err,
-                                                           varyA=varyA, conc_init=conc_init, conc_init_percentile=conc_init_percentile, **kwargs)
+            result, predictedConc = deconvoluteMixtures(variants_subset[cm_key][currCM], variants_subset['dG'], fmax, fmin,
+                                                        None, variants_subset['dG_err'], fmax_err, fmin_err,
+                                                        varyA=varyA, conc_init=conc_init, conc_init_percentile=conc_init_percentile, **kwargs)
+
         list_predictedConc.append(predictedConc)
-        dict_fitResults[currCM] = fitResult
+        dict_results[currCM] = result
     
-    predictedConcMatrix = pd.concat(list_predictedConc, axis=1, keys=listCM).reindex(listCM)
-    return predictedConcMatrix, dict_fitResults
+    fitResults = {'results': dict_results, 
+                  'predictedConcMatrix': pd.concat(list_predictedConc, axis=1, keys=listCM).reindex(listCM)}
+
+    return fitResults
 
 
-def reportFitStatusAllSamples(dict_fitResults):
-    for currSM in dict_fitResults:
+def reportFitStatusAllSamples(fitResults):
+    dict_results = fitResults['results']
+    for currSM in dict_results:
         print currSM+':'
-        print '  ier:'+str(dict_fitResults[currSM].ier)
-        print '  nfev:'+str(dict_fitResults[currSM].nfev)
-        print '  lmdif_message: '+dict_fitResults[currSM].lmdif_message
-        print '  message: '+dict_fitResults[currSM].message
+        print '  ier:'+str(dict_results[currSM].ier)
+        print '  nfev:'+str(dict_results[currSM].nfev)
+        print '  lmdif_message: '+dict_results[currSM].lmdif_message
+        print '  message: '+dict_results[currSM].message
 
 
 # --- Performance metrics --- # 

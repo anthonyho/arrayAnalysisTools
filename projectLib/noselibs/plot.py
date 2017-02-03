@@ -8,8 +8,14 @@ import plotlib
 import CN_globalVars
 
 
-def plotPredictedConcMatrixPureSamples(predictedConcMatrix, setup, nAptamers=None, 
-                                       cat_colors=None, vmax=350, figsize=(9.15, 9), fig_dir=None):
+def plotPredictedConcMatrixPureSamples(fitResults, setup,
+                                       nAptamers=None, cat_colors=None, vmax=350, 
+                                       figsize=(9.15, 9), fig_dir=None):
+
+    # Unpack object
+    predictedConcMatrix = fitResults['predictedConcMatrix']
+    if nAptamers is None:
+        nAptamers = fitResults['results'][predictedConcMatrix.columns[0]].nAptamers
 
     # Define cat_colors
     if cat_colors is None:
@@ -32,10 +38,10 @@ def plotPredictedConcMatrixPureSamples(predictedConcMatrix, setup, nAptamers=Non
         title_y = 1.03
     else: 
         title_y = 1.1
-    if nAptamers is None:
-        cg.ax_heatmap.set_title(setup, y=title_y)
-    else:
+    if nAptamers:
         cg.ax_heatmap.set_title(setup+', n='+str(nAptamers), y=title_y)
+    else:
+        cg.ax_heatmap.set_title(setup, y=title_y)
     plotlib.setproperties(ax=cg.ax_heatmap, tight=False, 
                           xlabel='Ligand standards', ylabel='Ligand predictions',
                           fontsize=18, xticklabelrot=90, yticklabelrot=0)
