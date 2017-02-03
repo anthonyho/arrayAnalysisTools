@@ -37,7 +37,6 @@ def deconvoluteMixtures(data, dG, fmax=None, fmin=None,
     result = lmfit.minimize(fit_funs._switchingEq_residuals, params,
                             args=(_data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err), 
                             maxfev=maxfev, **kwargs)
-    result.nAptamers = len(dG)
     predictedConc = liblib.dGtoKd(pd.Series(fitResult.params.valuesdict()).drop('A'), unit=unit)
     
     return result, predictedConc

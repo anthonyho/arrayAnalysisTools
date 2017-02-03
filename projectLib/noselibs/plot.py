@@ -15,7 +15,7 @@ def plotPredictedConcMatrixPureSamples(fitResults, setup,
     # Unpack object
     predictedConcMatrix = fitResults['predictedConcMatrix']
     if nAptamers is None:
-        nAptamers = fitResults['results'][predictedConcMatrix.columns[0]].nAptamers
+        nAptamers = fitResults['results'][predictedConcMatrix.columns[0]].ndata
 
     # Define cat_colors
     if cat_colors is None:
