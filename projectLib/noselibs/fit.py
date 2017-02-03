@@ -212,11 +212,11 @@ def fitAllComplexMixtures(variants_subset, listCM, fmax=True, fmin=True, data_er
 def reportFitStatusAllSamples(fitResults):
     dict_results = fitResults['results']
     for currSM in dict_results:
-        print currSM+':'
-        print '  ier:'+str(dict_results[currSM].ier)
-        print '  nfev:'+str(dict_results[currSM].nfev)
-        print '  lmdif_message: '+dict_results[currSM].lmdif_message
-        print '  message: '+dict_results[currSM].message
+        print '{:<6} ier = {}, nfev = {}'.format(currSM+':', 
+                                                 dict_results[currSM].ier, 
+                                                 dict_results[currSM].nfev)
+        print '       lmdif_message: {}'.format(dict_results[currSM].lmdif_message.replace('\n', ''))
+        print '       message: {}'.format(dict_results[currSM].message.replace('\n', ''))
 
 
 # --- Performance metrics --- # 
