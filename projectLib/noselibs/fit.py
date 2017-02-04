@@ -156,7 +156,7 @@ def fitAllPureSamples(variants_subset, currConc, listSM, fmax=True, fmin=True, d
 
 
 def fitAllComplexMixtures(variants_subset, listCM, fmax=True, fmin=True, data_err=True, norm=True, 
-                          varyA=False, conc_init=None, conc_init_percentile=0.1, **kwargs):
+                          varyA=False, conc_init=None, conc_init_percentile=10, **kwargs):
     '''Fit all complex mixtures measurements'''
     # Define column names for fmax, fmin, and bs in the normalized and unnormalzied cases
     if norm:
@@ -211,9 +211,10 @@ def fitAllComplexMixtures(variants_subset, listCM, fmax=True, fmin=True, data_er
 def reportFitStatusAllSamples(fitResults):
     dict_results = fitResults['results']
     for currSM in dict_results:
-        print '{:<6} ier = {}, nfev = {}'.format(currSM+':', 
-                                                 dict_results[currSM].ier, 
-                                                 dict_results[currSM].nfev)
+        print '{:<6} ier = {}, nfev = {}, redchi = {:.3f}'.format(currSM+':', 
+                                                                  dict_results[currSM].ier, 
+                                                                  dict_results[currSM].nfev, 
+                                                                  dict_results[currSM].redchi)
         print '       lmdif_message: {}'.format(dict_results[currSM].lmdif_message.replace('\n', ''))
         print '       message: {}'.format(dict_results[currSM].message.replace('\n', ''))
 
