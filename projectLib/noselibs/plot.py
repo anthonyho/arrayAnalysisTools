@@ -106,5 +106,5 @@ def plotFitStatus(fitResults, setup='',
 
     # Save figure
     if fig_dir is not None:
-        cg.savefig(fig_dir+'/fitStatus_'+setup+'.png')
-        cg.savefig(fig_dir+'/fitStatus_'+setup+'.eps')
+        plt.savefig(fig_dir+'/fitStatus_'+setup+'.png')
+        plt.savefig(fig_dir+'/fitStatus_'+setup+'.eps')
