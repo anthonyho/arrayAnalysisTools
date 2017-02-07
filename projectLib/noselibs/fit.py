@@ -176,7 +176,7 @@ class deconvoluteMixtures:
 
 
     # Public method to compute various functional terms given parameters
-    def reportFit(self, sample, output, weighted=True, params=None):
+    def reportFit(self, sample, output, weighted=True, params='fitted'):
         '''Return various functional terms using the fitted parameters'''
         # Initialize and typecast variables
         _data, _dG, _fmax, _fmin, \
@@ -189,7 +189,8 @@ class deconvoluteMixtures:
             A, mu = fit_funs._extractParams(self.results[sample].params)
         elif params == 'true':
             A = 1
-            mu = [self.trueConcDf[sample][ligand] for ligand in self.dG.columns]
+            mu = [liblib.KdtodG(self.trueConcDf[sample][ligand], unit=self.unit) 
+                  for ligand in self.dG.columns]
             mu = np.array(mu).reshape(1, -1)
         else:
             A, mu = fit_funs._extractParams(params)
