@@ -139,10 +139,12 @@ class deconvoluteMixtures:
     def reportFitStatus(self):
         '''Report the status of the fits'''
         for sample in self.results:
-            print '{:<6} ier = {}, nfev = {}, redchi = {:.3f}'.format(sample+':', 
-                                                                      self.results[sample].ier, 
-                                                                      self.results[sample].nfev, 
-                                                                      self.results[sample].redchi)
+            trueRedChi = self.reportFit(sample, output='redchi', weighted=True, params='true')
+            print '{:<6} ier = {}, nfev = {}, redchi = {:.3f}, trueRedChi = {:.3f}'.format(sample+':', 
+                                                                                           self.results[sample].ier, 
+                                                                                           self.results[sample].nfev, 
+                                                                                           self.results[sample].redchi, 
+                                                                                           trueRedChi)
             print '       lmdif_message: {}'.format(self.results[sample].lmdif_message.replace('\n', ''))
             print '       message: {}'.format(self.results[sample].message.replace('\n', ''))
 
