@@ -1,47 +1,175 @@
 # Anthony Ho, ahho@stanford.edu, 1/5/2017
-# Last update 1/31/2017
-"""Library containing functions for fitting and related higher level analysis"""
+# Last update 2/6/2017
+"""Python module for deconvolution of complex mixtures of ligands based on biophysical model"""
 
 
 import numpy as np
 import pandas as pd
 import lmfit
 import liblib
+import CN_globalVars
 import fit_funs
+import plot
 
 
-# --- Functions meant for one sample --- #
+class deconvoluteMixtures:
+    '''Python class for deconvoluting complex mixtures into individual components'''
 
 
-def deconvoluteMixtures(data, dG, fmax=None, fmin=None, 
-                        data_err=None, dG_err=None, fmax_err=None, fmin_err=None,
-                        varyA=False, conc_init=None, conc_init_percentile=10, unit='uM', 
-                        maxfev=500000, **kwargs):
-    '''Fit the concentrations of ligands using lmfit'''
-    # Initialize and typecast variables
-    _data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err = fit_funs._prepareVariables(data, dG, fmax, fmin,
-                                                                                                    data_err, dG_err, fmax_err, fmin_err)
+    # Constructor which also does fitting of all samples
+    def __init__(self, variants, listSamples, listLigands, 
+                 currConc=None, trueConcDf=None,
+                 use_fmax=True, use_fmin=True, use_data_err=True, 
+                 norm=True, varyA=False, unit='uM',
+                 conc_init=None, conc_init_percentile=10, 
+                 maxfev=500000, **kwargs):
+        '''Deconvolute samples given the variant matrix'''
 
-    # Define concenrations
-    try:
-        conc_init = np.ones(len(dG.columns)) * conc_init
-        mu_init = liblib.KdtodG(conc_init, unit=unit)
-    except TypeError:
-        mu_init = np.percentile(_dG, conc_init_percentile, axis=0)
-    params = lmfit.Parameters()
-    params.add('A', value=1.0, min=0.0, vary=varyA)
-    for i, currSM in enumerate(dG.columns):
-        params.add(currSM, value=mu_init[i])
+        # Assign instance variables
+        self.listSamples = listSamples
+        self.listLigands = listLigands
+        self.currConc = currConc
+        self.use_fmax = use_fmax
+        self.use_fmin = use_fmin
+        self.use_data_err = use_data_err
+        self.norm = norm
+        self.varyA = varyA
+        self.unit = unit
+        self.conc_init = conc_init
+        self.conc_init_percentile = conc_init_percentile
+        self.maxfev = maxfev
+        
+        # Create trueConcDf if not provided
+        if trueConcDf:
+            self.trueConcDf = trueConcDf
+        elif currConc and (listSamples == listLigands):
+            self.trueConcDf = CN_globalVars.generate_true_conMat_sm(currConc, listSamples) # to fix
+        else:
+            self.trueConcDf = None
+
+        # Define column names for fmax, fmin, data of samples, and their errors
+        # in the normalized and unnormalized cases
+        col = {'fmax': 'fmax', 
+               'fmax_err': 'fmax_err', 
+               'fmin': 'fmin',
+               'fmin_err': 'fmin_err'}
+        if currConc:
+            col['data'] = 'bs_'+str(currConc)+'.0'
+            col['data_err'] = 'bs_'+str(currConc)+'.0_err'
+        else:
+            col['data'] = 'cs'
+            col['data_err'] = 'cs_err'
+            
+        if norm:
+            col = {key: col[key]+'_norm' for key in col}
+
+        # Extract input to be fed into the fitting algorithm
+        # - data -
+        self.data = variants[col['data']]
+        if use_data_err:
+            self.data_err = variants[col['data_err']]
+        else:
+            self.data_err = {sample: None for sample in listSamples}
+        # - dG -
+        self.dG = variants['dG']
+        self.dG_err = variants['dG_err']
+        # - fmax -
+        if use_fmax:
+            self.fmax = variants[col['fmax']]
+            self.fmax_err = variants[col['fmax_err']]
+        else:
+            self.fmax = None
+            self.fmax_err = None
+        # - fmin -
+        if use_fmin:
+            self.fmin = variants[col['fmin']]
+            self.fmin_err = variants[col['fmin_err']]
+        else:
+            self.fmin = None
+            self.fmin_err = None
+
+        # Fit all samples
+        self.results = {}
+        for sample in listSamples:
+            self.results[sample] = self._fitSingleSample(sample, **kwargs)
+        
+        # Create predicted concentration matrix
+        self.predictedConcMatrix = pd.concat({sample: self.results[sample].predictedConc for sample in listSamples}, 
+                                             axis=1).reindex(index=listLigands, columns=listSamples)
+
+
+    # Private method to fit a single sample
+    def _fitSingleSample(self, sample, **kwargs):
+        '''Fit the concentrations of ligands using lmfit'''
+        # Initialize and typecast variables
+        _data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err = fit_funs._prepareVariables(self.data[sample], self.dG, self.fmax, self.fmin,
+                                                                                                        self.data_err[sample], self.dG_err, self.fmax_err, self.fmin_err)
+        
+        # Define concenrations
+        try:
+            _conc_init = np.ones(len(self.dG.columns)) * self.conc_init
+            _mu_init = liblib.KdtodG(_conc_init, unit=self.unit)
+        except TypeError:
+            _mu_init = np.percentile(_dG, self.conc_init_percentile, axis=0)
+        params = lmfit.Parameters()
+        params.add('A', value=1.0, min=0.0, vary=self.varyA)
+        for i, ligand in enumerate(self.dG.columns):
+            params.add(ligand, value=_mu_init[i])
+            
+        # Fit and extract params
+        result = lmfit.minimize(fit_funs._switchingEq_residuals, params,
+                                args=(_data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err), 
+                                maxfev=self.maxfev, **kwargs)
+        result.predictedConc = liblib.dGtoKd(pd.Series(result.params.valuesdict()).drop('A'), unit=self.unit)
     
-    # Fit and extract params
-    result = lmfit.minimize(fit_funs._switchingEq_residuals, params,
-                            args=(_data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err), 
-                            maxfev=maxfev, **kwargs)
-    predictedConc = liblib.dGtoKd(pd.Series(result.params.valuesdict()).drop('A'), unit=unit)
-    
-    return result, predictedConc
+        return result
 
 
+    # Public method to plot the predicted concentration confusion matrix
+    def plotPredictedConcMatrix(self, setup, fig_dir):
+        cg = plot.plotPredictedConcMatrix(fitResults=self, setup=setup, fig_dir=fig_dir)
+        return cg
+
+
+    # Public method to report the fit status of all samples
+    def reportFitStatus(self):
+        for sample in self.results:
+            print '{:<6} ier = {}, nfev = {}, redchi = {:.3f}'.format(sample+':', 
+                                                                      self.results[sample].ier, 
+                                                                      self.results[sample].nfev, 
+                                                                      self.results[sample].redchi)
+            print '       lmdif_message: {}'.format(self.results[sample].lmdif_message.replace('\n', ''))
+            print '       message: {}'.format(self.results[sample].message.replace('\n', ''))
+
+
+    # Public method to evaluate the performance of the fit
+    def evaluatePerformance(self, metric='IERMSLE', axis=0):
+        # Unpack variables
+        y1 = self.predictedConcMatrix
+        y2 = self.trueConcDf
+
+        # Evaluate performance
+        if metric == 'RMSE':
+            RMSE = np.sqrt(((y1 - y2)**2).mean(axis=axis))
+            return RMSE.dropna()
+        elif metric == 'RMSLE':
+            LE = np.log(y1+1) - np.log(y2+1)
+            RMSLE = np.sqrt((LE**2).mean(axis=axis))
+            return RMSLE.dropna()
+        elif metric == 'IRMSLE':
+            LE = np.log(y1+1) - np.log(y2+1)
+            IRMSLE = 1 / (1 + np.sqrt((LE**2).mean(axis=axis)))
+            return IRMSLE.dropna()
+        elif metric == 'IERMSLE':
+            LE = np.log(y1+1) - np.log(y2+1)
+            IERMSLE = np.exp(-np.sqrt((LE**2).mean(axis=axis)))
+            return IERMSLE.dropna()
+        elif metric == 'pearson':
+            pearson = y1.corrwith(y2, axis=axis)
+            return pearson.dropna()
+
+
+#
 def reportFit(output, weighted, 
               params, data, dG, fmax=None, fmin=None, 
               data_err=None, dG_err=None, fmax_err=None, fmin_err=None):
@@ -95,153 +223,3 @@ def reportFit(output, weighted,
         return fit_funs._switchingEq_jacobian_fmax(mu, _dG)
     elif output=='err_fmin':
         return fit_funs._switchingEq_jacobian_fmin(mu, _dG)
-
-
-# --- Higher level wrapper functions for multiple samples --- # 
-
-
-def fitAllPureSamples(variants_subset, currConc, listSM, fmax=True, fmin=True, data_err=True, norm=True, 
-                      varyA=False, conc_init=None, conc_init_percentile=10, **kwargs):
-    '''Fit all the pure sample measurements at a given concentration'''
-    # Define column names for fmax, fmin, and bs in the normalized and unnormalzied cases
-    if norm:
-        fmax_key = 'fmax_norm'
-        fmax_err_key = 'fmax_err_norm'
-        fmin_key = 'fmin_norm'
-        fmin_err_key = 'fmin_err_norm'
-        bs_key = 'bs_'+str(currConc)+'.0_norm'
-        ci_bs_key = 'ci_bs_'+str(currConc)+'.0_norm'
-    else:
-        fmax_key = 'fmax'
-        fmax_err_key = 'fmax_err'
-        fmin_key = 'fmin'
-        fmin_err_key = 'fmin_err'
-        bs_key = 'bs_'+str(currConc)+'.0'
-        ci_bs_key = 'ci_bs_'+str(currConc)+'.0'
-    
-    # Get fmax and fmin if requested
-    if fmax:
-        fmax = variants_subset[fmax_key]
-        fmax_err = variants_subset[fmax_err_key]
-    else:
-        fmax = None
-        fmax_err = None
-    
-    if fmin:
-        fmin = variants_subset[fmin_key]
-        fmin_err = variants_subset[fmin_err_key]
-    else:
-        fmin = None
-        fmin_err = None
-    
-    # Fit all pure samples
-    list_predictedConc = []
-    dict_results = {}
-    for currSM in listSM:
-        if data_err:
-            result, predictedConc = deconvoluteMixtures(variants_subset[bs_key][currSM], variants_subset['dG'], fmax, fmin,
-                                                        variants_subset[ci_bs_key][currSM], variants_subset['dG_err'], fmax_err, fmin_err,
-                                                        varyA=varyA, conc_init=conc_init, conc_init_percentile=conc_init_percentile, **kwargs)
-        else:
-            result, predictedConc = deconvoluteMixtures(variants_subset[bs_key][currSM], variants_subset['dG'], fmax, fmin,
-                                                        None, variants_subset['dG_err'], fmax_err, fmin_err,
-                                                        varyA=varyA, conc_init=conc_init, conc_init_percentile=conc_init_percentile, **kwargs)
-        list_predictedConc.append(predictedConc)
-        dict_results[currSM] = result
-    
-    fitResults = {'results': dict_results, 
-                  'predictedConcMatrix': pd.concat(list_predictedConc, axis=1, keys=listSM).reindex(listSM)}
-
-    return fitResults
-
-
-def fitAllComplexMixtures(variants_subset, listCM, fmax=True, fmin=True, data_err=True, norm=True, 
-                          varyA=False, conc_init=None, conc_init_percentile=10, **kwargs):
-    '''Fit all complex mixtures measurements'''
-    # Define column names for fmax, fmin, and bs in the normalized and unnormalzied cases
-    if norm:
-        fmax_key = 'fmax_norm'
-        fmax_err_key = 'fmax_err_norm'
-        fmin_key = 'fmin_norm'
-        fmin_err_key = 'fmin_err_norm'
-        cm_key = 'N'
-
-    else:
-        fmax_key = 'fmax'
-        fmax_err_key = 'fmax_err'
-        fmin_key = 'fmin'
-        fmin_err_key = 'fmin_err'
-        cm_key = 'S'
-    
-    # Get fmax and fmin if requested
-    if fmax:
-        fmax = variants_subset[fmax_key]
-        fmax_err = variants_subset[fmax_err_key]
-    else:
-        fmax = None
-        fmax_err = None
-    
-    if fmin:
-        fmin = variants_subset[fmin_key]
-        fmin_err = variants_subset[fmin_err_key]
-    else:
-        fmin = None
-        fmin_err = None
-    
-    # Fit all pure samples
-    list_predictedConc = []
-    dict_results = {}
-    for currCM in listCM:
-        if data_err:
-            return 0
-        else:
-            result, predictedConc = deconvoluteMixtures(variants_subset[cm_key][currCM], variants_subset['dG'], fmax, fmin,
-                                                        None, variants_subset['dG_err'], fmax_err, fmin_err,
-                                                        varyA=varyA, conc_init=conc_init, conc_init_percentile=conc_init_percentile, **kwargs)
-
-        list_predictedConc.append(predictedConc)
-        dict_results[currCM] = result
-    
-    fitResults = {'results': dict_results, 
-                  'predictedConcMatrix': pd.concat(list_predictedConc, axis=1, keys=listCM).reindex(listCM)}
-
-    return fitResults
-
-
-def reportFitStatusAllSamples(fitResults):
-    dict_results = fitResults['results']
-    for currSM in dict_results:
-        print '{:<6} ier = {}, nfev = {}, redchi = {:.3f}'.format(currSM+':', 
-                                                                  dict_results[currSM].ier, 
-                                                                  dict_results[currSM].nfev, 
-                                                                  dict_results[currSM].redchi)
-        print '       lmdif_message: {}'.format(dict_results[currSM].lmdif_message.replace('\n', ''))
-        print '       message: {}'.format(dict_results[currSM].message.replace('\n', ''))
-
-
-# --- Performance metrics --- # 
-
-
-def evaluatePerformance(y1, y2, metric='RMSLE', axis=0):
-    # Typecast into Pandas dataframes
-    if not(isinstance(y1, pd.DataFrame) and isinstance(y2, pd.DataFrame)):
-        raise TypeError('y1 and y2 must be Pandas dataframes')
-
-    if metric == 'RMSE':
-        RMSE = np.sqrt(((y1 - y2)**2).mean(axis=axis))
-        return RMSE.dropna()
-    elif metric == 'RMSLE':
-        LE = np.log(y1+1) - np.log(y2+1)
-        RMSLE = np.sqrt((LE**2).mean(axis=axis))
-        return RMSLE.dropna()
-    elif metric == 'IRMSLE':
-        LE = np.log(y1+1) - np.log(y2+1)
-        IRMSLE = 1 / (1 + np.sqrt((LE**2).mean(axis=axis)))
-        return IRMSLE.dropna()
-    elif metric == 'IERMSLE':
-        LE = np.log(y1+1) - np.log(y2+1)
-        IERMSLE = np.exp(-np.sqrt((LE**2).mean(axis=axis)))
-        return IERMSLE.dropna()
-    elif metric == 'pearson':
-        pearson = y1.corrwith(y2, axis=axis)
-        return pearson.dropna()

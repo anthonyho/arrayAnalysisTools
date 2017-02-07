@@ -1,5 +1,5 @@
 # Anthony Ho, ahho@stanford.edu, 1/5/2016
-# Last update 1/5/2015
+# Last update 2/6/2015
 """Library containing functions to process data"""
 
 
@@ -26,7 +26,7 @@ def mergeAllVariants(variants_dict, variants_max_dict, bindingSeries_dict, conce
                                         how='inner', left_index=True, right_index=True).groupby('variant_number')
         
         medianBindingSeriesByVariants = groupedBindingSeries.median()
-        medianBindingSeriesByVariants.columns = ['bs_'+str(c) for c in concentrations_dict[currSM]/1000]
+        medianBindingSeriesByVariants.columns = ['bs_{}'.format(c) for c in concentrations_dict[currSM]/1000]
         medianBindingSeriesByVariants_dict[currSM] = medianBindingSeriesByVariants
 
         medianNormBindingSeriesByVariants = medianBindingSeriesByVariants.divide(variants_max[currSM]['max'], axis=0)
@@ -34,7 +34,7 @@ def mergeAllVariants(variants_dict, variants_max_dict, bindingSeries_dict, conce
         medianNormBindingSeriesByVariants_dict[currSM] = medianNormBindingSeriesByVariants
 
         ciBindingSeriesByVariants = groupedBindingSeries.std() / np.sqrt(groupedBindingSeries.count())
-        ciBindingSeriesByVariants.columns = ['ci_bs_'+str(c) for c in concentrations_dict[currSM]/1000]
+        ciBindingSeriesByVariants.columns = ['bs_{}_err'.format(c) for c in concentrations_dict[currSM]/1000]
         ciBindingSeriesByVariants_dict[currSM] = ciBindingSeriesByVariants
 
         ciNormBindingSeriesByVariants = ciBindingSeriesByVariants.divide(variants_max[currSM]['max'], axis=0)
@@ -71,7 +71,7 @@ def mergeAllVariants(variants_dict, variants_max_dict, bindingSeries_dict, conce
 # Merge mixtures_dict into a single multilabel dataframe
 def mergeAllMixtures(mixtures_dict):
 
-    mixtures_all = pd.concat({currCM: mixtures_dict[currCM][[0, 2]].rename(columns={'0': 'N', '2': 'S'}) for currCM in mixtures_dict}, axis=1)
+    mixtures_all = pd.concat({currCM: mixtures_dict[currCM][[0, 2]].rename(columns={'0': 'cs_norm', '2': 'cs'}) for currCM in mixtures_dict}, axis=1)
 
     return mixtures_all
 
