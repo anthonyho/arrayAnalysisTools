@@ -14,7 +14,7 @@ import CN_globalVars
 colors = sns.color_palette("Paired", 12)
 
 
-def plotPredictedConcMatrix(fitResults, setup,
+def plotPredictedConcMatrix(fitResults, setup='',
                             nAptamers=None, vmax=None,
                             catColorsRow=None, catColorsCol=None, 
                             figsize=(9.1, 9), fig_dir=None):
@@ -76,8 +76,8 @@ def plotPredictedConcMatrix(fitResults, setup,
     return cg
 
 
-def plotFitStatus(fitResults, setup, 
-                  metric='IERMSLE', figsize=(7, 8), fig_dir=None):
+def plotFitStatus(fitResults, setup='',
+                  metric='IERMSLE', figsize=(7, 6), fig_dir=None):
 
     plt.figure(figsize=figsize)
 
