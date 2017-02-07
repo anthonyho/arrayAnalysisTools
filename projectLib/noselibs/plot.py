@@ -77,32 +77,50 @@ def plotPredictedConcMatrix(fitResults, setup='',
 
 
 def plotFitStatus(fitResults, setup='',
-                  metric='IERMSLE', figsize=(7, 6), fig_dir=None):
+                  metric='IERMSLE', figsize=(7, 8), fig_dir=None):
 
-    plt.figure(figsize=figsize)
+    fig = plt.figure(figsize=figsize)
 
-    # Compute log2 fold change of fitted vs true chi2
-    fittedRedChi = pd.Series({sample: fitResults.results[sample].redchi 
-                              for sample in fitResults.listSamples}) 
-    trueRedChi = pd.Series({sample: fitResults.reportFit(sample, 'redchi', weighted=True, params='true') 
+    # Compute log2 fold change of fitted vs true unweighted chi2
+    fittedRedChi = pd.Series({sample: fitResults.reportFit(sample, 'redchi', weighted=False, params='fitted') 
+                            for sample in fitResults.listSamples})
+    trueRedChi = pd.Series({sample: fitResults.reportFit(sample, 'redchi', weighted=False, params='true') 
                             for sample in fitResults.listSamples})
     redChiFoldChange = np.log2(fittedRedChi / trueRedChi)
-
-    # Plot log2 fold change of fitted vs true chi2
-    ax1 = plt.subplot(2, 1, 1)
-    sns.barplot(x=fitResults.listSamples, y=redChiFoldChange, color=colors[3])
-    plotlib.setproperties(ax=ax1, title=setup, fontsize=16,
-                          ylabel='Log2 fold change\nof fitted vs true chi2')
+    # Plot 
+    ax1 = plt.subplot(3, 1, 1)
+    sns.barplot(x=fitResults.listSamples, y=redChiFoldChange, 
+                color=colors[3], edgecolor=colors[3])
+    plotlib.setproperties(ax=ax1, title=setup, fontsize=16, tight=False,
+                          ylabel='Log2 fold change\nof fitted vs true\nunweighted chi2')
     plt.setp(ax1.get_xticklabels(), visible=False)
+
+    # Compute log2 fold change of fitted vs true weighted chi2
+    fittedRedChi = pd.Series({sample: fitResults.results[sample].redchi 
+                              for sample in fitResults.listSamples}) 
+    trueRedChi = pd.Series({sample: fitResults.reportFit(sample, 'redchi', weighted=True, params='true')
+                            for sample in fitResults.listSamples})
+    redChiFoldChange = np.log2(fittedRedChi / trueRedChi)
+    # Plot
+    ax2 = plt.subplot(3, 1, 2, sharex=ax1)
+    sns.barplot(x=fitResults.listSamples, y=redChiFoldChange, 
+                color=colors[3], edgecolor=colors[3])
+    plotlib.setproperties(ax=ax2, fontsize=16, tight=False,
+                          ylabel='Log2 fold change\nof fitted vs true\nweighted chi2')
+    plt.setp(ax2.get_xticklabels(), visible=False)
 
     # Compute performance metric
     performance = fitResults.evaluatePerformance(metric)
 
     # Plot performance metric
-    ax2 = plt.subplot(2, 1, 2, sharex=ax1)
-    sns.barplot(x=fitResults.listSamples, y=performance, color=colors[1])
-    plotlib.setproperties(ax=ax2, xlabel='Samples', ylabel=metric,
-                          ylim=(0, 1), xticklabelrot=90, fontsize=16)
+    ax3 = plt.subplot(3, 1, 3, sharex=ax1)
+    sns.barplot(x=fitResults.listSamples, y=performance, 
+                color=colors[1], edgecolor=colors[3])
+    plotlib.setproperties(ax=ax3, xlabel='Samples', ylabel=metric,
+                          ylim=(0, 1), tight=False,
+                          xticklabelrot=90, fontsize=16)
+
+    fig.tight_layout()
 
     # Save figure
     if fig_dir is not None:
