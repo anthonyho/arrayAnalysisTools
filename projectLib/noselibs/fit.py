@@ -1,6 +1,6 @@
 # Anthony Ho, ahho@stanford.edu, 1/5/2017
 # Last update 2/6/2017
-"""Python module for deconvolution of complex mixtures of ligands based on biophysical model"""
+'''Python module for deconvolution of complex mixtures of ligands based on biophysical model'''
 
 
 import numpy as np
@@ -24,7 +24,6 @@ class deconvoluteMixtures:
                  conc_init=None, conc_init_percentile=10, 
                  maxfev=500000, **kwargs):
         '''Deconvolute samples given the variant matrix'''
-
         # Assign instance variables
         self.listSamples = listSamples
         self.listLigands = listLigands
@@ -127,12 +126,14 @@ class deconvoluteMixtures:
 
     # Public method to plot the predicted concentration confusion matrix
     def plotPredictedConcMatrix(self, setup, fig_dir):
+        '''Plot the predicted concentration confusion matrix'''
         cg = plot.plotPredictedConcMatrix(fitResults=self, setup=setup, fig_dir=fig_dir)
         return cg
 
 
     # Public method to report the fit status of all samples
     def reportFitStatus(self):
+        '''Report the status of the fits'''
         for sample in self.results:
             print '{:<6} ier = {}, nfev = {}, redchi = {:.3f}'.format(sample+':', 
                                                                       self.results[sample].ier, 
@@ -144,6 +145,7 @@ class deconvoluteMixtures:
 
     # Public method to evaluate the performance of the fit
     def evaluatePerformance(self, metric='IERMSLE', axis=0):
+        '''Evaulate the performance of the fits'''
         # Unpack variables
         y1 = self.predictedConcMatrix
         y2 = self.trueConcDf
