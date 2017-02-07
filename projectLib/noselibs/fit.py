@@ -1,5 +1,5 @@
 # Anthony Ho, ahho@stanford.edu, 1/5/2017
-# Last update 2/6/2017
+# Last update 2/7/2017
 '''Python module for deconvolution of complex mixtures of ligands based on biophysical model'''
 
 
@@ -42,7 +42,7 @@ class deconvoluteMixtures:
         if trueConcDf:
             self.trueConcDf = trueConcDf
         elif currConc and (listSamples == listLigands):
-            self.trueConcDf = CN_globalVars.generate_true_conMat_sm(currConc, listSamples) # to fix
+            self.trueConcDf = CN_globalVars.generate_true_conMat_sm(currConc, listSamples) # to be fixed for listSamples != listLigands
         else:
             self.trueConcDf = None
 
@@ -93,7 +93,8 @@ class deconvoluteMixtures:
             self.results[sample] = self._fitSingleSample(sample, **kwargs)
         
         # Create predicted concentration matrix
-        self.predictedConcMatrix = pd.concat({sample: self.results[sample].predictedConc for sample in listSamples}, 
+        self.predictedConcMatrix = pd.concat({sample: self.results[sample].predictedConc 
+                                              for sample in listSamples}, 
                                              axis=1).reindex(index=listLigands, columns=listSamples)
 
 
@@ -101,8 +102,10 @@ class deconvoluteMixtures:
     def _fitSingleSample(self, sample, **kwargs):
         '''Fit the concentrations of ligands using lmfit'''
         # Initialize and typecast variables
-        _data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err = fit_funs._prepareVariables(self.data[sample], self.dG, self.fmax, self.fmin,
-                                                                                                        self.data_err[sample], self.dG_err, self.fmax_err, self.fmin_err)
+        _data, _dG, _fmax, _fmin, \
+        _data_err, _dG_err, _fmax_err, _fmin_err = \
+        fit_funs._prepareVariables(self.data[sample], self.dG, self.fmax, self.fmin,
+                                   self.data_err[sample], self.dG_err, self.fmax_err, self.fmin_err)
         
         # Define concenrations
         try:
@@ -119,7 +122,8 @@ class deconvoluteMixtures:
         result = lmfit.minimize(fit_funs._switchingEq_residuals, params,
                                 args=(_data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err), 
                                 maxfev=self.maxfev, **kwargs)
-        result.predictedConc = liblib.dGtoKd(pd.Series(result.params.valuesdict()).drop('A'), unit=self.unit)
+        result.predictedConc = liblib.dGtoKd(pd.Series(result.params.valuesdict()).drop('A'), 
+                                             unit=self.unit)
     
         return result
 
@@ -171,57 +175,52 @@ class deconvoluteMixtures:
             return pearson.dropna()
 
 
-#
-def reportFit(output, weighted, 
-              params, data, dG, fmax=None, fmin=None, 
-              data_err=None, dG_err=None, fmax_err=None, fmin_err=None):
-    '''Return various functional terms using the fitted parameters'''
-    # Initialize and typecast variables
-    _data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err = fit_funs._prepareVariables(data, dG, fmax, fmin,
-                                                                                                    data_err, dG_err, fmax_err, fmin_err)
+    # Public method to compute various functional terms given parameters
+    def reportFit(self, sample, output, weighted=True, params=None):
+        '''Return various functional terms using the fitted parameters'''
+        # Initialize and typecast variables
+        _data, _dG, _fmax, _fmin, \
+        _data_err, _dG_err, _fmax_err, _fmin_err = \
+        fit_funs._prepareVariables(self.data[sample], self.dG, self.fmax, self.fmin,
+                                   self.data_err[sample], self.dG_err, self.fmax_err, self.fmin_err)
 
-    # Extract concentrations of ligands from params dict
-    A, mu = fit_funs._extractParams(params)
-    
-    # Output
-    if output=='data':
-        if weighted:
-            return _data / fit_funs._switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err)
+        # Extract concentrations of ligands from params dict
+        if params == 'fitted':
+            A, mu = fit_funs._extractParams(self.results[sample].params)
+        elif params == 'true':
+            A = 1
+            mu = [self.trueConcDf[sample][ligand] for ligand in self.dG.columns]
+            mu = np.array(mu).reshape(1, -1)
         else:
-            return _data
-    elif output=='eq':
+            A, mu = fit_funs._extractParams(params)
+
+        # Define weights if requested
         if weighted:
-            return A * fit_funs._switchingEq(mu, _dG, _fmax, _fmin) / fit_funs._switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err)
+            weights = fit_funs._switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err)
         else:
-            return A * fit_funs._switchingEq(mu, _dG, _fmax, _fmin)
-    elif output=='residual':
-        if weighted:
-            return (_data - A * fit_funs._switchingEq(mu, _dG, _fmax, _fmin)) / fit_funs._switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err)
-        else:
-            return _data - A * fit_funs._switchingEq(mu, _dG, _fmax, _fmin)
-    elif output=='chisqr':
-        if weighted:
-            r = (_data - A * fit_funs._switchingEq(mu, _dG, _fmax, _fmin)) / fit_funs._switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err)
+            weights = 1
+
+        # Output
+        if output=='data':
+            return _data / weights
+        elif output=='eq':
+            return A * fit_funs._switchingEq(mu, _dG, _fmax, _fmin) / weights
+        elif output=='residual':
+            return (_data - A * fit_funs._switchingEq(mu, _dG, _fmax, _fmin)) / weights
+        elif output=='chisqr':
+            r = (_data - A * fit_funs._switchingEq(mu, _dG, _fmax, _fmin)) / weights
             return np.linalg.norm(r)**2
-        else:
-            r = _data - A * fit_funs._switchingEq(mu, _dG, _fmax, _fmin)
-            return np.linalg.norm(r)**2
-    elif output=='redchi':
-        if weighted:
-            r = (_data - A * fit_funs._switchingEq(mu, _dG, _fmax, _fmin)) / fit_funs._switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err)
+        elif output=='redchi':
+            r = (_data - A * fit_funs._switchingEq(mu, _dG, _fmax, _fmin)) / weights
             v = _dG.shape[0] - _dG.shape[1]
             return np.linalg.norm(r)**2 / v
-        else:
-            r = _data - A * fit_funs._switchingEq(mu, _dG, _fmax, _fmin)
-            v = _dG.shape[0] - _dG.shape[1]
-            return np.linalg.norm(r)**2 / v
-    elif output=='err':
-        return fit_funs._switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err)
-    elif output=='err_mu':
-        return fit_funs._switchingEq_jacobian_mu(mu, _dG, _fmax, _fmin)
-    elif output=='err_dG':
-        return fit_funs._switchingEq_jacobian_dG(mu, _dG, _fmax, _fmin)
-    elif output=='err_fmax':
-        return fit_funs._switchingEq_jacobian_fmax(mu, _dG)
-    elif output=='err_fmin':
-        return fit_funs._switchingEq_jacobian_fmin(mu, _dG)
+        elif output=='err':
+            return fit_funs._switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err)
+        elif output=='err_mu':
+            return fit_funs._switchingEq_jacobian_mu(mu, _dG, _fmax, _fmin)
+        elif output=='err_dG':
+            return fit_funs._switchingEq_jacobian_dG(mu, _dG, _fmax, _fmin)
+        elif output=='err_fmax':
+            return fit_funs._switchingEq_jacobian_fmax(mu, _dG)
+        elif output=='err_fmin':
+            return fit_funs._switchingEq_jacobian_fmin(mu, _dG)
