@@ -8,7 +8,7 @@ import pandas as pd
 import lmfit
 
 
-# --- Library functions for interal use--- #
+# --- Library of functions modeling the biophysical behaviors of aptamer switching --- #
 
 RT = 0.582
 
@@ -79,8 +79,8 @@ def _extractParams(params):
         paramvals = params.valuesdict()
         A = paramvals.pop('A')
         mu = np.zeros((1, len(paramvals)))
-        for i, currSM in enumerate(paramvals):
-            mu[0, i] = paramvals[currSM]
+        for i, ligand in enumerate(paramvals):
+            mu[0, i] = paramvals[ligand]
     else:
         A = params[0]
         mu = np.array(params[1:]).reshape(1, -1)
