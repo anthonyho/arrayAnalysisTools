@@ -129,10 +129,16 @@ class deconvoluteMixtures:
 
 
     # Public method to plot the predicted concentration confusion matrix
-    def plotPredictedConcMatrix(self, setup, fig_dir):
+    def plotPredictedConcMatrix(self, setup='', fig_dir=None):
         '''Plot the predicted concentration confusion matrix'''
         cg = plot.plotPredictedConcMatrix(fitResults=self, setup=setup, fig_dir=fig_dir)
         return cg
+
+
+    # Public method to plot the convergence and performance metrics
+    def plotPredictedConcMatrix(self, setup='', metric='IERMSLE', fig_dir=None):
+        '''Plot the convergence and performance metrics'''
+        plot.plotFitStatus(fitResults=self, setup=setup, metric=metric, fig_dir=fig_dir)
 
 
     # Public method to report the fit status of all samples
