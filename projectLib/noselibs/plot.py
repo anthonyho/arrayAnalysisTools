@@ -1,12 +1,17 @@
 # Anthony Ho, ahho@stanford.edu, 1/10/2016
-# Last update 2/6/2015
+# Last update 2/7/2015
 """Library containing plotting functions"""
 
 
+import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotlib
 import CN_globalVars
+
+
+colors = sns.color_palette("Paired", 12)
 
 
 def plotPredictedConcMatrix(fitResults, setup,
@@ -25,7 +30,7 @@ def plotPredictedConcMatrix(fitResults, setup,
 
     # Define catColors
     if catColorsRow is None:
-        listCatColorsRow = [CN_globalVars.catcolors[sample] for sample in matrix.index]
+        listCatColorsRow = [CN_globalVars.catcolors[ligand] for ligand in matrix.index]
     elif catColorsRow is False:
         listCatColorsRow = None
     else:
@@ -69,3 +74,37 @@ def plotPredictedConcMatrix(fitResults, setup,
         cg.savefig(fig_dir+'/predictConMat_'+setup+'.eps')
 
     return cg
+
+
+def plotFitStatus(fitResults, setup, 
+                  metric='IERMSLE', figsize=(7, 8), fig_dir=None):
+
+    plt.figure(figsize=figsize)
+
+    # Compute log2 fold change of fitted vs true chi2
+    fittedRedChi = pd.Series({sample: fitResults.results[sample].redchi 
+                              for sample in fitResults.listSamples}) 
+    trueRedChi = pd.Series({sample: fitResults.reportFit(sample, 'redchi', weighted=True, params='true') 
+                            for sample in fitResults.listSamples})
+    redChiFoldChange = np.log2(fittedRedChi / trueRedChi)
+
+    # Plot log2 fold change of fitted vs true chi2
+    ax1 = plt.subplot(2, 1, 1)
+    sns.barplot(x=fitResults.listSamples, y=redChiFoldChange, color=colors[3])
+    plotlib.setproperties(ax=ax1, title=setup, fontsize=16,
+                          ylabel='Log2 fold change\nof fitted vs true chi2')
+    plt.setp(ax1.get_xticklabels(), visible=False)
+
+    # Compute performance metric
+    performance = fitResults.evaluatePerformance(metric)
+
+    # Plot performance metric
+    ax2 = plt.subplot(2, 1, 2, sharex=ax1)
+    sns.barplot(x=fitResults.listSamples, y=performance, color=colors[1])
+    plotlib.setproperties(ax=ax2, xlabel='Samples', ylabel=metric,
+                          ylim=(0, 1), xticklabelrot=90, fontsize=16)
+
+    # Save figure
+    if fig_dir is not None:
+        cg.savefig(fig_dir+'/fitStatus_'+setup+'.png')
+        cg.savefig(fig_dir+'/fitStatus_'+setup+'.eps')
