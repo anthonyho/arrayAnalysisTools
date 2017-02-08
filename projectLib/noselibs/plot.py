@@ -117,7 +117,7 @@ def plotFitStatus(fitResults, setup='',
     sns.barplot(x=fitResults.listSamples, y=performance, 
                 color=colors[1], edgecolor=colors[3])
     plotlib.setproperties(ax=ax3, xlabel='Samples', ylabel=metric,
-                          ylim=(0, 1), tight=False,
+                          tight=False,
                           xticklabelrot=90, fontsize=16)
 
     fig.tight_layout()
