@@ -8,7 +8,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotlib
-import CN_globalVars
+import globalvars
 
 
 colors = sns.color_palette("Paired", 12)
@@ -30,7 +30,7 @@ def plotPredictedConcMatrix(fitResults, setup='',
 
     # Define catColors
     if catColorsRow is None:
-        listCatColorsRow = [CN_globalVars.catcolors[ligand] for ligand in matrix.index]
+        listCatColorsRow = [globalvars.catcolors[ligand] for ligand in matrix.index]
     elif catColorsRow is False:
         listCatColorsRow = None
     else:
@@ -38,7 +38,7 @@ def plotPredictedConcMatrix(fitResults, setup='',
 
     if catColorsCol is None:
         try:
-            listCatColorsCol = [CN_globalVars.catcolors[sample] for sample in matrix.columns]
+            listCatColorsCol = [globalvars.catcolors[sample] for sample in matrix.columns]
         except KeyError:
             pass
     elif catColorsCol is False:

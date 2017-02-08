@@ -1,18 +1,18 @@
 # Anthony Ho, ahho@stanford.edu, 1/5/2017
 # Last update 2/7/2017
-'''Python module for deconvolution of complex mixtures of ligands based on biophysical model'''
+"""Python module for deconvolution of complex mixtures of ligands based on biophysical model"""
 
 
 import numpy as np
 import pandas as pd
 import lmfit
-import CN_globalVars
 import fit_funs
 import plot
+import aux
 
 
 class deconvoluteMixtures:
-    '''Python class for deconvoluting complex mixtures into individual components'''
+    """Python class for deconvoluting complex mixtures into individual components"""
 
 
     # Constructor which also does fitting of all samples
@@ -22,7 +22,7 @@ class deconvoluteMixtures:
                  norm=True, varyA=False, unit='uM',
                  conc_init=None, conc_init_percentile=10, 
                  maxfev=500000, **kwargs):
-        '''Deconvolute samples given the variant matrix'''
+        """Deconvolute samples given the variant matrix"""
         # Assign instance variables
         self.listSamples = listSamples
         self.listLigands = listLigands
@@ -41,7 +41,7 @@ class deconvoluteMixtures:
         if trueConcDf:
             self.trueConcDf = trueConcDf
         elif currConc and (listSamples == listLigands):
-            self.trueConcDf = CN_globalVars.generate_true_conMat_sm(currConc, listSamples) # to be fixed for listSamples != listLigands
+            self.trueConcDf = aux.generate_true_conMat_sm(currConc, listSamples) # to be fixed for listSamples != listLigands
         else:
             self.trueConcDf = None
 
@@ -99,7 +99,7 @@ class deconvoluteMixtures:
 
     # Private method to fit a single sample
     def _fitSingleSample(self, sample, **kwargs):
-        '''Fit the concentrations of ligands using lmfit'''
+        """Fit the concentrations of ligands using lmfit"""
         # Initialize and typecast variables
         _data, _dG, _fmax, _fmin, \
         _data_err, _dG_err, _fmax_err, _fmin_err = \
@@ -109,7 +109,7 @@ class deconvoluteMixtures:
         # Define concenrations
         try:
             _conc_init = np.ones(len(self.dG.columns)) * self.conc_init
-            _mu_init = fit_funs.KdtodG(_conc_init, unit=self.unit)
+            _mu_init = aux.KdtodG(_conc_init, unit=self.unit)
         except TypeError:
             _mu_init = np.percentile(_dG, self.conc_init_percentile, axis=0)
         params = lmfit.Parameters()
@@ -121,28 +121,28 @@ class deconvoluteMixtures:
         result = lmfit.minimize(fit_funs._switchingEq_residuals, params,
                                 args=(_data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err), 
                                 maxfev=self.maxfev, **kwargs)
-        result.predictedConc = fit_funs.dGtoKd(pd.Series(result.params.valuesdict()).drop('A'), 
-                                               unit=self.unit)
+        result.predictedConc = aux.dGtoKd(pd.Series(result.params.valuesdict()).drop('A'), 
+                                          unit=self.unit)
     
         return result
 
 
     # Public method to plot the predicted concentration confusion matrix
     def plotPredictedConcMatrix(self, setup='', fig_dir=None):
-        '''Plot the predicted concentration confusion matrix'''
+        """Plot the predicted concentration confusion matrix"""
         cg = plot.plotPredictedConcMatrix(fitResults=self, setup=setup, fig_dir=fig_dir)
         return cg
 
 
     # Public method to plot the convergence and performance metrics
     def plotFitStatus(self, setup='', metric='IERMSLE', fig_dir=None):
-        '''Plot the convergence and performance metrics'''
+        """Plot the convergence and performance metrics"""
         plot.plotFitStatus(fitResults=self, setup=setup, metric=metric, fig_dir=fig_dir)
 
 
     # Public method to report the fit status of all samples
     def reportFitStatus(self):
-        '''Report the status of the fits'''
+        """Report the status of the fits"""
         for sample in self.results:
             trueRedChi = self.reportFit(sample, output='redchi', weighted=True, params='true')
             print '{:<6} ier = {}, nfev = {}, redchi = {:.3f}, trueRedChi = {:.3f}'.format(sample+':', 
@@ -156,7 +156,7 @@ class deconvoluteMixtures:
 
     # Public method to evaluate the performance of the fit
     def evaluatePerformance(self, metric='IERMSLE', axis=0):
-        '''Evaulate the performance of the fits'''
+        """Evaulate the performance of the fits"""
         # Unpack variables
         y1 = self.predictedConcMatrix
         y2 = self.trueConcDf
@@ -184,7 +184,7 @@ class deconvoluteMixtures:
 
     # Public method to compute various functional terms given parameters
     def reportFit(self, sample, output, weighted=True, params='fitted'):
-        '''Return various functional terms using the fitted parameters'''
+        """Return various functional terms using the fitted parameters"""
         # Initialize and typecast variables
         _data, _dG, _fmax, _fmin, \
         _data_err, _dG_err, _fmax_err, _fmin_err = \
@@ -196,7 +196,7 @@ class deconvoluteMixtures:
             A, mu = fit_funs._extractParams(self.results[sample].params)
         elif params == 'true':
             A = 1
-            mu = [fit_funs.KdtodG(self.trueConcDf[sample][ligand], unit=self.unit) 
+            mu = [aux.KdtodG(self.trueConcDf[sample][ligand], unit=self.unit) 
                   for ligand in self.dG.columns]
             mu = np.array(mu).reshape(1, -1)
         else:

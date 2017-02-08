@@ -1,20 +1,18 @@
 # Anthony Ho, ahho@stanford.edu, 1/5/2017
-# Last update 1/30/2017
+# Last update 2/7/2017
 """Library containing the switching equation, its derivatives, and residuals"""
 
 
 import numpy as np
 import lmfit
+import aux
 
 
-# --- Library of functions modeling the biophysical behaviors of aptamer switching --- #
-
-T = 19.72386556666862
-RT = 0.0019872036 * (T + 273.15)
+RT = aux.RT
 
 
 def _switchingEq(mu, dG, fmax, fmin):
-    '''Compute the intensity of a switching aptamer'''
+    """Compute the intensity of a switching aptamer"""
     B = np.exp(-(dG - mu)/RT)
     Q = B.sum(axis=1).reshape(-1, 1)
     Q_weighted = (B * (fmax - fmin)).sum(axis=1).reshape(-1, 1)
@@ -22,7 +20,7 @@ def _switchingEq(mu, dG, fmax, fmin):
 
 
 def _switchingEq_jaconbian_mu(mu, dG, fmax, fmin):
-    '''Compute the Jacobian of the switching equation with respect to conc'''
+    """Compute the Jacobian of the switching equation with respect to conc"""
     B = np.exp(-(dG - mu)/RT)
     Q = B.sum(axis=1).reshape(-1, 1)
     Q_weighted = (B * (fmax - fmin)).sum(axis=1).reshape(-1, 1)
@@ -30,7 +28,7 @@ def _switchingEq_jaconbian_mu(mu, dG, fmax, fmin):
 
 
 def _switchingEq_jacobian_dG(mu, dG, fmax, fmin):
-    '''Compute the Jacobian of the switching equation with respect to dG'''
+    """Compute the Jacobian of the switching equation with respect to dG"""
     B = np.exp(-(dG - mu)/RT)
     Q = B.sum(axis=1).reshape(-1, 1)
     Q_weighted = (B * (fmax - fmin)).sum(axis=1).reshape(-1, 1)
@@ -38,21 +36,21 @@ def _switchingEq_jacobian_dG(mu, dG, fmax, fmin):
 
 
 def _switchingEq_jacobian_fmax(mu, dG):
-    '''Compute the Jacobian of the switching equation with respect to fmax'''
+    """Compute the Jacobian of the switching equation with respect to fmax"""
     B = np.exp(-(dG - mu)/RT)
     Q = B.sum(axis=1).reshape(-1, 1)
     return B / (1 + Q)
 
 
 def _switchingEq_jacobian_fmin(mu, dG):
-    '''Compute the Jacobian of the switching equation with respect to fmin'''
+    """Compute the Jacobian of the switching equation with respect to fmin"""
     B = np.exp(-(dG - mu)/RT)
     Q = B.sum(axis=1).reshape(-1, 1)
     return 1 / (1 + Q)
 
 
 def _switchingEq_errors(mu, dG, fmax, fmin, data_err, dG_err, fmax_err, fmin_err):
-    '''Compute the total uncertainty of each aptamer'''
+    """Compute the total uncertainty of each aptamer"""
     var_data = (data_err**2).reshape(-1)
     var_dG_sum = ((_switchingEq_jacobian_dG(mu, dG, fmax, fmin) * dG_err)**2).sum(axis=1)
     var_fmax_sum = ((_switchingEq_jacobian_fmax(mu, dG) * fmax_err)**2).sum(axis=1)
@@ -62,7 +60,7 @@ def _switchingEq_errors(mu, dG, fmax, fmin, data_err, dG_err, fmax_err, fmin_err
 
 def _switchingEq_residuals(params, data, dG, fmax, fmin,
                            data_err, dG_err=None, fmax_err=None, fmin_err=None):
-    '''Compute the residuals of each aptamer'''
+    """Compute the residuals of each aptamer"""
     # Extract concentrations of ligands from params dict
     A, mu = _extractParams(params)
 
@@ -74,7 +72,7 @@ def _switchingEq_residuals(params, data, dG, fmax, fmin,
 
 
 def _extractParams(params):
-    '''Extract concentrations of ligands from params dict'''
+    """Extract concentrations of ligands from params dict"""
     if isinstance(params, lmfit.Parameters):
         paramvals = params.valuesdict()
         A = paramvals.pop('A')
@@ -89,7 +87,7 @@ def _extractParams(params):
 
 def _prepareVariables(data, dG, fmax=None, fmin=None,
                       data_err=None, dG_err=None, fmax_err=None, fmin_err=None):
-    '''Initialize and typecast variables'''
+    """Initialize and typecast variables"""
     # Define fmax, fmin, their respective errors, and data_err if not provided
     if fmax is None:
         fmax = np.ones(dG.shape)
@@ -113,50 +111,3 @@ def _prepareVariables(data, dG, fmax=None, fmin=None,
     _fmin_err = np.array(fmin_err).reshape(-1, 1)
 
     return _data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err
-
-
-# Convert delta G in kcal/mol to Kd. Default Kd unit is uM
-def dGtoKd(data, unit='uM'):
-    '''Converts delta G in kcal/mol to Kd '''
-    # Set unit multiplier
-    if unit == 'pM':
-        multiplier = 1e12
-    elif unit == 'nM':
-        multiplier = 1e9
-    elif unit == 'uM':
-        multiplier = 1e6
-    elif unit == 'mM':
-        multiplier = 1e3
-    elif unit == 'M':
-        multiplier = 1
-    else:
-        raise ValueError('Unit \"'+unit+'\" not supported!')
-    
-    try: 
-        return np.exp(data.astype(float) / RT) * multiplier
-    except AttributeError:
-        return np.exp(data / RT) * multiplier
-
-
-# Convert Kd to delta G in kcal/mol. Default Kd unit is uM
-def KdtodG(data, unit='uM'):
-    '''Converts Kd to delta G in kcal/mol'''
-    # Set unit multiplier
-    if unit == 'pM':
-        multiplier = 1e12
-    elif unit == 'nM':
-        multiplier = 1e9
-    elif unit == 'uM':
-        multiplier = 1e6
-    elif unit == 'mM':
-        multiplier = 1e3
-    elif unit == 'M':
-        multiplier = 1
-    else:
-        raise ValueError('Unit \"'+unit+'\" not supported!')
-    
-    try: 
-        return np.log(data.astype(float) / multiplier) * RT
-    except AttributeError:
-        return np.log(data / multiplier) * RT
-
