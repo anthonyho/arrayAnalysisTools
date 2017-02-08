@@ -6,7 +6,6 @@
 import numpy as np
 import pandas as pd
 import lmfit
-import liblib
 import CN_globalVars
 import fit_funs
 import plot
@@ -110,7 +109,7 @@ class deconvoluteMixtures:
         # Define concenrations
         try:
             _conc_init = np.ones(len(self.dG.columns)) * self.conc_init
-            _mu_init = liblib.KdtodG(_conc_init, unit=self.unit)
+            _mu_init = fit_funs.KdtodG(_conc_init, unit=self.unit)
         except TypeError:
             _mu_init = np.percentile(_dG, self.conc_init_percentile, axis=0)
         params = lmfit.Parameters()
@@ -122,8 +121,8 @@ class deconvoluteMixtures:
         result = lmfit.minimize(fit_funs._switchingEq_residuals, params,
                                 args=(_data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err), 
                                 maxfev=self.maxfev, **kwargs)
-        result.predictedConc = liblib.dGtoKd(pd.Series(result.params.valuesdict()).drop('A'), 
-                                             unit=self.unit)
+        result.predictedConc = fit_funs.dGtoKd(pd.Series(result.params.valuesdict()).drop('A'), 
+                                               unit=self.unit)
     
         return result
 
@@ -197,7 +196,7 @@ class deconvoluteMixtures:
             A, mu = fit_funs._extractParams(self.results[sample].params)
         elif params == 'true':
             A = 1
-            mu = [liblib.KdtodG(self.trueConcDf[sample][ligand], unit=self.unit) 
+            mu = [fit_funs.KdtodG(self.trueConcDf[sample][ligand], unit=self.unit) 
                   for ligand in self.dG.columns]
             mu = np.array(mu).reshape(1, -1)
         else:

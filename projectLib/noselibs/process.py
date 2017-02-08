@@ -5,7 +5,6 @@
 
 import numpy as np
 import pandas as pd
-import liblib
 
 
 # Merge and process all variants related information into a single multilabel dataframe
@@ -54,7 +53,7 @@ def mergeAllVariants(variants_dict, variants_max_dict, bindingSeries_dict, conce
     # Compute new columns
     variants_all_swapped = variants_all.swaplevel(0, 1, axis=1).sort_index(axis=1)
 
-    computedColumns = {'Kd': liblib.dGtoKd(variants_all_swapped['dG'], unit='uM'),
+    computedColumns = {'Kd': fit_funs.dGtoKd(variants_all_swapped['dG'], unit='uM'),
                        'dG_err': (variants_all_swapped['dG_ub'] - variants_all_swapped['dG_lb']) / 3.92,
                        'fmax_err': (variants_all_swapped['fmax_ub'] - variants_all_swapped['fmax_lb']) / 3.92,
                        'fmax_norm': variants_all_swapped['fmax'] / variants_all_swapped['max'],

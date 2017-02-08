@@ -4,13 +4,13 @@
 
 
 import numpy as np
-import pandas as pd
 import lmfit
 
 
 # --- Library of functions modeling the biophysical behaviors of aptamer switching --- #
 
-RT = 0.582
+T = 19.72386556666862
+RT = 0.0019872036 * (T + 273.15)
 
 
 def _switchingEq(mu, dG, fmax, fmin):
@@ -113,3 +113,50 @@ def _prepareVariables(data, dG, fmax=None, fmin=None,
     _fmin_err = np.array(fmin_err).reshape(-1, 1)
 
     return _data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err
+
+
+# Convert delta G in kcal/mol to Kd. Default Kd unit is uM
+def dGtoKd(data, unit='uM'):
+    '''Converts delta G in kcal/mol to Kd '''
+    # Set unit multiplier
+    if unit == 'pM':
+        multiplier = 1e12
+    elif unit == 'nM':
+        multiplier = 1e9
+    elif unit == 'uM':
+        multiplier = 1e6
+    elif unit == 'mM':
+        multiplier = 1e3
+    elif unit == 'M':
+        multiplier = 1
+    else:
+        raise ValueError('Unit \"'+unit+'\" not supported!')
+    
+    try: 
+        return np.exp(data.astype(float) / RT) * multiplier
+    except AttributeError:
+        return np.exp(data / RT) * multiplier
+
+
+# Convert Kd to delta G in kcal/mol. Default Kd unit is uM
+def KdtodG(data, unit='uM'):
+    '''Converts Kd to delta G in kcal/mol'''
+    # Set unit multiplier
+    if unit == 'pM':
+        multiplier = 1e12
+    elif unit == 'nM':
+        multiplier = 1e9
+    elif unit == 'uM':
+        multiplier = 1e6
+    elif unit == 'mM':
+        multiplier = 1e3
+    elif unit == 'M':
+        multiplier = 1
+    else:
+        raise ValueError('Unit \"'+unit+'\" not supported!')
+    
+    try: 
+        return np.log(data.astype(float) / multiplier) * RT
+    except AttributeError:
+        return np.log(data / multiplier) * RT
+
