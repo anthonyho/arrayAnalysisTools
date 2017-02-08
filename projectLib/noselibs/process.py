@@ -13,33 +13,33 @@ def mergeAllVariants(variants_dict, variants_max_dict, bindingSeries_dict, conce
 
     # Merge variants_dict and variants_max_dict into multilabel dataframes
     variants = pd.concat(variants_dict, axis=1)
-    variants_max = pd.concat({currSM: variants_max_dict[currSM].rename(columns={'0': 'max'}) for currSM in variants_max_dict}, axis=1)
+    variants_max = pd.concat({ligand: variants_max_dict[ligand].rename(columns={'0': 'max'}) for ligand in variants_max_dict}, axis=1)
     
     # Compute median signals of binding series for each variant, and merge dict of binding series into a single multilabel dataframe
     medianBindingSeriesByVariants_dict = {}
     medianNormBindingSeriesByVariants_dict = {}
     ciBindingSeriesByVariants_dict = {}
     ciNormBindingSeriesByVariants_dict = {}
-    for currSM in bindingSeries_dict:
+    for ligand in bindingSeries_dict:
         
-        groupedBindingSeries = pd.merge(bindingSeries_dict[currSM], annotatedClusters,
+        groupedBindingSeries = pd.merge(bindingSeries_dict[ligand], annotatedClusters,
                                         how='inner', left_index=True, right_index=True).groupby('variant_number')
         
         medianBindingSeriesByVariants = groupedBindingSeries.median()
-        medianBindingSeriesByVariants.columns = ['bs_{}'.format(c) for c in concentrations_dict[currSM]/1000]
-        medianBindingSeriesByVariants_dict[currSM] = medianBindingSeriesByVariants
+        medianBindingSeriesByVariants.columns = ['bs_{}'.format(c) for c in concentrations_dict[ligand]/1000]
+        medianBindingSeriesByVariants_dict[ligand] = medianBindingSeriesByVariants
 
-        medianNormBindingSeriesByVariants = medianBindingSeriesByVariants.divide(variants_max[currSM]['max'], axis=0)
+        medianNormBindingSeriesByVariants = medianBindingSeriesByVariants.divide(variants_max[ligand]['max'], axis=0)
         medianNormBindingSeriesByVariants.columns = [col+'_norm' for col in medianNormBindingSeriesByVariants.columns]
-        medianNormBindingSeriesByVariants_dict[currSM] = medianNormBindingSeriesByVariants
+        medianNormBindingSeriesByVariants_dict[ligand] = medianNormBindingSeriesByVariants
 
         ciBindingSeriesByVariants = groupedBindingSeries.std() / np.sqrt(groupedBindingSeries.count())
-        ciBindingSeriesByVariants.columns = ['bs_{}_err'.format(c) for c in concentrations_dict[currSM]/1000]
-        ciBindingSeriesByVariants_dict[currSM] = ciBindingSeriesByVariants
+        ciBindingSeriesByVariants.columns = ['bs_{}_err'.format(c) for c in concentrations_dict[ligand]/1000]
+        ciBindingSeriesByVariants_dict[ligand] = ciBindingSeriesByVariants
 
-        ciNormBindingSeriesByVariants = ciBindingSeriesByVariants.divide(variants_max[currSM]['max'], axis=0)
+        ciNormBindingSeriesByVariants = ciBindingSeriesByVariants.divide(variants_max[ligand]['max'], axis=0)
         ciNormBindingSeriesByVariants.columns = [col+'_norm' for col in ciNormBindingSeriesByVariants.columns]
-        ciNormBindingSeriesByVariants_dict[currSM] = ciNormBindingSeriesByVariants
+        ciNormBindingSeriesByVariants_dict[ligand] = ciNormBindingSeriesByVariants
     
     variants_bindingSeries = pd.concat(medianBindingSeriesByVariants_dict, axis=1)
     variants_normBindingSeries = pd.concat(medianNormBindingSeriesByVariants_dict, axis=1)
@@ -71,7 +71,7 @@ def mergeAllVariants(variants_dict, variants_max_dict, bindingSeries_dict, conce
 # Merge mixtures_dict into a single multilabel dataframe
 def mergeAllMixtures(mixtures_dict):
 
-    mixtures_all = pd.concat({currCM: mixtures_dict[currCM][[0, 2]].rename(columns={'0': 'cs_norm', '2': 'cs'}) for currCM in mixtures_dict}, axis=1)
+    mixtures_all = pd.concat({cm: mixtures_dict[cm][[0, 2]].rename(columns={'0': 'cs_norm', '2': 'cs'}) for cm in mixtures_dict}, axis=1)
 
     return mixtures_all
 

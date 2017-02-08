@@ -41,7 +41,7 @@ class deconvoluteMixtures:
         if trueConcDf:
             self.trueConcDf = trueConcDf
         elif currConc and (listSamples == listLigands):
-            self.trueConcDf = aux.generate_true_conMat_sm(currConc, listSamples) # to be fixed for listSamples != listLigands
+            self.trueConcDf = aux.generate_ligand_trueConcMat(currConc, listSamples) # to be fixed for listSamples != listLigands
         else:
             self.trueConcDf = None
 

@@ -57,7 +57,7 @@ def KdtodG(data, unit='uM'):
         return np.log(data / multiplier) * RT
 
 
-# Function to return a confusion matrix of true concentration of sm
-def generate_true_conMat_sm(conc, listSM=globalvars.sm_names):
-    return pd.DataFrame(np.identity(len(listSM)) * float(conc), index=listSM, columns=listSM)
+# Function to return a confusion matrix of the true concentrations of ligands
+def generate_ligand_trueConcMat(conc, listLigands=globalvars.ligand_names):
+    return pd.DataFrame(np.identity(len(listLigands)) * float(conc), index=listLigands, columns=listLigands)
     
