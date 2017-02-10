@@ -30,7 +30,7 @@ def plotPredictedConcMatrix(fitResults, setup='',
 
     # Define catColors
     if catColorsRow is None:
-        listCatColorsRow = [globalvars.catcolors[ligand] for ligand in matrix.index]
+        listCatColorsRow = [globalvars.ligand_catcolors[ligand] for ligand in matrix.index]
     elif catColorsRow is False:
         listCatColorsRow = None
     else:
@@ -38,7 +38,7 @@ def plotPredictedConcMatrix(fitResults, setup='',
 
     if catColorsCol is None:
         try:
-            listCatColorsCol = [globalvars.catcolors[sample] for sample in matrix.columns]
+            listCatColorsCol = [globalvars.ligand_catcolors[sample] for sample in matrix.columns]
         except KeyError:
             pass
     elif catColorsCol is False:

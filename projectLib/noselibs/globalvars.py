@@ -19,7 +19,7 @@ ligand_names = ['CA', 'GCA', 'TCA',
                 ]
 
 # Number of ligands
-num_ligands = len(ligands_names)
+num_ligands = len(ligand_names)
 
 # Dictionary of directory number corresponding to each ligand
 ligand_dirNum = {'CA': 6, 
@@ -94,7 +94,7 @@ ligand_catcolors = {'CA': sns.light_palette("purple", 5)[2],
                     }
 
 # List of colors to be used for plotting for each ligand
-ligand_catcolors_list = [catcolors[ligand] for ligand in ligand_names]
+ligand_catcolors_list = [ligand_catcolors[ligand] for ligand in ligand_names]
 
 # Define class labels and categories
 ligand_cat1 = [0, 0, 0, 1, 1, 1, 2, 2, 3, 3, 3, 4, 4, 4, 3]
