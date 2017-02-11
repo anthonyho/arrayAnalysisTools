@@ -96,8 +96,8 @@ def plotFitStatus(fitResults, setup='',
     plt.setp(ax1.get_xticklabels(), visible=False)
 
     # Compute log2 fold change of fitted vs true weighted chi2
-    fittedRedChi = pd.Series({sample: fitResults.results[sample].redchi 
-                              for sample in fitResults.listSamples}) 
+    fittedRedChi = pd.Series({sample: fitResults.reportFit(sample, 'redchi', weighted=True, params='fitted') 
+                            for sample in fitResults.listSamples})
     trueRedChi = pd.Series({sample: fitResults.reportFit(sample, 'redchi', weighted=True, params='true')
                             for sample in fitResults.listSamples})
     redChiFoldChange = np.log2(fittedRedChi / trueRedChi)
