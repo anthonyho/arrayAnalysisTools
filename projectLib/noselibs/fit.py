@@ -21,7 +21,7 @@ class deconvoluteMixtures:
                  use_fmax=True, use_fmin=True, use_data_err=True, 
                  norm=True, varyA=False, unit='uM',
                  conc_init=None, conc_init_percentile=10, 
-                 maxfev=500000, **kwargs):
+                 method='leastsq', **kwargs):
         """Deconvolute samples given the variant matrix"""
         # Assign instance variables
         self.listSamples = listSamples
@@ -35,7 +35,7 @@ class deconvoluteMixtures:
         self.unit = unit
         self.conc_init = conc_init
         self.conc_init_percentile = conc_init_percentile
-        self.maxfev = maxfev
+        self.method = method
         
         # Create trueConcDf if not provided
         if trueConcDf:
@@ -119,8 +119,8 @@ class deconvoluteMixtures:
             
         # Fit and extract params
         result = lmfit.minimize(fit_funs._switchingEq_residuals, params,
-                                args=(_data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err), 
-                                maxfev=self.maxfev, **kwargs)
+                                args=(_data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err),
+                                method=self.method, **kwargs)
         result.predictedConc = aux.dGtoKd(pd.Series(result.params.valuesdict()).drop('A'), 
                                           unit=self.unit)
     
@@ -150,8 +150,9 @@ class deconvoluteMixtures:
                                                                                            self.results[sample].nfev, 
                                                                                            self.results[sample].redchi, 
                                                                                            trueRedChi)
-            print '       lmdif_message: {}'.format(self.results[sample].lmdif_message.replace('\n', ''))
             print '       message: {}'.format(self.results[sample].message.replace('\n', ''))
+            if self.method == 'leastsq':
+                print '       lmdif_message: {}'.format(self.results[sample].lmdif_message.replace('\n', ''))
 
 
     # Public method to evaluate the performance of the fit
