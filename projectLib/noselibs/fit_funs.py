@@ -19,7 +19,7 @@ def _switchingEq(mu, dG, fmax, fmin):
     return (Q_weighted / (1 + Q) + fmin).reshape(-1)
 
 
-def _switchingEq_jaconbian_mu(mu, dG, fmax, fmin):
+def _switchingEq_jacobian_mu(mu, dG, fmax, fmin):
     """Compute the Jacobian of the switching equation with respect to conc"""
     B = np.exp(-(dG - mu)/RT)
     Q = B.sum(axis=1).reshape(-1, 1)
