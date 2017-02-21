@@ -89,7 +89,7 @@ def plotFitStatus(fitResults, setup='',
                             for sample in fitResults.listSamples})
     redChiFoldChange = np.log2(fittedRedChi / trueRedChi)
     # Plot 
-    ax1 = plt.subplot(3, 2, 1)
+    ax1 = plt.subplot(2, 2, 1)
     sns.barplot(x=fitResults.listSamples, y=redChiFoldChange, 
                 color=colors[3], edgecolor=colors[3])
     plotlib.setproperties(ax=ax1, fontsize=14, tight=False,
@@ -103,18 +103,19 @@ def plotFitStatus(fitResults, setup='',
                             for sample in fitResults.listSamples})
     redChiFoldChange = np.log2(fittedRedChi / trueRedChi)
     # Plot
-    ax2 = plt.subplot(3, 2, 3, sharex=ax1)
+    ax2 = plt.subplot(2, 2, 3, sharex=ax1)
     sns.barplot(x=fitResults.listSamples, y=redChiFoldChange, 
                 color=colors[3], edgecolor=colors[3])
     plotlib.setproperties(ax=ax2, fontsize=14, tight=False,
-                          ylabel='Log2 fold change\nof fitted vs true\nweighted chi2')
-    plt.setp(ax2.get_xticklabels(), visible=False)
+                          ylabel='Log2 fold change\nof fitted vs true\nweighted chi2', 
+                          xlabel='Samples', xticklabelrot=90)
+#    plt.setp(ax2.get_xticklabels(), visible=False)
 
     # Compute performance metric
     performance = fitResults.evaluatePerformance(metric)
 
     # Plot performance metric
-    ax3 = plt.subplot(3, 2, 5, sharex=ax1)
+    ax3 = plt.subplot(2, 2, 4)#, sharex=ax1)
     sns.barplot(x=fitResults.listSamples, y=performance, 
                 color=colors[1], edgecolor=colors[3])
     plotlib.setproperties(ax=ax3, xlabel='Samples', ylabel=metric,
@@ -128,7 +129,7 @@ def plotFitStatus(fitResults, setup='',
                                for sample in fitResults.listSamples})
 
     # Plot distribution of mean residuals across ligands of all aptamers
-    ax4 = plt.subplot(3, 2, 2)
+    ax4 = plt.subplot(2, 2, 2)
     sns.distplot(fittedRedMat.mean(axis=1), label='fitted')
     sns.distplot(trueRedMat.mean(axis=1), label='true')
     xlim = ax4.get_xlim()
