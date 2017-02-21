@@ -78,7 +78,7 @@ def plotPredictedConcMatrix(fitResults, setup='',
 
 
 def plotFitStatus(fitResults, setup='',
-                  metric='IERMSLE', figsize=(14, 8), fig_dir=None):
+                  metric='IERMSLE', figsize=(10, 8), fig_dir=None):
 
     fig = plt.figure(figsize=figsize)
 
@@ -92,7 +92,7 @@ def plotFitStatus(fitResults, setup='',
     ax1 = plt.subplot(3, 2, 1)
     sns.barplot(x=fitResults.listSamples, y=redChiFoldChange, 
                 color=colors[3], edgecolor=colors[3])
-    plotlib.setproperties(ax=ax1, fontsize=16, tight=False,
+    plotlib.setproperties(ax=ax1, fontsize=14, tight=False,
                           ylabel='Log2 fold change\nof fitted vs true\nunweighted chi2')
     plt.setp(ax1.get_xticklabels(), visible=False)
 
@@ -106,7 +106,7 @@ def plotFitStatus(fitResults, setup='',
     ax2 = plt.subplot(3, 2, 3, sharex=ax1)
     sns.barplot(x=fitResults.listSamples, y=redChiFoldChange, 
                 color=colors[3], edgecolor=colors[3])
-    plotlib.setproperties(ax=ax2, fontsize=16, tight=False,
+    plotlib.setproperties(ax=ax2, fontsize=14, tight=False,
                           ylabel='Log2 fold change\nof fitted vs true\nweighted chi2')
     plt.setp(ax2.get_xticklabels(), visible=False)
 
@@ -119,7 +119,7 @@ def plotFitStatus(fitResults, setup='',
                 color=colors[1], edgecolor=colors[3])
     plotlib.setproperties(ax=ax3, xlabel='Samples', ylabel=metric,
                           tight=False,
-                          xticklabelrot=90, fontsize=16)
+                          xticklabelrot=90, fontsize=14)
 
     # Compute residual matrics
     fittedRedMat = pd.DataFrame({sample: fitResults.reportFit(sample, 'residual', weighted=True, params='fitted') 
@@ -134,7 +134,7 @@ def plotFitStatus(fitResults, setup='',
     xlim = ax4.get_xlim()
     x = np.linspace(xlim[0], xlim[1], 1000)
     plt.plot(x, mlab.normpdf(x, 0, 1./np.sqrt(len(fitResults.results))), label='theoretical')
-    plotlib.setproperties(ax=ax4, fontsize=16, tight=False, 
+    plotlib.setproperties(ax=ax4, fontsize=14, tight=False, 
                           xlabel='Weighted residuals', ylabel='Density', 
                           legend=True, legendfontsize=12)
 
