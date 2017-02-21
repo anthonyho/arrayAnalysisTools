@@ -6,6 +6,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.mlab as mlab
 import seaborn as sns
 import plotlib
 import globalvars
@@ -77,7 +78,7 @@ def plotPredictedConcMatrix(fitResults, setup='',
 
 
 def plotFitStatus(fitResults, setup='',
-                  metric='IERMSLE', figsize=(7, 8), fig_dir=None):
+                  metric='IERMSLE', figsize=(14, 8), fig_dir=None):
 
     fig = plt.figure(figsize=figsize)
 
@@ -88,10 +89,10 @@ def plotFitStatus(fitResults, setup='',
                             for sample in fitResults.listSamples})
     redChiFoldChange = np.log2(fittedRedChi / trueRedChi)
     # Plot 
-    ax1 = plt.subplot(3, 1, 1)
+    ax1 = plt.subplot(3, 2, 1)
     sns.barplot(x=fitResults.listSamples, y=redChiFoldChange, 
                 color=colors[3], edgecolor=colors[3])
-    plotlib.setproperties(ax=ax1, title=setup, fontsize=16, tight=False,
+    plotlib.setproperties(ax=ax1, fontsize=16, tight=False,
                           ylabel='Log2 fold change\nof fitted vs true\nunweighted chi2')
     plt.setp(ax1.get_xticklabels(), visible=False)
 
@@ -102,7 +103,7 @@ def plotFitStatus(fitResults, setup='',
                             for sample in fitResults.listSamples})
     redChiFoldChange = np.log2(fittedRedChi / trueRedChi)
     # Plot
-    ax2 = plt.subplot(3, 1, 2, sharex=ax1)
+    ax2 = plt.subplot(3, 2, 3, sharex=ax1)
     sns.barplot(x=fitResults.listSamples, y=redChiFoldChange, 
                 color=colors[3], edgecolor=colors[3])
     plotlib.setproperties(ax=ax2, fontsize=16, tight=False,
@@ -113,13 +114,31 @@ def plotFitStatus(fitResults, setup='',
     performance = fitResults.evaluatePerformance(metric)
 
     # Plot performance metric
-    ax3 = plt.subplot(3, 1, 3, sharex=ax1)
+    ax3 = plt.subplot(3, 2, 5, sharex=ax1)
     sns.barplot(x=fitResults.listSamples, y=performance, 
                 color=colors[1], edgecolor=colors[3])
     plotlib.setproperties(ax=ax3, xlabel='Samples', ylabel=metric,
                           tight=False,
                           xticklabelrot=90, fontsize=16)
 
+    # Compute residual matrics
+    fittedRedMat = pd.DataFrame({sample: fitResults.reportFit(sample, 'residual', weighted=True, params='fitted') 
+                                 for sample in fitResults.listSamples})
+    trueRedMat = pd.DataFrame({sample: fitResults.reportFit(sample, 'residual', weighted=True, params='true') 
+                               for sample in fitResults.listSamples})
+
+    # Plot distribution of mean residuals across ligands of all aptamers
+    ax4 = plt.subplot(3, 2, 2)
+    sns.distplot(fittedRedMat.mean(axis=1), label='fitted')
+    sns.distplot(trueRedMat.mean(axis=1), label='true')
+    xlim = ax4.get_xlim()
+    x = np.linspace(xlim[0], xlim[1], 1000)
+    plt.plot(x, mlab.normpdf(x, 0, 1./np.sqrt(len(fitResults.results))), label='theoretical')
+    plotlib.setproperties(ax=ax4, fontsize=16, tight=False, 
+                          xlabel='Weighted residuals', ylabel='Density', 
+                          legend=True, legendfontsize=12)
+
+    plt.suptitle(setup, y = 1.01, fontsize=16)
     fig.tight_layout()
 
     # Save figure
