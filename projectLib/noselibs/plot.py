@@ -123,7 +123,7 @@ def plotFitStatus(fitResults, setup='',
                           xticklabelrot=90, fontsize=14)
 
     # Compute residual matrics
-    fittedRedMat = pd.DataFrame({sample: fitResults.reportFit(sample, 'residual', weighted=True, params='fitted') 
+    fittedRedMat = pd.DataFrame({sample: fitResults.reportFit(sample, 'residual', weighted=True, params='fitted') # to be fixed for unweighted case with theo line
                                  for sample in fitResults.listSamples})
     trueRedMat = pd.DataFrame({sample: fitResults.reportFit(sample, 'residual', weighted=True, params='true') 
                                for sample in fitResults.listSamples})

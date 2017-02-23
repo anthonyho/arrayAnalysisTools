@@ -18,7 +18,8 @@ class deconvoluteMixtures:
     # Constructor which also does fitting of all samples
     def __init__(self, variants, listSamples, listLigands, 
                  currConc=None, trueConcDf=None,
-                 use_fmax=True, use_fmin=True, use_data_err=True, 
+                 use_fmax=True, use_fmin=True, 
+                 use_data_err=True, use_err=[1, 1, 1, 1],
                  norm=True, varyA=False, unit='uM',
                  conc_init=None, conc_init_percentile=10, 
                  method='leastsq', **kwargs):
@@ -30,6 +31,7 @@ class deconvoluteMixtures:
         self.use_fmax = use_fmax
         self.use_fmin = use_fmin
         self.use_data_err = use_data_err
+        self.use_err = use_err
         self.norm = norm
         self.varyA = varyA
         self.unit = unit
@@ -86,6 +88,13 @@ class deconvoluteMixtures:
             self.fmin = None
             self.fmin_err = None
 
+        # Define initial concenrations for all samples
+        try:
+            _conc_init = np.ones(len(self.dG.columns)) * self.conc_init
+            self.mu_init = aux.KdtodG(_conc_init, unit=self.unit).reshape(1, -1)
+        except TypeError:
+            self.mu_init = np.percentile(self.dG, self.conc_init_percentile, axis=0).reshape(1, -1)
+
         # Fit all samples
         self.results = {}
         for sample in listSamples:
@@ -106,20 +115,15 @@ class deconvoluteMixtures:
         fit_funs._prepareVariables(self.data[sample], self.dG, self.fmax, self.fmin,
                                    self.data_err[sample], self.dG_err, self.fmax_err, self.fmin_err)
         
-        # Define concenrations
-        try:
-            _conc_init = np.ones(len(self.dG.columns)) * self.conc_init
-            _mu_init = aux.KdtodG(_conc_init, unit=self.unit)
-        except TypeError:
-            _mu_init = np.percentile(_dG, self.conc_init_percentile, axis=0)
+        # Define parameters
         params = lmfit.Parameters()
         params.add('A', value=1.0, min=0.0, vary=self.varyA)
         for i, ligand in enumerate(self.dG.columns):
-            params.add(ligand, value=_mu_init[i])
+            params.add(ligand, value=self.mu_init[0, i])
             
         # Fit and extract params
         result = lmfit.minimize(fit_funs._switchingEq_residuals, params,
-                                args=(_data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err),
+                                args=(_data, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err, self.use_err),
                                 method=self.method, **kwargs)
         result.predictedConc = aux.dGtoKd(pd.Series(result.params.valuesdict()).drop('A'), 
                                           unit=self.unit)
@@ -200,12 +204,24 @@ class deconvoluteMixtures:
             mu = [aux.KdtodG(self.trueConcDf[sample][ligand], unit=self.unit) 
                   for ligand in self.dG.columns]
             mu = np.array(mu).reshape(1, -1)
+        elif params == 'init':
+            A = 1
+            mu = self.mu_init
+        elif params == 'zeros':
+            A = 1
+            _conc = np.zeros(len(self.dG.columns))
+            mu = aux.KdtodG(_conc, unit=self.unit).reshape(1, -1)
         else:
-            A, mu = fit_funs._extractParams(params)
+            try:
+                A = 1
+                _conc = np.ones(len(self.dG.columns)) * params
+                mu = aux.KdtodG(_conc, unit=self.unit).reshape(1, -1)
+            except TypeError:
+                A, mu = fit_funs._extractParams(params)
 
         # Define weights if requested
         if weighted:
-            weights = fit_funs._switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err)
+            weights = fit_funs._switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err, self.use_err)
         else:
             weights = 1
 
@@ -224,7 +240,7 @@ class deconvoluteMixtures:
             v = _dG.shape[0] - _dG.shape[1]
             return np.linalg.norm(r)**2 / v
         elif output=='err':
-            return fit_funs._switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err)
+            return fit_funs._switchingEq_errors(mu, _dG, _fmax, _fmin, _data_err, _dG_err, _fmax_err, _fmin_err, self.use_err)
         elif output=='err_mu':
             return fit_funs._switchingEq_jacobian_mu(mu, _dG, _fmax, _fmin)
         elif output=='err_dG':

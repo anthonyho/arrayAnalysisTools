@@ -49,17 +49,21 @@ def _switchingEq_jacobian_fmin(mu, dG):
     return 1 / (1 + Q)
 
 
-def _switchingEq_errors(mu, dG, fmax, fmin, data_err, dG_err, fmax_err, fmin_err):
+def _switchingEq_errors(mu, dG, fmax, fmin, data_err, dG_err, fmax_err, fmin_err, use_err):
     """Compute the total uncertainty of each aptamer"""
     var_data = (data_err**2).reshape(-1)
     var_dG_sum = ((_switchingEq_jacobian_dG(mu, dG, fmax, fmin) * dG_err)**2).sum(axis=1)
     var_fmax_sum = ((_switchingEq_jacobian_fmax(mu, dG) * fmax_err)**2).sum(axis=1)
     var_fmin = ((_switchingEq_jacobian_fmin(mu, dG) * fmin_err)**2).reshape(-1)
-    return np.sqrt(var_data + var_dG_sum + var_fmax_sum + var_fmin)
+    if np.sum(use_err) == 0:
+        return 1
+    else:
+        return np.sqrt(var_data * use_err[0] + var_dG_sum * use_err[1] + 
+                       var_fmax_sum * use_err[2] + var_fmin * use_err[3])
 
 
 def _switchingEq_residuals(params, data, dG, fmax, fmin,
-                           data_err, dG_err=None, fmax_err=None, fmin_err=None):
+                           data_err, dG_err=None, fmax_err=None, fmin_err=None, use_err=[1, 1, 1, 1]):
     """Compute the residuals of each aptamer"""
     # Extract concentrations of ligands from params dict
     A, mu = _extractParams(params)
@@ -68,7 +72,7 @@ def _switchingEq_residuals(params, data, dG, fmax, fmin,
     if dG_err is None:
         return data - A * _switchingEq(mu, dG, fmax, fmin)
     else:
-        return (data - A * _switchingEq(mu, dG, fmax, fmin)) / _switchingEq_errors(mu, dG, fmax, fmin, data_err, dG_err, fmax_err, fmin_err)
+        return (data - A * _switchingEq(mu, dG, fmax, fmin)) / _switchingEq_errors(mu, dG, fmax, fmin, data_err, dG_err, fmax_err, fmin_err, use_err)
 
 
 def _extractParams(params):
