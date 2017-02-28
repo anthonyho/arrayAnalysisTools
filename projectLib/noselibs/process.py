@@ -78,7 +78,7 @@ def mergeAllMixtures(mixtures_dict):
 
 # Filter variants
 def filterVariants(df, dG_max=None, dG_err_max=None, 
-                   fmax_max=None, fmax_norm_max=None, fmax_err_max=None, fmax_err_norm_max=None,
+                   fmax_max=None, fmax_norm_max=None, fmax_err_max=None, fmax_err_norm_max=None, frac_fmax_err_max=None,
                    rsq_min=None, nCluster_min=None, pvalue_max=None, minColsAgreed=1, swapped=False):
 
     if minColsAgreed == 'all':
@@ -102,6 +102,8 @@ def filterVariants(df, dG_max=None, dG_err_max=None,
         filters = filters & (df_swapped['fmax_err'] < fmax_err_max)
     if fmax_err_norm_max is not None:
         filters = filters & (df_swapped['fmax_err_norm'] < fmax_err_norm_max)
+    if frac_fmax_err_max is not None:
+        filters = filters & ((df_swapped['fmax_err'] / df_swapped['fmax']) < frac_fmax_err_max)
     if rsq_min is not None:
         filters = filters & (df_swapped['rsq'] > rsq_min)
     if nCluster_min is not None:
