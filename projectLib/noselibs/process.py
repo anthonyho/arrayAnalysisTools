@@ -77,7 +77,9 @@ def mergeAllMixtures(mixtures_dict):
 
 
 # Filter variants
-def filterVariants(df, dG_max=None, dG_err_max=None, rsq_min=None, nCluster_min=None, pvalue_max=None, minColsAgreed=1, swapped=False):
+def filterVariants(df, dG_max=None, dG_err_max=None, 
+                   fmax_max=None, fmax_norm_max=None, fmax_err_max=None, fmax_err_norm_max=None,
+                   rsq_min=None, nCluster_min=None, pvalue_max=None, minColsAgreed=1, swapped=False):
 
     if minColsAgreed == 'all':
         minColsAgreed = len(df.columns.get_level_values(0).unique())
@@ -92,6 +94,14 @@ def filterVariants(df, dG_max=None, dG_err_max=None, rsq_min=None, nCluster_min=
         filters = filters & (df_swapped['dG'] < dG_max)
     if dG_err_max is not None:
         filters = filters & (df_swapped['dG_err'] < dG_err_max)
+    if fmax_max is not None:
+        filters = filters & (df_swapped['fmax'] < fmax_max)
+    if fmax_norm_max is not None:
+        filters = filters & (df_swapped['fmax_norm'] < fmax_norm_max)
+    if fmax_err_max is not None:
+        filters = filters & (df_swapped['fmax_err'] < fmax_err_max)
+    if fmax_err_norm_max is not None:
+        filters = filters & (df_swapped['fmax_err_norm'] < fmax_err_norm_max)
     if rsq_min is not None:
         filters = filters & (df_swapped['rsq'] > rsq_min)
     if nCluster_min is not None:
