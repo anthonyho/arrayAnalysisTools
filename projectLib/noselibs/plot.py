@@ -23,7 +23,7 @@ def plotPredictedConcMatrix(fitResults, setup='',
     # Unpack object
     matrix = fitResults.predictedConcMatrix
     if nAptamers is None:
-        nAptamers = fitResults.results[matrix.columns[0]].ndata
+        nAptamers = fitResults.ndata
     try:
         vmax = 1.5 * fitResults.currConc
     except TypeError:
