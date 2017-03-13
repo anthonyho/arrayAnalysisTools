@@ -79,7 +79,7 @@ def _switchingEq_residuals(beta, x, x_err, y, y_err, A, use_err):
     """Compute the residuals of each aptamer"""
     return (y - A * _switchingEq(beta, x)) / _switchingEq_errors(beta, x, x_err, y_err, use_err)
 
-def _switchingEq_residuals_lmfit(params, x, x_err, y, y_err, use_err):
+def _switchingEq_residuals_lm(params, x, x_err, y, y_err, use_err):
     """Compute the residuals of each aptamer"""
     A, beta = _extract_params(params)
     return _switchingEq_residuals(beta, x, x_err, y, y_err, A, use_err)
