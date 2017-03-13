@@ -34,7 +34,6 @@ def dG_to_Kd(data, unit='uM'):
     except AttributeError:
         return np.exp(data / RT) * multiplier
 
-
 # Convert Kd to delta G in kcal/mol. Default Kd unit is uM.
 def Kd_to_dG(data, unit='uM'):
     """Converts Kd to delta G in kcal/mol"""
@@ -56,7 +55,6 @@ def Kd_to_dG(data, unit='uM'):
         return np.log(data.astype(float) / multiplier) * RT
     except AttributeError:
         return np.log(data / multiplier) * RT
-
 
 # Function to return a confusion matrix of the true concentrations of ligands
 def generate_true_conc_df(conc,
