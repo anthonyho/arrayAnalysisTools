@@ -56,7 +56,7 @@ def Kd_to_dG(data, unit='uM'):
     except AttributeError:
         return np.log(data / multiplier) * RT
 
-# Function to return a confusion matrix of the true concentrations of ligands
+# Function to return ligand true concentration matrix
 def generate_true_conc_df(conc,
                           list_ligands=globalvars.ligand_names,
                           list_samples=globalvars.ligand_names):
