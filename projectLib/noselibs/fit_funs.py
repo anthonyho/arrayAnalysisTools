@@ -1,5 +1,5 @@
 # Anthony Ho, ahho@stanford.edu, 1/5/2017
-# Last update 3/8/2017
+# Last update 3/13/2017
 """Library containing the switching equation, its derivatives, and residuals"""
 
 
@@ -13,7 +13,7 @@ RT = aux.RT
 
 def _switchingEq(beta, x):
     """Compute the intensity of a switching aptamer. Shape=(m, n)"""
-    mu, dG, fmax, fmin = _unpackVariables(beta, x)
+    mu, dG, fmax, fmin = _unpack_variables(beta, x)
     B = np.exp(-(dG - mu)/RT)
     Q = B.sum(axis=0)
     Q_weighted = (B * (fmax - fmin)).sum(axis=0)
@@ -21,8 +21,9 @@ def _switchingEq(beta, x):
 
 
 def _switchingEq_jacobian_mu(beta, x):
-    """Compute the Jacobian of the switching equation with respect to mu. Shape=(m, n)"""
-    mu, dG, fmax, fmin = _unpackVariables(beta, x)
+    """Compute the Jacobian of the switching equation
+    with respect to mu. Shape=(m, n)"""
+    mu, dG, fmax, fmin = _unpack_variables(beta, x)
     B = np.exp(-(dG - mu)/RT)
     Q = B.sum(axis=0)
     Q_weighted = (B * (fmax - fmin)).sum(axis=0)
@@ -30,8 +31,9 @@ def _switchingEq_jacobian_mu(beta, x):
 
 
 def _switchingEq_jacobian_dG(beta, x):
-    """Compute the Jacobian of the switching equation with respect to dG. Shape=(m, n)"""
-    mu, dG, fmax, fmin = _unpackVariables(beta, x)
+    """Compute the Jacobian of the switching equation
+    with respect to dG. Shape=(m, n)"""
+    mu, dG, fmax, fmin = _unpack_variables(beta, x)
     B = np.exp(-(dG - mu)/RT)
     Q = B.sum(axis=0)
     Q_weighted = (B * (fmax - fmin)).sum(axis=0)
@@ -39,23 +41,26 @@ def _switchingEq_jacobian_dG(beta, x):
 
 
 def _switchingEq_jacobian_fmax(beta, x):
-    """Compute the Jacobian of the switching equation with respect to fmax. Shape=(m, n)"""
-    mu, dG, fmax, fmin = _unpackVariables(beta, x)
+    """Compute the Jacobian of the switching equation
+    with respect to fmax. Shape=(m, n)"""
+    mu, dG, fmax, fmin = _unpack_variables(beta, x)
     B = np.exp(-(dG - mu)/RT)
     Q = B.sum(axis=0)
     return B / (1 + Q)
 
 
 def _switchingEq_jacobian_fmin(beta, x):
-    """Compute the Jacobian of the switching equation with respect to fmin. Shape=(n,)"""
-    mu, dG, fmax, fmin = _unpackVariables(beta, x)
+    """Compute the Jacobian of the switching equation
+    with respect to fmin. Shape=(n,)"""
+    mu, dG, fmax, fmin = _unpack_variables(beta, x)
     B = np.exp(-(dG - mu)/RT)
     Q = B.sum(axis=0)
     return 1 / (1 + Q)
 
 
 def _switchingEq_jacobian_x(beta, x):
-    """Compute the Jacobian of the switching equation with respect to dG, fmax, and fmin. Shape=(2m+1, n)"""
+    """Compute the Jacobian of the switching equation
+    with respect to dG, fmax, and fmin. Shape=(2m+1, n)"""
     return np.vstack([_switchingEq_jacobian_dG(beta, x),
                       _switchingEq_jacobian_fmax(beta, x),
                       _switchingEq_jacobian_fmin(beta, x)])
@@ -63,7 +68,7 @@ def _switchingEq_jacobian_x(beta, x):
 
 def _switchingEq_errors(beta, x, x_err, y_err, use_err):
     """Compute the total uncertainty of each aptamer. Shape=(n,)"""
-    dG_err, fmax_err, fmin_err, data_err = _unpackUncertainties(x_err, y_err)
+    dG_err, fmax_err, fmin_err, data_err = _unpack_uncertainties(x_err, y_err)
     var_data = data_err**2
     var_dG_sum = ((_switchingEq_jacobian_dG(beta, x) * dG_err)**2).sum(axis=0)
     var_fmax_sum = ((_switchingEq_jacobian_fmax(beta, x) * fmax_err)**2).sum(axis=0)
@@ -71,8 +76,10 @@ def _switchingEq_errors(beta, x, x_err, y_err, use_err):
     if np.sum(use_err) == 0:
         return 1
     else:
-        return np.sqrt(var_data * use_err['data'] + var_dG_sum * use_err['dG'] +
-                       var_fmax_sum * use_err['fmax'] + var_fmin * use_err['fmin'])
+        return np.sqrt(var_data * use_err['data'] +
+                       var_dG_sum * use_err['dG'] +
+                       var_fmax_sum * use_err['fmax'] +
+                       var_fmin * use_err['fmin'])
 
 
 def _switchingEq_residuals(beta, x, x_err, y, y_err, A, use_err):
@@ -82,11 +89,11 @@ def _switchingEq_residuals(beta, x, x_err, y, y_err, A, use_err):
 
 def _switchingEq_residuals_lmfit(params, x, x_err, y, y_err, use_err):
     """Compute the residuals of each aptamer"""
-    A, beta = _extractParams(params)
+    A, beta = _extract_params(params)
     return _switchingEq_residuals(beta, x, x_err, y, y_err, A, use_err)
 
 
-def _unpackVariables(beta, x, y=None):
+def _unpack_variables(beta, x, y=None):
     """Unpack independent variable x into dG, fmax, and fmin"""
     mu = beta.reshape(-1, 1)
     nLigands = (len(x) - 1)/2
@@ -100,8 +107,9 @@ def _unpackVariables(beta, x, y=None):
         return mu, dG, fmax, fmin, data
 
 
-def _unpackUncertainties(x_err, y_err=None):
-    """Unpack errors on independent variable x into dG_err, fmax_err, and fmin_err"""
+def _unpack_uncertainties(x_err, y_err=None):
+    """Unpack errors on independent variable x
+    into dG_err, fmax_err, and fmin_err"""
     nLigands = (len(x_err) - 1)/2
     dG_err = x_err[0:nLigands]
     fmax_err = x_err[nLigands:-1]
@@ -113,8 +121,9 @@ def _unpackUncertainties(x_err, y_err=None):
         return dG_err, fmax_err, fmin_err, data_err
 
 
-def _extractParams(params):
-    """Extract concentrations of ligands from params dict into A and beta (m,)"""
+def _extract_params(params):
+    """Extract concentrations of ligands from params dict
+    into A and beta (m,)"""
     if isinstance(params, lmfit.Parameters):
         paramvals = params.valuesdict()
         A = paramvals.pop('A')
@@ -127,8 +136,8 @@ def _extractParams(params):
     return A, beta
 
 
-def _transformVariables(data, dG, fmax, fmin,
-                        data_err, dG_err, fmax_err, fmin_err):
+def _transform_variables(data, dG, fmax, fmin,
+                         data_err, dG_err, fmax_err, fmin_err):
     """Initialize and typecast variables"""
     # Typecast and reshape input variables
     _data = np.array(data)
