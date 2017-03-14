@@ -1,5 +1,5 @@
 # Anthony Ho, ahho@stanford.edu, 1/10/2016
-# Last update 2/7/2015
+# Last update 3/13/2017
 """Library containing plotting functions"""
 
 
@@ -12,73 +12,80 @@ import plotlib
 import globalvars
 
 
-colors = sns.color_palette("Paired", 12)
+colors = sns.color_palette('Paired', 12)
 
 
-def plotPredictedConcMatrix(fitResults, setup='',
-                            nAptamers=None, vmax=None,
-                            catColorsRow=None, catColorsCol=None, 
-                            figsize=(9.1, 9), fig_dir=None):
+def plot_pred_conc_matrix(fit_results, setup='',
+                          n_data=None, vmax=None,
+                          catcolors_row=None, catcolors_col=None,
+                          figsize=(9.1, 9), fig_dir=None):
 
     # Unpack object
-    matrix = fitResults.predictedConcMatrix
-    if nAptamers is None:
-        nAptamers = fitResults.ndata
+    matrix = fit_results.pred_conc_matrix
+    if n_data is None:
+        try:
+            n_data = fitResults.n_data
+        except AttributeError:
+            pass
     try:
-        vmax = 1.5 * fitResults.currConc
+        vmax = 1.5 * fit_results.curr_conc
     except TypeError:
         pass
 
-    # Define catColors
-    if catColorsRow is None:
-        listCatColorsRow = [globalvars.ligand_catcolors[ligand] for ligand in matrix.index]
-    elif catColorsRow is False:
-        listCatColorsRow = None
+    # Define catcolors
+    if catcolors_row is None:
+        list_catcolors_row = [globalvars.ligand_catcolors[ligand]
+                              for ligand in matrix.index]
+    elif catcolors_row is False:
+        list_catcolors_row = None
     else:
-        listCatColorsRow = catColorsRow
+        list_catcolors_row = catcolors_row
 
-    if catColorsCol is None:
+    if catcolors_col is None:
         try:
-            listCatColorsCol = [globalvars.ligand_catcolors[sample] for sample in matrix.columns]
+            list_catcolors_col = [globalvars.ligand_catcolors[sample]
+                                  for sample in matrix.columns]
         except KeyError:
             pass
-    elif catColorsCol is False:
-        listCatColorsCol = None
+    elif catcolors_col is False:
+        list_catcolors_col = None
     else:
-        listCatColorsCol = catColorsCol
+        list_catcolors_col = catcolors_col
 
     # Make plot
     cg = sns.clustermap(matrix,
-                        row_colors=listCatColorsRow, col_colors=listCatColorsCol,
-                        figsize=figsize, row_cluster=False, col_cluster=False, vmax=vmax, vmin=0,
+                        row_colors=list_catcolors_row,
+                        col_colors=list_catcolors_col,
+                        row_cluster=False, col_cluster=False,
+                        figsize=figsize, vmax=vmax, vmin=0,
                         cbar_kws={'label': 'Predicted concentration (uM)'})
     cax = plt.gcf().axes[-1]
     cax.set_position([0.13, .2, .03, .45])
 
     # Set miscel properties
-    if catColorsCol is False:
+    if catcolors_col is False:
         title_y = 1.03
-    else: 
+    else:
         title_y = 1.1
-    if nAptamers:
-        cg.ax_heatmap.set_title(setup+', n='+str(nAptamers), y=title_y)
+    if n_data:
+        cg.ax_heatmap.set_title(setup+', n='+str(n_data), y=title_y)
     else:
         cg.ax_heatmap.set_title(setup, y=title_y)
-    plotlib.setproperties(ax=cg.ax_heatmap, tight=False, 
+    plotlib.setproperties(ax=cg.ax_heatmap, tight=False,
                           xlabel='Samples', ylabel='Predictions',
                           fontsize=18, xticklabelrot=90, yticklabelrot=0)
     plotlib.setproperties(ax=cax, tight=False, fontsize=18, yticklabelrot=0)
 
     # Save figure
     if fig_dir is not None:
-        cg.savefig(fig_dir+'/predictConMat_'+setup+'.png')
-        cg.savefig(fig_dir+'/predictConMat_'+setup+'.eps')
+        cg.savefig(fig_dir+'/predictedConcMatrix_'+setup+'.png')
+        cg.savefig(fig_dir+'/predictedConcMatrix_'+setup+'.eps')
 
     return cg
 
 
-def plotFitStatus(fitResults, setup='',
-                  metric='IERMSLE', figsize=(10, 8), fig_dir=None):
+def plot_fit_status(fit_results, setup='',
+                    metric='IERMSLE', figsize=(10, 8), fig_dir=None): ###
 
     fig = plt.figure(figsize=figsize)
 
