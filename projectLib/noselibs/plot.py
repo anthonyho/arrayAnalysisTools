@@ -24,7 +24,7 @@ def plot_pred_conc_matrix(fit_results, setup='',
     matrix = fit_results.pred_conc_matrix
     if n_data is None:
         try:
-            n_data = fitResults.n_data
+            n_data = fit_results.n_data
         except AttributeError:
             pass
     try:
