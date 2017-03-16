@@ -1,8 +1,9 @@
 # Anthony Ho, ahho@stanford.edu, 2/7/2017
-# Last update 3/13/2017
+# Last update 3/15/2017
 """Library containing the auxiliary functions"""
 
 
+from __future__ import division
 import numpy as np
 import pandas as pd
 import globalvars
@@ -29,10 +30,7 @@ def dG_to_Kd(data, unit='uM'):
     else:
         raise ValueError('Unit \"'+unit+'\" not supported!')
 
-    try:
-        return np.exp(data.astype(float) / RT) * multiplier
-    except AttributeError:
-        return np.exp(data / RT) * multiplier
+    return np.exp(data / RT) * multiplier
 
 
 # Convert Kd to delta G in kcal/mol. Default Kd unit is uM.
@@ -52,10 +50,7 @@ def Kd_to_dG(data, unit='uM'):
     else:
         raise ValueError('Unit \"'+unit+'\" not supported!')
 
-    try:
-        return np.log(data.astype(float) / multiplier) * RT
-    except AttributeError:
-        return np.log(data / multiplier) * RT
+    return np.log(data / multiplier) * RT
 
 
 # Function to return ligand true concentration matrix
@@ -67,3 +62,14 @@ def generate_true_conc_df(conc,
     for ligand in list(set(list_ligands) & set(list_samples)):
         true_conc_df.loc[ligand, ligand] = conc
     return true_conc_df
+
+
+# Function to calculate Jaccard index of a multilabel classification result
+def jaccard_index(y_true, y_pred, axis=0, average=True):
+    pred_and_true = np.logical_and(y_true, y_pred).sum(axis=axis)
+    pred_or_true = np.logical_or(y_true, y_pred).sum(axis=axis)
+    scores = pred_and_true / pred_or_true
+    if average:
+        return scores.mean()
+    else:
+        return scores
