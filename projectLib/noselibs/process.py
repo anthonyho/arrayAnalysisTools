@@ -9,6 +9,10 @@ import pandas as pd
 import aux
 
 
+# Conversion factor of one sided 95% CI to standard error
+cf = 1.96
+
+
 # Merge and process all variants related information
 # into a single multilabel dataframe
 def merge_variants(variants_dict, variants_max_dict, binding_series_dict,
@@ -69,11 +73,11 @@ def merge_variants(variants_dict, variants_max_dict, binding_series_dict,
     swapped = variants_all.swaplevel(0, 1, axis=1).sort_index(axis=1)
 
     imputed = {'Kd': aux.dG_to_Kd(swapped['dG'], unit='uM'),
-               'dG_err': (swapped['dG_ub'] - swapped['dG_lb']) / 3.92,
-               'fmax_err': (swapped['fmax_ub'] - swapped['fmax_lb']) / 3.92,
+               'dG_err': (swapped['dG'] - swapped['dG_lb']) / cf,
+               'fmax_err': (swapped['fmax'] - swapped['fmax_lb']) / cf,
                'fmax_norm': swapped['fmax'] / swapped['max'],
-               'fmax_err_norm': (swapped['fmax_ub'] - swapped['fmax_lb']) / swapped['max'] / 3.92,
-               'fmax_err_frac': (swapped['fmax_ub'] - swapped['fmax_lb']) / swapped['fmax'] / 3.92
+               'fmax_err_norm': (swapped['fmax'] - swapped['fmax_lb']) / swapped['max'] / cf,
+               'fmax_err_frac': (swapped['fmax'] - swapped['fmax_lb']) / swapped['fmax'] / cf
                }
 
     imputed = pd.concat(imputed, axis=1)
