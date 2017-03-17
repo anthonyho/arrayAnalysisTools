@@ -90,28 +90,28 @@ def plot_fit_status(fit_results, setup='',
     fig = plt.figure(figsize=figsize)
 
     # Compute log2 fold change of fitted vs true unweighted chi2
-    fittedRedChi = pd.Series({sample: fitResults.reportFit(sample, 'redchi', weighted=False, params='fitted') 
-                            for sample in fitResults.listSamples})
-    trueRedChi = pd.Series({sample: fitResults.reportFit(sample, 'redchi', weighted=False, params='true') 
-                            for sample in fitResults.listSamples})
+    fittedRedChi = pd.Series({sample: fit_results.reportFit(sample, 'redchi', weighted=False, params='fitted') 
+                            for sample in fit_results.listSamples})
+    trueRedChi = pd.Series({sample: fit_results.reportFit(sample, 'redchi', weighted=False, params='true') 
+                            for sample in fit_results.listSamples})
     redChiFoldChange = np.log2(fittedRedChi / trueRedChi)
     # Plot 
     ax1 = plt.subplot(2, 2, 1)
-    sns.barplot(x=fitResults.listSamples, y=redChiFoldChange, 
+    sns.barplot(x=fit_results.listSamples, y=redChiFoldChange, 
                 color=colors[3], edgecolor=colors[3])
     plotlib.setproperties(ax=ax1, fontsize=14, tight=False,
                           ylabel='Log2 fold change\nof fitted vs true\nunweighted chi2')
     plt.setp(ax1.get_xticklabels(), visible=False)
 
     # Compute log2 fold change of fitted vs true weighted chi2
-    fittedRedChi = pd.Series({sample: fitResults.reportFit(sample, 'redchi', weighted=True, params='fitted') 
-                            for sample in fitResults.listSamples})
-    trueRedChi = pd.Series({sample: fitResults.reportFit(sample, 'redchi', weighted=True, params='true')
-                            for sample in fitResults.listSamples})
+    fittedRedChi = pd.Series({sample: fit_results.reportFit(sample, 'redchi', weighted=True, params='fitted') 
+                            for sample in fit_results.listSamples})
+    trueRedChi = pd.Series({sample: fit_results.reportFit(sample, 'redchi', weighted=True, params='true')
+                            for sample in fit_results.listSamples})
     redChiFoldChange = np.log2(fittedRedChi / trueRedChi)
     # Plot
     ax2 = plt.subplot(2, 2, 3, sharex=ax1)
-    sns.barplot(x=fitResults.listSamples, y=redChiFoldChange, 
+    sns.barplot(x=fit_results.listSamples, y=redChiFoldChange, 
                 color=colors[3], edgecolor=colors[3])
     plotlib.setproperties(ax=ax2, fontsize=14, tight=False,
                           ylabel='Log2 fold change\nof fitted vs true\nweighted chi2', 
@@ -119,21 +119,21 @@ def plot_fit_status(fit_results, setup='',
 #    plt.setp(ax2.get_xticklabels(), visible=False)
 
     # Compute performance metric
-    performance = fitResults.evaluatePerformance(metric)
+    performance = fit_results.evaluatePerformance(metric)
 
     # Plot performance metric
     ax3 = plt.subplot(2, 2, 4)#, sharex=ax1)
-    sns.barplot(x=fitResults.listSamples, y=performance, 
+    sns.barplot(x=fit_results.listSamples, y=performance, 
                 color=colors[1], edgecolor=colors[3])
     plotlib.setproperties(ax=ax3, xlabel='Samples', ylabel=metric,
                           tight=False,
                           xticklabelrot=90, fontsize=14)
 
     # Compute residual matrics
-    fittedRedMat = pd.DataFrame({sample: fitResults.reportFit(sample, 'residual', weighted=True, params='fitted') # to be fixed for unweighted case with theo line
-                                 for sample in fitResults.listSamples})
-    trueRedMat = pd.DataFrame({sample: fitResults.reportFit(sample, 'residual', weighted=True, params='true') 
-                               for sample in fitResults.listSamples})
+    fittedRedMat = pd.DataFrame({sample: fit_results.reportFit(sample, 'residual', weighted=True, params='fitted') # to be fixed for unweighted case with theo line
+                                 for sample in fit_results.listSamples})
+    trueRedMat = pd.DataFrame({sample: fit_results.reportFit(sample, 'residual', weighted=True, params='true') 
+                               for sample in fit_results.listSamples})
 
     # Plot distribution of mean residuals across ligands of all aptamers
     ax4 = plt.subplot(2, 2, 2)
@@ -141,7 +141,7 @@ def plot_fit_status(fit_results, setup='',
     sns.distplot(trueRedMat.mean(axis=1), label='true')
     xlim = ax4.get_xlim()
     x = np.linspace(xlim[0], xlim[1], 1000)
-    plt.plot(x, mlab.normpdf(x, 0, 1./np.sqrt(len(fitResults.results))), label='theoretical')
+    plt.plot(x, mlab.normpdf(x, 0, 1./np.sqrt(len(fit_results.results))), label='theoretical')
     plotlib.setproperties(ax=ax4, fontsize=14, tight=False, 
                           xlabel='Weighted residuals', ylabel='Density', 
                           legend=True, legendfontsize=12)

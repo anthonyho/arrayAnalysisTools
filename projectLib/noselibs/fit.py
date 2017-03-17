@@ -1,6 +1,7 @@
 # Anthony Ho, ahho@stanford.edu, 1/5/2017
-# Last update 3/9/2017
-"""Python module for deconvolution of complex mixtures of ligands based on biophysical model"""
+# Last update 3/16/2017
+"""Python module for deconvolution of complex mixtures of ligands
+based on biophysical model"""
 
 
 import numpy as np
@@ -12,90 +13,84 @@ import plot
 import aux
 
 
-class deconvoluteMixtures:
-    """Python class for deconvoluting complex mixtures into individual components"""
-
+class DeconvoluteMixtures:
+    """Python class for deconvoluting complex mixtures
+    into individual components"""
 
     # Constructor which also does fitting of all samples
-    def __init__(self, variants, listSamples, listLigands,
-                 currConc=None, trueConcDf=None,
+    def __init__(self, variants, list_samples, list_ligands,
+                 curr_conc=None, true_conc_df=None,
                  use_fmax=True, use_fmin=True,
                  use_err={'data': 1, 'dG': 1, 'fmax': 1, 'fmin': 1},
-                 norm=True, varyA=False, unit='uM',
+                 norm=True, vary_A=False, unit='uM',
                  conc_init=None, conc_init_percentile=10,
-                 method='leastsq', maxit_lmfit=0, maxit_odr=1000, **kwargs):
+                 method='leastsq', run_odr=False,
+                 maxit_lmfit=0, maxit_odr=1000, **kwargs):
         """Deconvolute samples given the variant matrix"""
         # Assign instance variables
-        self.listSamples = listSamples
-        self.listLigands = listLigands
-        self.currConc = currConc
+        self.list_samples = list_samples
+        self.list_ligands = list_ligands
+        self.curr_conc = curr_conc
         self.use_fmax = use_fmax
         self.use_fmin = use_fmin
         self.use_err = use_err
         self.norm = norm
-        self.varyA = varyA
+        self.vary_A = vary_A
         self.unit = unit
         self.conc_init = conc_init
         self.conc_init_percentile = conc_init_percentile
         self.method = method
+        self.run_odr = run_odr
         self.maxit_lmfit = maxit_lmfit
         self.maxit_odr = maxit_odr
-        self.ndata = len(variants)
+        self.n_data = len(variants)
+        self.n_samples = len(list_samples)
+        self.n_ligands = len(variants['dG'].columns)
 
-        # Get fitting methods
-        self._getFittingMethods()
-
-        # Create trueConcDf if not provided
-        if trueConcDf:
-            self.trueConcDf = trueConcDf
-        elif currConc and (listSamples == listLigands):
-            self.trueConcDf = aux.generate_ligand_trueConcMat(currConc, listSamples) # to be fixed for listSamples != listLigands
-        else:
-            self.trueConcDf = None
+        # Create true_conc_df if not provided
+        self._create_true_conc_df(true_conc_df)
 
         # Extract and define variables used for fitting
-        self._prepareVariables(variants)
+        self._prepare_variables(variants)
 
         # Fit all samples
         self.results = {}
-        for sample in listSamples:
-            self.results[sample] = self._fitSingleSample(sample, **kwargs)
-        
+        for sample in list_samples:
+            self.results[sample] = self._fit_single_sample(sample, **kwargs)
+
         # Create predicted concentration matrix
         final_method = 'ODR' if self.run_odr else 'OLS'
-        self.predictedConcMatrix = pd.concat({sample: self.results[sample][final_method].predictedConc 
-                                              for sample in listSamples}, 
-                                             axis=1).reindex(index=listLigands, columns=listSamples)
+        self.pred_conc_matrix = \
+            pd.concat({sample: self.results[sample][final_method].pred_conc
+                       for sample in list_samples},
+                      axis=1).reindex(index=list_ligands, columns=list_samples)
 
-
-    # Private method to define fitting methods
-    def _getFittingMethods(self):
-        if self.method == 'odr':
-            self.lmfit_method = None
-            self.run_odr = True
-        elif self.method[-4:] == '+odr':
-            self.lmfit_method = self.method[:-4]
-            self.run_odr = True
+    # Private method to create true_conc_df if not provided
+    def _create_true_conc_df(self, true_conc_df):
+        if true_conc_df:
+            self.true_conc_df = true_conc_df
+        elif self.curr_conc:
+            self.true_conc_df = aux.generate_true_conc_df(self.curr_conc,
+                                                          self.list_ligands,
+                                                          self.list_samples)
         else:
-            self.lmfit_method = self.method
-            self.run_odr = False
-
+            self.true_conc_df = None
 
     # Private method to extract and define variables used for fitting
-    def _prepareVariables(self, variants):
+    def _prepare_variables(self, variants):
         # Define column names for fmax, fmin, data of samples, and their errors
         # in the normalized and unnormalized cases
         col = {'fmax': 'fmax',
                'fmax_err': 'fmax_err',
                'fmin': 'fmin',
                'fmin_err': 'fmin_err'}
-        if self.currConc:
-            col['data'] = 'bs_'+str(self.currConc)+'.0'
-            col['data_err'] = 'bs_'+str(self.currConc)+'.0_err'
+        if self.curr_conc:
+            col['data'] = 'bs_'+str(self.curr_conc)+'.0'
+            col['data_err'] = 'bs_'+str(self.curr_conc)+'.0_err'
         else:
             col['data'] = 'cs'
             col['data_err'] = 'cs_err'
-            
+
         if self.norm:
             col = {key: col[key]+'_norm' for key in col}
 
@@ -105,23 +100,27 @@ class deconvoluteMixtures:
         if self.use_err['data']:
             self.data_err = variants[col['data_err']]
         else:
-            self.data_err = pd.DataFrame(1, index=self.data.index, columns=self.data.columns)
+            self.data_err = pd.DataFrame(1, index=self.data.index,
+                                         columns=self.data.columns)
         # - dG -
         self.dG = variants['dG']
         if self.use_err['dG']:
             self.dG_err = variants['dG_err']
         else:
-            self.dG_err = pd.DataFrame(1, index=self.dG.index, columns=self.dG.columns)
+            self.dG_err = pd.DataFrame(1, index=self.dG.index,
+                                       columns=self.dG.columns)
         # - fmax -
         if self.use_fmax:
             self.fmax = variants[col['fmax']]
         else:
             self.use_err['fmax'] = 0
-            self.fmax = pd.DataFrame(1, index=self.dG.index, columns=self.dG.columns)
+            self.fmax = pd.DataFrame(1, index=self.dG.index,
+                                     columns=self.dG.columns)
         if self.use_err['fmax']:
             self.fmax_err = variants[col['fmax_err']]
-        else: 
-            self.fmax_err = pd.DataFrame(1, index=self.fmax.index, columns=self.fmax.columns)
+        else:
+            self.fmax_err = pd.DataFrame(1, index=self.fmax.index,
+                                         columns=self.fmax.columns)
         # - fmin -
         if self.use_fmin:
             self.fmin = variants[col['fmin']]
@@ -130,92 +129,89 @@ class deconvoluteMixtures:
             self.fmin = pd.Series(0, index=self.dG.index)
         if self.use_err['fmin']:
             self.fmin_err = variants[col['fmin_err']]
-        else: 
+        else:
             self.fmin_err = pd.Series(1, index=self.fmin.index)
         # - ifixx -
-        self.ifixx = np.ones(len(self.dG.columns) + len(self.fmax.columns) + 1)
-        self.ifixx[0:len(self.dG.columns)] = self.use_err['dG']
-        self.ifixx[len(self.dG.columns):len(self.dG.columns)+len(self.fmax.columns)] = self.use_err['fmax']
+        self.ifixx = np.ones(2 * self.n_ligands + 1)
+        self.ifixx[0:self.n_ligands] = self.use_err['dG']
+        self.ifixx[self.n_ligands:(2 * self.n_ligands)] = self.use_err['fmax']
         self.ifixx[-1] = self.use_err['fmin']
 
         # Define initial concenrations for all samples
         try:
             _conc_init = np.ones(len(self.dG.columns)) * self.conc_init
-            self.beta_init = aux.KdtodG(_conc_init, unit=self.unit)
+            self.beta_init = aux.Kd_to_dG(_conc_init, unit=self.unit)
         except TypeError:
-            self.beta_init = np.percentile(self.dG, self.conc_init_percentile, axis=0)
-
+            self.beta_init = np.percentile(self.dG, self.conc_init_percentile,
+                                           axis=0)
 
     # Private method to fit a single sample
-    def _fitSingleSample(self, sample, **kwargs):
+    def _fit_single_sample(self, sample, **kwargs):
         """Fit the concentrations of ligands using lmfit"""
         # Initialize and typecast variables
         x, x_err, y, y_err = \
-            fit_funs._transformVariables(self.data[sample], self.dG, self.fmax, self.fmin,
-                                         self.data_err[sample], self.dG_err, self.fmax_err, self.fmin_err)
+            fit_funs._transform_variables(self.data[sample], self.dG,
+                                          self.fmax, self.fmin,
+                                          self.data_err[sample], self.dG_err,
+                                          self.fmax_err, self.fmin_err)
 
         # Construct parameters
         params = lmfit.Parameters()
-        params.add('A', value=1.0, min=0.0, vary=self.varyA)
+        params.add('A', value=1.0, min=0.0, vary=self.vary_A)
         for i, ligand in enumerate(self.dG.columns):
             params.add(ligand, value=self.beta_init[i])
 
         # Fit and extract parameter estimates
         result = {}
-        if self.lmfit_method is not None:
-            lmfit_result = lmfit.minimize(fit_funs._switchingEq_residuals_lmfit, params,
-                                          args=(x, x_err, y, y_err, self.use_err),
-                                          method=self.lmfit_method, maxfev=self.maxit_lmfit, **kwargs)
-            lmfit_result.predictedConc = aux.dGtoKd(pd.Series(lmfit_result.params.valuesdict()).drop('A'), 
-                                                    unit=self.unit)
-            result['OLS'] = lmfit_result
+        if self.method is not None:
+            lm_result = lmfit.minimize(fit_funs._switchingEq_residuals_lm,
+                                       params,
+                                       args=(x, x_err, y, y_err, self.use_err),
+                                       method=self.method,
+                                       maxfev=self.maxit_lmfit, **kwargs)
+            pred_dG = pd.Series(lm_result.params.valuesdict()).drop('A')
+            lm_result.pred_conc = aux.dG_to_Kd(pred_dG, unit=self.unit)
+            result['OLS'] = lm_result
         if self.run_odr:
             try:
-                beta0 = np.array(pd.Series(lmfit_result.params.valuesdict()).drop('A'))
+                beta0 = np.array(pred_dG)
             except NameError:
                 beta0 = self.beta_init
             odr_model = odr.Model(fit_funs._switchingEq,
                                   fjacb=fit_funs._switchingEq_jacobian_mu,
                                   fjacd=fit_funs._switchingEq_jacobian_x)
             odr_data = odr.RealData(x, y, sx=x_err, sy=y_err)
-            odr_obj = odr.ODR(odr_data, odr_model, beta0=beta0, ifixx=self.ifixx, maxit=self.maxit_odr)
+            odr_obj = odr.ODR(odr_data, odr_model,
+                              beta0=beta0, ifixx=self.ifixx,
+                              maxit=self.maxit_odr)
             odr_result = odr_obj.run()
-            odr_result.predictedConc = aux.dGtoKd(pd.Series(odr_result.beta, index=self.dG.columns), unit='uM')
+            pred_dG = pd.Series(odr_result.beta, index=self.dG.columns)
+            odr_result.pred_conc = aux.dG_to_Kd(pred_dG, unit='uM')
             result['ODR'] = odr_result
 
         return result
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # Public method to plot the predicted concentration confusion matrix
-    def plotPredictedConcMatrix(self, setup='', fig_dir=None):
-        """Plot the predicted concentration confusion matrix"""
-        cg = plot.plotPredictedConcMatrix(fitResults=self, setup=setup, fig_dir=fig_dir)
+    # Public method to plot the predicted concentration matrix
+    def plot_pred_conc_matrix(self, setup='', fig_dir=None):
+        """Plot the predicted concentration matrix"""
+        cg = plot.plot_pred_conc_matrix(fit_results=self,
+                                        setup=setup, fig_dir=fig_dir)
         return cg
 
-
     # Public method to plot the convergence and performance metrics
-    def plotFitStatus(self, setup='', metric='IERMSLE', fig_dir=None):
+    def plot_fit_status(self, setup='', metric='IERMSLE', fig_dir=None):
         """Plot the convergence and performance metrics"""
-        plot.plotFitStatus(fitResults=self, setup=setup, metric=metric, fig_dir=fig_dir)
+        plot.plot_fit_status(fit_results=self,
+                             setup=setup, metric=metric, fig_dir=fig_dir)
+
+
+
+
+
 
 
     # Public method to report the fit status of all samples
-    def reportFitStatus(self):
+    def reportFitStatus(self):   ###
         """Report the status of the fits"""
         for sample in self.results:
             trueRedChi = self.reportFit(sample, output='redchi', weighted=True, params='true')
@@ -229,8 +225,18 @@ class deconvoluteMixtures:
                 print '       lmdif_message: {}'.format(self.results[sample].lmdif_message.replace('\n', ''))
 
 
+
+
+
+
+
+
+
+
+
+
     # Public method to evaluate the performance of the fit
-    def evaluatePerformance(self, metric='IERMSLE', axis=0):
+    def evaluatePerformance(self, metric='IERMSLE', axis=0):   ###
         """Evaulate the performance of the fits"""
         # Unpack variables
         y1 = self.predictedConcMatrix
@@ -255,6 +261,14 @@ class deconvoluteMixtures:
         elif metric == 'pearson':
             pearson = y1.corrwith(y2, axis=axis)
             return pearson.dropna()
+
+
+
+
+
+
+
+
 
 
     # Public method to compute various functional terms given parameters
