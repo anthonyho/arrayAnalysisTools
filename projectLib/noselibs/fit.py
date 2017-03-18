@@ -1,5 +1,5 @@
 # Anthony Ho, ahho@stanford.edu, 1/5/2017
-# Last update 3/16/2017
+# Last update 3/17/2017
 """Python module for deconvolution of complex mixtures of ligands
 based on biophysical model"""
 
@@ -8,9 +8,82 @@ import numpy as np
 import pandas as pd
 import lmfit
 import scipy.odr as odr
+from joblib import Parallel, delayed
 import fit_funs
 import plot
 import aux
+
+
+# Private method to unpack results from fit obejcts into dict
+# So that it could work with joblib
+def _unpack_results(result, method):
+    """Unpack results from fit object into dict"""
+    result_dict = {}
+    if method == 'lmfit':
+        list_attr = ['params', 'redchi', 'chisqr', 'ier', 'nfev',
+                     'message', 'lmdif_message']
+        for attr in list_attr:
+            result_dict[attr] = getattr(result, attr)
+    if method == 'odr':
+        list_attr = ['beta', 'sd_beta', 'cov_beta', 'delta', 'eps',
+                     'xplus', 'y', 'res_var', 'sum_square', 'sum_square_delta',
+                     'sum_square_eps', 'inv_condnum', 'info', 'stopreason']
+        for attr in list_attr:
+            result_dict[attr] = getattr(result, attr)
+
+    return result_dict
+
+
+# Private method to fit a single sample
+# Has to be outside of class so it could work with joblib
+def _fit_single_sample(obj, sample, **kwargs):
+    """Fit the concentrations of ligands using lmfit"""
+    # Initialize and typecast variables
+    x, x_err, y, y_err = \
+        fit_funs._transform_variables(obj.data[sample], obj.dG,
+                                      obj.fmax, obj.fmin,
+                                      obj.data_err[sample], obj.dG_err,
+                                      obj.fmax_err, obj.fmin_err)
+
+    # Fit and extract parameter estimates
+    result = {}
+    if obj.method is not None:
+        # Construct parameters for lmfit
+        params = lmfit.Parameters()
+        params.add('A', value=1.0, min=0.0, vary=obj.vary_A)
+        for i, ligand in enumerate(obj.dG.columns):
+            params.add(ligand, value=obj.beta_init[i])
+        # Fit with lmfit
+        lm_result = lmfit.minimize(fit_funs._switchingEq_residuals_lm,
+                                   params,
+                                   args=(x, x_err, y, y_err, obj.use_err),
+                                   method=obj.method,
+                                   maxfev=obj.maxit_lmfit, **kwargs)
+        # Unpack results from lmfit into dict
+        result['OLS'] = _unpack_results(lm_result, 'lmfit')
+        pred_dG = pd.Series(lm_result.params.valuesdict()).drop('A')
+        result['OLS']['pred_conc'] = aux.dG_to_Kd(pred_dG, unit=obj.unit)
+    if obj.run_odr:
+        # Set initial parameters
+        try:
+            beta0 = np.array(pred_dG)
+        except NameError:
+            beta0 = obj.beta_init
+        # Fit with ODR
+        odr_model = odr.Model(fit_funs._switchingEq,
+                              fjacb=fit_funs._switchingEq_jacobian_mu,
+                              fjacd=fit_funs._switchingEq_jacobian_x)
+        odr_data = odr.RealData(x, y, sx=x_err, sy=y_err)
+        odr_obj = odr.ODR(odr_data, odr_model,
+                          beta0=beta0, ifixx=obj.ifixx,
+                          maxit=obj.maxit_odr)
+        odr_result = odr_obj.run()
+        # Unpack results from ODR into dict
+        result['ODR'] = _unpack_results(odr_result, 'odr')
+        pred_dG = pd.Series(odr_result.beta, index=obj.dG.columns)
+        result['ODR']['pred_conc'] = aux.dG_to_Kd(pred_dG, unit=obj.unit)
+
+    return result
 
 
 class DeconvoluteMixtures:
@@ -25,7 +98,8 @@ class DeconvoluteMixtures:
                  norm=True, vary_A=False, unit='uM',
                  conc_init=None, conc_init_percentile=10,
                  method='leastsq', run_odr=False,
-                 maxit_lmfit=0, maxit_odr=1000, **kwargs):
+                 maxit_lmfit=0, maxit_odr=1000,
+                 parallel=True, **kwargs):
         """Deconvolute samples given the variant matrix"""
         # Assign instance variables
         self.list_samples = list_samples
@@ -54,14 +128,20 @@ class DeconvoluteMixtures:
         self._prepare_variables(variants)
 
         # Fit all samples
-        self.results = {}
-        for sample in list_samples:
-            self.results[sample] = self._fit_single_sample(sample, **kwargs)
+        if parallel:
+            list_results = Parallel(n_jobs=self.n_samples, verbose=10)(
+                delayed(_fit_single_sample)(self, sample, **kwargs)
+                for sample in list_samples)
+        else:
+            list_results = [_fit_single_sample(self, sample, **kwargs)
+                            for sample in list_samples]
+
+        self.results = dict(zip(list_samples, list_results))
 
         # Create predicted concentration matrix
         final_method = 'ODR' if self.run_odr else 'OLS'
         self.pred_conc_matrix = \
-            pd.concat({sample: self.results[sample][final_method].pred_conc
+            pd.concat({sample: self.results[sample][final_method]['pred_conc']
                        for sample in list_samples},
                       axis=1).reindex(index=list_ligands, columns=list_samples)
 
@@ -145,52 +225,6 @@ class DeconvoluteMixtures:
             self.beta_init = np.percentile(self.dG, self.conc_init_percentile,
                                            axis=0)
 
-    # Private method to fit a single sample
-    def _fit_single_sample(self, sample, **kwargs):
-        """Fit the concentrations of ligands using lmfit"""
-        # Initialize and typecast variables
-        x, x_err, y, y_err = \
-            fit_funs._transform_variables(self.data[sample], self.dG,
-                                          self.fmax, self.fmin,
-                                          self.data_err[sample], self.dG_err,
-                                          self.fmax_err, self.fmin_err)
-
-        # Construct parameters
-        params = lmfit.Parameters()
-        params.add('A', value=1.0, min=0.0, vary=self.vary_A)
-        for i, ligand in enumerate(self.dG.columns):
-            params.add(ligand, value=self.beta_init[i])
-
-        # Fit and extract parameter estimates
-        result = {}
-        if self.method is not None:
-            lm_result = lmfit.minimize(fit_funs._switchingEq_residuals_lm,
-                                       params,
-                                       args=(x, x_err, y, y_err, self.use_err),
-                                       method=self.method,
-                                       maxfev=self.maxit_lmfit, **kwargs)
-            pred_dG = pd.Series(lm_result.params.valuesdict()).drop('A')
-            lm_result.pred_conc = aux.dG_to_Kd(pred_dG, unit=self.unit)
-            result['OLS'] = lm_result
-        if self.run_odr:
-            try:
-                beta0 = np.array(pred_dG)
-            except NameError:
-                beta0 = self.beta_init
-            odr_model = odr.Model(fit_funs._switchingEq,
-                                  fjacb=fit_funs._switchingEq_jacobian_mu,
-                                  fjacd=fit_funs._switchingEq_jacobian_x)
-            odr_data = odr.RealData(x, y, sx=x_err, sy=y_err)
-            odr_obj = odr.ODR(odr_data, odr_model,
-                              beta0=beta0, ifixx=self.ifixx,
-                              maxit=self.maxit_odr)
-            odr_result = odr_obj.run()
-            pred_dG = pd.Series(odr_result.beta, index=self.dG.columns)
-            odr_result.pred_conc = aux.dG_to_Kd(pred_dG, unit='uM')
-            result['ODR'] = odr_result
-
-        return result
-
     # Public method to plot the predicted concentration matrix
     def plot_pred_conc_matrix(self, setup='', fig_dir=None):
         """Plot the predicted concentration matrix"""
@@ -203,6 +237,18 @@ class DeconvoluteMixtures:
         """Plot the convergence and performance metrics"""
         plot.plot_fit_status(fit_results=self,
                              setup=setup, metric=metric, fig_dir=fig_dir)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
