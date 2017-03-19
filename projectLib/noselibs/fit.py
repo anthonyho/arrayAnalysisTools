@@ -1,5 +1,5 @@
 # Anthony Ho, ahho@stanford.edu, 1/5/2017
-# Last update 3/17/2017
+# Last update 3/18/2017
 """Python module for deconvolution of complex mixtures of ligands
 based on biophysical model"""
 
@@ -9,6 +9,7 @@ import pandas as pd
 import lmfit
 import scipy.odr as odr
 from joblib import Parallel, delayed
+import pickle
 import fit_funs
 import plot
 import aux
@@ -238,7 +239,22 @@ class DeconvoluteMixtures:
         plot.plot_fit_status(fit_results=self,
                              setup=setup, metric=metric, fig_dir=fig_dir)
 
+    # Public method to save the current DeconvoluteMixtures instance
+    def save(self, path):
+        """Save the current DeconvoluteMixtures instance"""
+        if path.endswith(('.pkl', '.PKL')):
+            path = path[:-4]
+        with open(path+'.pkl', 'wb') as f:
+            pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
 
+    # Static method to load a DeconvoluteMixtures instance
+    @staticmethod
+    def load(path):
+        """Load and return a new DeconvoluteMixtures instance"""
+        if path.endswith(('.pkl', '.PKL')):
+            path = path[:-4]
+        with open(path+'.pkl', 'rb') as f:
+            return pickle.load(f)
 
 
 
