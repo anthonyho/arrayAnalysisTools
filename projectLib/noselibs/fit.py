@@ -9,7 +9,7 @@ import pandas as pd
 import lmfit
 import scipy.odr as odr
 from joblib import Parallel, delayed
-import pickle
+import cPickle as pickle
 import fit_funs
 import plot
 import aux
