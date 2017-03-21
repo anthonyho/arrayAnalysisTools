@@ -130,7 +130,11 @@ class DeconvoluteMixtures:
 
         # Fit all samples
         if parallel:
-            list_results = Parallel(n_jobs=self.n_samples, verbose=10)(
+            if isinstance(parallel, int):
+                n_cores = parallel
+            else:
+                n_cores = self.n_samples
+            list_results = Parallel(n_jobs=n_cores, verbose=10)(
                 delayed(_fit_single_sample)(self, sample, **kwargs)
                 for sample in list_samples)
         else:
