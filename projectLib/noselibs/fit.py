@@ -100,7 +100,7 @@ class DeconvoluteMixtures:
                  conc_init=None, conc_init_percentile=10,
                  method='leastsq', run_odr=False,
                  maxit_lmfit=0, maxit_odr=1000,
-                 parallel=True, **kwargs):
+                 n_cores='auto', **kwargs):
         """Deconvolute samples given the variant matrix"""
         # Assign instance variables
         self.list_samples = list_samples
@@ -129,10 +129,8 @@ class DeconvoluteMixtures:
         self._prepare_variables(variants)
 
         # Fit all samples
-        if parallel:
-            if isinstance(parallel, int):
-                n_cores = parallel
-            else:
+        if n_cores and n_cores != 1:
+            if not isinstance(n_cores, int):
                 n_cores = self.n_samples
             list_results = Parallel(n_jobs=n_cores, verbose=10)(
                 delayed(_fit_single_sample)(self, sample, **kwargs)
