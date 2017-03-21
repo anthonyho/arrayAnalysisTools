@@ -46,7 +46,7 @@ def plot_pred_conc_matrix(fit_results, setup='',
             list_catcolors_col = [globalvars.ligand_catcolors[sample]
                                   for sample in matrix.columns]
         except KeyError:
-            pass
+            list_catcolors_col = None
     elif catcolors_col is False:
         list_catcolors_col = None
     else:
