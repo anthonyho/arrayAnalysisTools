@@ -1,5 +1,5 @@
 # Anthony Ho, ahho@stanford.edu, 1/5/2017
-# Last update 3/18/2017
+# Last update 3/21/2017
 """Python module for deconvolution of complex mixtures of ligands
 based on biophysical model"""
 
@@ -10,6 +10,7 @@ import lmfit
 import scipy.odr as odr
 from joblib import Parallel, delayed
 import cPickle as pickle
+import gzip
 import fit_funs
 import plot
 import aux
@@ -244,18 +245,18 @@ class DeconvoluteMixtures:
     # Public method to save the current DeconvoluteMixtures instance
     def save(self, path):
         """Save the current DeconvoluteMixtures instance"""
-        if path.endswith(('.pkl', '.PKL')):
+        if path.endswith(('.pgz', '.PGZ')):
             path = path[:-4]
-        with open(path+'.pkl', 'wb') as f:
+        with gzip.GzipFile(path+'.pgz', 'wb') as f:
             pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
 
     # Static method to load a DeconvoluteMixtures instance
     @staticmethod
     def load(path):
         """Load and return a new DeconvoluteMixtures instance"""
-        if path.endswith(('.pkl', '.PKL')):
+        if path.endswith(('.pgz', '.PGZ')):
             path = path[:-4]
-        with open(path+'.pkl', 'rb') as f:
+        with gzip.GzipFile(path+'.pgz', 'rb') as f:
             return pickle.load(f)
 
 
