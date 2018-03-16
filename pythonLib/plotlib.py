@@ -20,16 +20,17 @@ import seqlib
 # Handy function to set the commonly used plot modifiers and apply to plot/figure
 def setproperties(fig=None, ax=None, figsize=None,
                   suptitle=None, title=None,
-                  legend=None, legendloc=1, legendwidth=2.5, legendbox=None,
+                  legend=None, legendloc=1, legend_bbox=None,
+                  legendwidth=2.5, legendbox=None,
                   xlabel=None, ylabel=None, xlim=None, ylim=None,
                   scix=False, sciy=False, scilimitsx=(-3, 3), scilimitsy=(-3, 3),
                   logx=False, logy=False, majorgrid=None, minorgrid=None,
                   borderwidth=2.5, tight=True, pad=1.6,
                   fontsize=None, legendfontsize=20, tickfontsize=20,
                   labelfontsize=20, titlefontsize=18, suptitlefontsize=20,
-                  xticklabelrot=None, yticklabelrot=None, 
+                  xticklabelrot=None, yticklabelrot=None,
                   equal=False, symmetric=False):
-    """ Convenient tool to set properties of a plot in a single command"""
+    """Convenient tool to set properties of a plot in a single command"""
     # Get figure and axis handles
     if not fig:
         fig = plt.gcf()
@@ -53,7 +54,8 @@ def setproperties(fig=None, ax=None, figsize=None,
         ax.set_title(title, y=1.02)
     # Show legend if requested
     if legend:
-        legend = plt.legend(loc=legendloc, numpoints=1, fontsize=legendfontsize, frameon=legendbox)
+        legend = ax.legend(bbox_to_anchor=legend_bbox, loc=legendloc,
+                           numpoints=1, fontsize=legendfontsize, frameon=legendbox)
         legend.get_frame().set_linewidth(legendwidth)
     # Set x and y labels if provided
     if xlabel is not None:
