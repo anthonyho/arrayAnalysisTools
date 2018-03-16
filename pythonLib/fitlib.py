@@ -528,8 +528,8 @@ class lsqcurvefit:
             ax.title.set_fontsize(fontsize)
 
         # Show figure
-        if not _useCurrFig:
-            plt.show(block=False)
+        #if not _useCurrFig:
+        #    plt.show(block=False)
 
         return ax
 
@@ -568,7 +568,7 @@ class lsqcurvefit:
             legend.get_frame().set_linewidth(legendwidth)
 
         # Show figure
-        plt.show(block=False)
+        #plt.show(block=False)
 
         return ax
 
