@@ -73,10 +73,10 @@ def main():
             # If cluster is not fitted, replace value with NaN
             CPsignals[currTimepoint] = ((twoPi * currCPfluorData.amp * currCPfluorData.sigma**2)
                                         / currCPfluorData.fitted).replace([np.inf, -np.inf], np.nan)
+
+            del currCPfluorData
         else:
             CPsignals[currTimepoint] = np.nan
-            
-        del currCPfluorData
 
     # Write dataframes to files
     CPsignals.to_csv(CPsignalsFilePath, sep='\t', index=False)
