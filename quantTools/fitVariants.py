@@ -29,9 +29,9 @@ def jac_binding(params, conc):
     fmin = params[1]
     fmax = params[2]
     E = Kd / conc
-    partial_dG = -E / (RT * (1 + E)**2)
+    partial_dG = - (fmax - fmin) * E / (RT * (1 + E)**2)
     partial_b = - 1 / (1 + E) + 1
-    partial_A = 1 / (1+E)
+    partial_A = 1 / (1 + E)
     return np.vstack([partial_dG, partial_b, partial_A]).T
 
 def fit(row, conc, params0, bounds, method, sigma=None):
